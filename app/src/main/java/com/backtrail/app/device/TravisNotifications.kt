@@ -56,8 +56,14 @@ object TravisNotifications {
     }
     fun post(context: Context, id: Int, title: String, body: String, destination: NotificationDestination? = null): Boolean {
         if (!allowed(context)) return false
-        context.getSystemService(NotificationManager::class.java).notify(id, notification(context, title, body, destination = destination))
-        return true
+        return try {
+            context.getSystemService(NotificationManager::class.java).notify(id, notification(context, title, body, destination = destination))
+            true
+        } catch (_: SecurityException) {
+            // Permission may be revoked between the gate and notify. A reminder
+            // delivery failure must never stop the independent GPS recording loop.
+            false
+        }
     }
     fun schedule(context: Context, minutes: Int, outingId: String = "", memoryId: String? = null) {
         require(outingId.isNotBlank()) { "A time reminder must belong to a saved outing" }
