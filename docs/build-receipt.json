@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-24",
+  "apk_path": "app/build/outputs/apk/debug/app-debug.apk",
+  "apk_bytes": 73877454,
+  "apk_sha256": "03fbe56c9bcb1d0768d4b4cb0a055ff25750caacf3e57db61137290aefec0470",
+  "gradle_command": "./gradlew --offline :app:assembleDebug :app:testDebugUnitTest :app:lintDebug",
+  "test_count": 17,
+  "test_failures": 0,
+  "lint_errors": 0,
+  "lint_warnings": 22,
+  "physical_phone_connected": false,
+  "model_installed_on_physical_phone": false,
+  "model_proven_offline_on_physical_phone": false
+}

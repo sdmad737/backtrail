@@ -1,0 +1,331 @@
+TRAVIS — NIGHT-BEFORE PREPARATION AND BUILD HANDOFF
+Prepared October 24, 2026. Give this entire brief to Codex in the actual project workspace.
+
+You are my product, design, and engineering collaborator. We are preparing Travis for the Google Gemma Hardware Hackathon. It is the night before / the hours before the event. I want useful work completed now: finish the real model downloads and environment preparation, establish a runnable foundation, and create a beautiful, lively interface that demonstrates the product's possibilities.
+
+Take ownership and execute. Inspect the actual workspace and available hardware before deciding architecture. Make reasonable decisions, verify them, and keep moving. This brief gives you context and required outcomes; it gives you freedom over how to achieve them.
+
+This supersedes earlier briefs that treated AR as an optional stretch feature. AR/camera navigation is a core product experience alongside offline location tracking and retracing.
+
+1. PRODUCT CONTEXT AND INTENT
+
+The app is named Travis. Its central promise is:
+"Know where you are, remember where you have been, and find your way back — even off the grid."
+
+The initial audience is hikers, campers, outdoor photographers, and people exploring unfamiliar places. Think of the user who puts their phone away while walking, saves a meaningful junction or viewpoint, and later wants the actual route and useful visual context for returning. Skiing is a potential extension, not a requirement for the first demonstration.
+
+The essential product combines:
+- Offline current position and a continuously recorded breadcrumb route.
+- Retracing the ordered route actually recorded.
+- A prominent camera/AR view that helps orient toward the next checkpoint.
+- Photo landmarks and personal memories linked to recorded places.
+- Useful on-device Gemma assistance for understanding and retrieving those memories.
+- Local reminders and route-deviation alerts where useful.
+
+GPS receives satellite signals; cellular coverage is not a prerequisite for positioning. Offline maps and locally installed models are separate preparation tasks. Lost reception, stale fixes, and missing map coverage must have clear states.
+
+Route recording already has established competitors. Our hypothesis is that integrating the actual recorded route, visual memories, and camera guidance makes the return journey more understandable and useful. Do not claim invented novelty or turn this into a generic chatbot or reminders app.
+
+The event's public listing requires a Gemma-based model and on-device execution without cloud services in the runtime loop. Development tools and asset downloads can use the network before the demonstration. The finished phone experience must work independently of a server or laptop. A Mac-only inference experiment is development evidence, not proof of the final phone experience.
+
+The public event description I checked did not specify an advance-work restriction. Read any organizer instructions already provided in the workspace and obey explicit rules. Keep an honest record of pre-event preparation for disclosure if requested. An unknown policy is not a reason to leave model downloads unfinished or abandon preparation.
+
+2. YOUR CREATIVE FREEDOM
+
+Use your judgment. You may improve the screen structure, visual identity, interaction design, motion, feature naming, architecture, and demonstration narrative. Propose a few strong possibilities briefly, choose the most convincing direction, and build it without requiring me to approve every detail.
+
+Treat the prior ivory/evergreen/orange concept as inspiration. You can evolve it or choose a stronger cohesive direction. I want something beautiful, distinctive, lively, outdoors-oriented, and genuinely usable on a phone. Avoid a generic dashboard or a chat transcript with a map added as decoration.
+
+Preserve the central requirements: offline location, continuous route recording, retracing, prominent functional AR/camera guidance, and actual Gemma use. Improving the design must not quietly remove one of them.
+
+Use available design and native-mobile skills. If frontend-skill is installed, invoke it for composition and interaction polish while respecting the native framework. Its documented installation request in Codex is "$skill-installer frontend-skill". If using Expo, its official skills can be installed with "npx skills add expo/skills"; relevant skills include expo-overview, expo-native-ui, expo-design-system, and expo-animation. Skill installation should not become a blocker to useful work.
+
+Ask me only when an answer is actually necessary: unavailable credentials or access, incompatible hardware, a destructive change, or an important choice that cannot reasonably be inferred. Continue independent work while reporting a specific blocker. Do not publish, purchase services, send messages, or delete unrelated work.
+
+3. TONIGHT'S MISSION
+
+Begin the long downloads early and work on the interface and project structure while they run. Tonight should end with:
+- Every required selected model asset fully downloaded and verified on the development machine.
+- Native dependencies and build tooling resolved as far as the actual machine permits.
+- A real model-loading smoke test on available supported hardware.
+- A runnable mobile project with persistent outing/checkpoint data and clear integration boundaries.
+- A lively, interactive map, capture, retrace, memory, and AR experience.
+- A clearly labeled replay/demo mode for exploring the experience without an outdoor walk.
+- A precise status report showing what is real, what is simulated, and what still needs physical-device verification.
+
+Inspect the existing repository, instructions, uncommitted work, connected devices, installed toolchains, free disk space, and available signing configuration. Adapt working code. Do not replace an existing functional project just to match a preferred template.
+
+I have an M4 MacBook Pro. Exact phone models, RAM, OS versions, and available loaner hardware have not been confirmed in this conversation. Discover connected devices where possible. If there is no phone, finish portable host preparation and the interface, then document the exact remaining device steps.
+
+Use parallel agents if available and useful: model/runtime readiness; mobile UI and design; location/route/AR integration. Assign clear ownership and a small shared data contract. Integrate early.
+
+4. MODELS MUST BE COMPLETELY DOWNLOADED
+
+This is a required execution task. Download the actual files, wait for completion, verify them, and run a local load test. Merely writing a downloader, listing commands, opening a model page, or starting an unattended download does not satisfy it.
+
+"All models" means every model and companion asset required by the implementation you select. It does not mean downloading every size, hardware-specific build, or repository variant.
+
+A verified starting candidate for a phone-oriented LiteRT-LM implementation is:
+
+Repository: litert-community/gemma-4-E2B-it-litert-lm
+File: gemma-4-E2B-it.litertlm
+Pinned file-changing revision observed:
+6e5c4f1e395deb959c494953478fa5cec4b8008f
+Expected bytes for that revision: 2588147712
+Expected SHA-256:
+181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c
+
+Published file page:
+https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/blob/main/gemma-4-E2B-it.litertlm
+
+An example download using the Hugging Face CLI is:
+hf download litert-community/gemma-4-E2B-it-litert-lm gemma-4-E2B-it.litertlm --revision 6e5c4f1e395deb959c494953478fa5cec4b8008f --local-dir models/gemma4-e2b
+
+Recheck authoritative metadata before executing. You may choose a newer verified revision or another compatible Gemma asset if the runtime/device requires it. Record the reason, immutable revision, expected size, and published digest. Download the exact selected file instead of blindly cloning all large variants. Do not choose a web-specific or board-specific model bundle for an unrelated native device.
+
+The first fallback can be the same model with another supported backend, bounded context, smaller image processing budget, and shorter outputs. Test that configuration, including vision. If you choose a separate fallback model, download and verify it too. A text-only fallback is a reduced-capability mode and cannot establish successful image understanding. A larger model is not a memory-saving fallback.
+
+For each required asset:
+1. Check disk space, approved source, runtime compatibility, modalities, and any access requirement.
+2. Complete the download with resumable tooling where appropriate.
+3. Check the exact byte length and compute the full SHA-256.
+4. Compare with the published digest when available; distinguish SHA-256 from the different Xet storage hash.
+5. Reject partial files, tiny Git LFS pointers, HTML error responses, or broken cache references.
+6. Confirm required tokenizer, metadata, vision/audio components, and native libraries are present. Inspect what the chosen bundle already includes; do not invent separate projector requirements for a unified container.
+7. Load from a local filesystem path and run real text and image requests without a network dependency.
+8. Keep the assets in a stable local directory outside source control and record their locations.
+
+Do not place multi-gigabyte weights in Git. Save a reproducible manifest and download/verification procedure. Never expose access tokens in logs or commit them. If an asset needs account access that is unavailable, identify that exact blocker and continue the other work; do not label it complete.
+
+Create a machine-readable asset manifest with model ID, revision, filename, bytes, SHA-256, source, license, required modalities, SDK version, tested backend, host path, phone path, and verification status. Record actual failures and pending steps.
+
+Use three distinct readiness states:
+A. Downloaded and integrity-verified on the Mac.
+B. Transferred into persistent, app-accessible storage on the phone.
+C. Loaded and exercised on the phone with networking unavailable.
+
+A does not imply B or C. If a phone is connected, perform B and C and verify the transferred bytes where possible. If no phone is available, complete A and mark B/C pending with a concrete transfer procedure.
+
+Smoke tests should include a fresh image, short text response, three saved memories with a paraphrased retrieval query, and a no-match query. Record actual device, runtime, first-load time, response time, and failure behavior. Do not use benchmark numbers from documentation as our observed performance.
+
+5. PREPARE THE WHOLE OFFLINE STACK
+
+Resolve and cache the native model runtime, framework packages, camera/location/motion modules, local notifications, and the build dependencies needed by the chosen project. Pin a working dependency set and retain lockfiles.
+
+Prepare local fonts, icons, animations, sounds, demo photographs, and other required assets. Download the demonstration map region using a provider and SDK that permit offline use; preserve attribution and verify the required zoom levels. Check for missing glyphs, sprites, styles, terrain resources, and other map dependencies.
+
+Display unavailable map coverage separately from unavailable GPS. A locally drawn trace can remain useful when map tiles are missing, but report that as a fallback rather than a completed offline-map milestone.
+
+The final installed app must include its executable/application code and assets. For React Native/Expo, verify the JavaScript bundle is packaged. A development client that still depends on Metro over a local network is insufficient. Test a cold launch without the development server and with networking disabled.
+
+Keep inference, location history, saved photos, retrieval, reminders, and camera guidance local. Disable unintended runtime analytics or remote asset dependencies in the offline demonstration. Do not substitute remote inference or phone-to-laptop processing.
+
+If voice capture or spoken responses are added, verify the exact speech path and language work offline. Otherwise keep the typed/photo path complete and mark voice as unimplemented. An operating-system dictation button alone does not prove offline speech.
+
+6. PLATFORM AND ARCHITECTURE
+
+Target a consistent high-quality iPhone and Android product. Prove a complete flow on one real phone early; report the second platform's status precisely.
+
+If the team already has a working React Native/Expo baseline, or can promptly verify its native integration, it is a reasonable shared-UI option. Use a custom native build. The react-native-litert-lm binding is community maintained; verify its actual API, device support, image pipeline, and memory requirements before depending on it.
+
+A working native Android Gemma starter may be the fastest foundation. Google's LiteRT-LM Kotlin API is labeled Stable and Swift API Early Preview in the current overview. Native Swift remains an option when it fits the existing project and available hardware. Choose based on a short real capability proof, not framework preference.
+
+A browser preview may help review the visuals, but the phone implementation owns background location, sensors, camera, AR, and on-device inference. Distinguish browser-layout checks from native capability tests.
+
+Use lightweight components or modules for:
+- Location sampling and heading.
+- Ordered route persistence and retrace progress.
+- Camera capture and original media.
+- Gemma inference and memory retrieval.
+- AR/camera presentation.
+- Local notifications.
+- Live versus replay data.
+
+Keep expensive model work off the UI thread. Save original data immediately and process it asynchronously. Navigation must continue while the model initializes, fails, or answers another request.
+
+7. REQUIRED MAP AND ROUTE EXPERIENCE
+
+Ready: show current position/readiness, downloaded map coverage, model availability, and a clear Start outing action.
+
+Recording: begin only on an explicit user action, persist measured samples incrementally, draw the growing trail, and provide Pause and End. Use the platform's supported native background-location mechanisms and permissions. Android needs the appropriate location service/notification behavior; iOS needs background configuration and authorization. Verify screen-lock behavior on hardware.
+
+Store sample timestamps and reported accuracy. Treat stale fixes as stale. Preserve segment boundaries across pauses or missing data so the display does not invent a straight traveled line through a gap. Show useful uncertainty without overwhelming the main screen.
+
+Retracing: follow the recorded sequence in reverse progression. Use continuity and previous progress to resolve crossings and repeated sections. The nearest point anywhere on the trace is not sufficient. Target the next relevant recorded waypoint along the route; an arrow straight toward the start is not backtracking.
+
+Compute route distances, bearings, remaining distance, and progress in application code. Distinguish distance along the trace from straight-line target distance. Do not have Gemma generate coordinates, choose an imaginary trail, or infer safe terrain from a photo.
+
+Keep Find landmark and Retrace as explicit guidance modes. Selecting a search result may show a clearly labeled straight-line bearing to that saved location, but must not silently overwrite retrace progress. Retrace continues to target the next waypoint along the recorded route. Make the mode and distance meaning visible in both map and camera views.
+
+Keep the route, current position, next landmark, and primary action readable. Retain completed outings so they reopen with their original media and recorded context.
+
+8. AR IS A CORE DELIVERABLE
+
+Create a prominent "AR" or "Camera" entry point directly from the active outing and retracing views. A Map/AR switch is one possible design. Give it the same visual attention as the map.
+
+The required minimum is a working sensor-driven camera guidance experience:
+- Live camera preview on supported hardware.
+- Directional indicator toward the selected recorded checkpoint.
+- Real device heading/orientation and location updates.
+- Target name, uncertainty, clearly labeled distance, and original saved photograph.
+- Smooth map/camera switching that preserves the same outing and target.
+- A near-target state that emphasizes the original photo and recorded context.
+- Useful states for denied camera access, no heading, stale location, and uncertain position.
+
+Implement an end-to-end journey:
+save a place -> retrieve/select that memory -> Find in AR -> rotate/walk and see the cue update -> recognize the saved landmark -> continue retracing or complete a requested pickup.
+
+A screenshot, static overlay, dead AR button, or animation driven only by a timer does not satisfy the live feature. A clearly labeled replay can demonstrate its intended interaction while hardware testing remains pending.
+
+For the first functional baseline, camera plus GPS/compass guidance is acceptable. Label the mode "Approximate direction" and document its actual capability. Align screen rotation and north reference, handle wraparound/smoothing, and show a sensible cue when the target is outside the field of view. Reduce precise-looking placement when heading/location uncertainty dominates. Route progression supplies the target.
+
+Compute the cue relative to the camera's current viewing direction and display orientation. Validate upright camera use and portrait/landscape rotation; a raw top-of-device compass heading can be wrong for the camera view. A screen-space directional HUD is acceptable when its measured direction is correct. Spatial placement requires the corresponding pose calculation.
+
+You are encouraged to explore local world-tracked AR using ARKit/ARCore when the available device and integration support it. A world-anchored marker must actually remain fixed as the camera moves. Test session interruption and relocalization before promising persistent placement. Keep the usable camera guidance baseline while adding richer local anchors.
+
+Do not introduce cloud Geospatial/VPS/Cloud Anchor services into the offline loop. Do not draw a supposedly exact route on the ground without a demonstrated spatial alignment. Gemma can help describe and retrieve landmarks; it is not a substitute for pose estimation or sensor measurements.
+
+For Android local AR, verify device support, install/update Google Play Services for AR while online if required, and test launch afterward offline. For iOS, check world-tracking support and run the actual camera session on a physical device. A simulator cannot establish camera/world-tracking performance.
+
+AR work belongs in the initial project structure, first interactive prototype, and acceptance checks. Advanced anchoring may be staged; the camera guidance flow must remain in the core planned demonstration.
+
+9. PHOTO MEMORIES AND GEMMA
+
+At any useful junction, gear location, camp, or viewpoint, a large capture action saves a photo, its measured location, timestamp, route reference, and optional note. Preserve the exact note and original image. If location is missing, keep it unknown. Imported old photos must not silently inherit the current position.
+
+Gemma should add value through:
+- A concise title and description of visible landmark details.
+- Retrieval from natural language: "the junction with the broken wooden sign."
+- Explanations tied to actual stored evidence.
+- Optional comparison of a fresh photo with a few saved candidates, if verified on-device.
+- Turning an explicit user request into a locally stored pickup reminder.
+
+Model observations and user statements must stay distinguishable. Use wording such as "Saved here" or "Last recorded here." Show the source photo. A saved object may have moved, and visually similar landmarks may be ambiguous.
+
+For a small demonstration, compact saved records can be passed directly to the model; an additional embedding model or vector database is optional. If you choose one, include its complete downloads and offline tests.
+
+Use structured, bounded outputs. For example:
+{"landmark_title":"Wooden sign","visible_objects":["wooden sign"],"visual_description":"A weathered sign beside a path."}
+{"status":"match","landmark_ids":["existing-id"],"reason":"The saved record describes a wooden sign."}
+
+Also support no_match and ambiguous. These are schema examples, not live results. Validate returned IDs against real candidates and load locations/media from storage. Handle malformed output without corrupting evidence. Do not treat a model's self-reported confidence as calibrated certainty.
+
+The app assigns IDs, coordinates, timestamps, file paths, distances, route targets, and completion state. Inference runs on capture or request, with bounded context and sensible cancellation. The model need not run continuously while walking or while the camera is open.
+
+10. NOTIFICATIONS AND REMINDERS
+
+Track continuously during an active outing; notify for useful events:
+- Sustained departure from the selected reference route while retracing.
+- An opted-in arrival alert near a saved checkpoint.
+- A requested pickup reminder on returning to a saved area.
+- A requested time-based reminder.
+
+During free exploration there is no known route to deviate from. Use recent valid measurements, accuracy-aware thresholds, repeated evidence, hysteresis, and cooldowns. Suppress misleading route alerts when location is too stale or uncertain.
+
+Generate local notifications from stored state. Prepare their text without requiring a large-model wake-up. Evaluate location conditions using the active recording pipeline; do not assume a platform geofence will work reliably with network/Wi-Fi unavailable.
+
+Pickup tasks should progress through saved/waiting-to-leave -> armed -> notified -> collected, so they do not fire immediately at capture. Repeated periodic pings are optional and off by default. Do not promise a notification from code that the operating system has terminated.
+
+11. MAKE THE FRONTEND BEAUTIFUL AND LIVELY
+
+Aim for a memorable outdoor instrument with confident typography, legible maps, excellent camera composition, and fluid transitions. Use the supplied concept if available, but take creative ownership.
+
+One possible palette is warm ivory #F4F2EA, evergreen #173F35, orange route #E87742, blue position, and quiet terrain. You can improve it. Maintain strong contrast outdoors and in dark appearance. The map should usually dominate the active-outing view, with a compact bottom sheet and reachable controls.
+
+Create cohesive states for:
+- Offline preparation / Ready.
+- Active recording.
+- Capture and save.
+- Retracing with the next photo landmark.
+- AR/camera guidance.
+- Search and memory results.
+- Completed outing / replay.
+
+Make key interactions feel alive: route drawing responds to real accepted samples; a saved photo becomes a map checkpoint; selecting a landmark synchronizes map and AR; switching to return mode reveals the next target; near-target states respond to actual or explicitly replayed progress; brief haptics confirm useful actions.
+
+Keep animations purposeful and brief. Support reduced motion, larger text, readable touch targets, native safe areas, keyboard avoidance, and platform back navigation. Keep photos and route context visible while asking a question. Avoid motion that obscures navigation or makes uncertainty look like precision.
+
+Build an "Explore demo" experience so we can assess the possibilities tonight. It should replay an illustrative outing with several photo landmarks, support stepping through progress, selecting memories, switching Map/AR, heading back, and viewing a sample reminder. Add believable loading, empty, low-accuracy, and error states.
+
+Clearly label demo movement, prerecorded camera media, and sample model responses. Keep replay data separate from live recordings. A camera placeholder should remain visibly a preview until a real camera opens. Do not silently animate a fake live position.
+
+Use shared components and integration adapters so the showcase becomes the real product. Inspect actual rendered iPhone and Android layouts, including a small screen, long note with keyboard, larger text, dark appearance, weak GPS, and both AR and map states. Fix obvious clipping, contrast, crowded controls, and inconsistent styling.
+
+12. SMALL SHARED DATA CONTRACT
+
+Adapt these concepts to the existing codebase:
+- Outing: immutable ID, timestamps, status, ordered segments, local map-region reference.
+- RouteSample: ID, outing/segment ID, coordinates, fix time, horizontal accuracy, optional sensor provenance.
+- Landmark: ID, original-media path, exact note, optional user label, capture time, nullable measured location/fix quality, route reference, generated description, indexing status.
+- RetraceSession: reference outing/segments, progress, selected/next target, alert cooldown.
+- PickupTask: source landmark, confirmed label, state, notification history.
+- GuidanceState: guidanceMode (retrace or find_landmark), target ID, bearing, distance semantics, location/heading quality, live/replay mode.
+
+The map, AR, retrieval results, and reminders must refer to the same records. Decide schemas early and keep persistence simple. Never maintain unrelated fake targets in each screen.
+
+13. ACCEPTANCE CHECKS AND STOPPING POINT
+
+Use focused checks that prove the risky parts of the product. Do not spend the night writing tests that merely duplicate implementation.
+
+Before saying "prepared", report:
+- Exact selected model files downloaded, verified byte counts/digests, and local paths.
+- Model loaded from local storage with real text and image evidence on the hardware actually available.
+- Runtime/native dependencies resolved and the chosen app's build/run status.
+- Recording, retracing, capture, retrieval, and AR flows present in the interactive project.
+- Live sensor-driven camera guidance tested, or explicitly marked pending if no phone is available.
+- Actual iPhone/Android layout inspection and fixes, with platform capability status separate.
+- No unexplained background downloads or unfinished essential transfers.
+
+Before saying "offline phone demo works", verify on a physical phone:
+1. Installed app cold-launches with networking off and no development server.
+2. Downloaded maps and local model load from persistent storage.
+3. A short outdoor walk records real samples, including a screen-locked interval.
+4. A new photo checkpoint is saved and interpreted locally.
+5. A fresh paraphrased question retrieves its actual source record.
+6. Find in AR uses live camera/heading/location and updates while the phone moves.
+7. Head back follows recorded progress through both map and camera views.
+8. Pause, End, and ordinary app relaunch preserve the correct state.
+9. Stale/uncertain fixes, route gaps, and a crossing/repeated route segment do not invent guidance.
+10. Applicable local alerts occur once with valid conditions and cooldown.
+11. A no-match question and a model failure preserve access to the route and photos.
+
+The showcase can be ready before all phone tests pass. Say which milestone was reached.
+
+14. HANDOFF FOR THE EVENT
+
+Leave a concise preparation-status document and a reproducible README with:
+- How to install, build, run, and launch replay mode.
+- What was prepared before the event.
+- Actual tested devices, SDK/model versions, and observed results.
+- Download manifest and stable asset locations.
+- Transfer/import steps for a loaner phone.
+- What is live, what is replayed, and what is unverified.
+- The next three integration steps in priority order.
+- A short demonstration script centered on map -> save -> ask -> AR -> retrace.
+
+Once hardware is available, prioritize the complete offline core loop and actual AR interaction before expanding secondary features. Design for both platforms, and be specific about which one has been demonstrated. Keep one known working build and an honest recorded demonstration as backup.
+
+Finish tonight with a concrete result, not just another plan. Report completed work, evidence, blockers, and the exact next command or device action. You have freedom to surprise me with a stronger design and better ideas while preserving the offline navigation + AR + Gemma product.
+
+REFERENCE STARTING POINTS — VERIFY CURRENT DOCUMENTATION
+Event: https://luma.com/6ccl0jw5
+Gemma models: https://developers.google.com/edge/litert-lm/models/gemma-4
+Model file: https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/blob/main/gemma-4-E2B-it.litertlm
+Pinned model revision: https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/commit/6e5c4f1e395deb959c494953478fa5cec4b8008f
+Hugging Face CLI: https://huggingface.co/docs/huggingface_hub/main/package_reference/cli
+LiteRT-LM overview: https://developers.google.com/edge/litert-lm/overview
+Android runtime: https://developers.google.com/edge/litert-lm/android
+Swift runtime: https://developers.google.com/edge/litert-lm/swift
+Bundle format: https://developers.google.com/edge/litert-lm/file_builder
+Google reference app: https://github.com/google-ai-edge/gallery
+Community React Native binding: https://github.com/hung-yueh/react-native-litert-lm
+Expo development builds: https://docs.expo.dev/develop/development-builds/introduction/
+Android background services: https://developer.android.com/develop/background-work/services/fgs/service-types
+Apple background location: https://developer.apple.com/documentation/corelocation/handling-location-updates-in-the-background
+Android geofencing: https://developer.android.com/develop/sensors-and-location/location/geofencing
+ARCore local/geospatial anchors: https://developers.google.com/ar/develop/anchors
+ARCore setup: https://developers.google.com/ar/develop/java/enable-arcore
+ARCore device support: https://developers.google.com/ar/devices
+Apple AR support: https://developer.apple.com/documentation/arkit/arconfiguration/issupported
+Frontend skill: https://developers.openai.com/blog/designing-delightful-frontends-with-gpt-5-4
+Expo skills: https://docs.expo.dev/skills/

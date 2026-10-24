@@ -1,34 +1,46 @@
-# Backtrail
+# Travis
 
-Backtrail remembers the route, landmarks and things you meant to do on the way back, entirely on your phone.
+**Remember the way out. Find the way back.** Travis records an outing, saves photo landmarks and notes, retrieves those memories with local Gemma, and guides you toward them with synchronized map and camera views.
 
-This repository contains the team handoff and one native Android starter. The current screen is explicitly a **local image inference smoke test**, not a navigation demo. It imports a checksum-verified Gemma model and a local photo, then requests a structured description through LiteRT-LM. No model weights are included. The app has no Internet permission and no canned inference results.
+This repository contains one **native Android application** and a polished **interactive browser Explore demo** for iPhone/Android-sized screens. The native app now includes CameraX, GPS recording, persistent outings, offline raster maps, ordered retrace, approximate camera guidance and local reminders. Native iOS is not implemented.
 
-Camera capture, saved trips, GNSS recording, two-image comparison, destination resolution, checkpoint confirmation and undo are not implemented yet. The shared interfaces and proposal/freshness checks are in place for those workstreams. A built APK does not establish Pixel compatibility or inference quality; see the observed results in [DECISIONS](docs/DECISIONS.txt).
-
-## Build and first phone test
-
-For the event, start with the [tomorrow preparation checklist](docs/PREP-TOMORROW.md).
-
-For the proposed pocket-use experience, read the [sensor, reminder and Gemma feasibility notes](docs/SENSOR-RESEARCH.md). These distinguish supported platform behavior from unimplemented product ideas and unmeasured device performance.
-
-Follow [SETUP](docs/SETUP.md) for JDK/SDK setup, the exact model artifact, and the first offline phone test. From the repository root with JDK 17 and Android SDK configured:
+## Experience it tonight
 
 ```sh
-./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+cd /Users/shahinmadantschi/Downloads/backtrail-team-handoff
+python3 -m http.server 4173 --directory explore --bind 127.0.0.1
 ```
 
-The Android project is this repository root; its only application module is `app`. The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk` and is excluded from Git.
+Open [Travis Explore](http://127.0.0.1:4173). No package install or internet connection is needed. The browser explicitly labels replayed movement, still-camera previews and sample answers. Try Start → Save → Ask → Find in AR → Resume retrace. [Explore instructions and scenario controls](explore/README.md).
 
-## Team ownership
+## Build the Android app
 
-| Area | Path under `app/src/main/java/com/backtrail/app/` | Owner |
-| --- | --- | --- |
-| Presentation | `ui/` | UI / `codex/ui` |
-| Local model, import, validation | `ai/` | Inference / `codex/inference` |
-| Data, device state, request freshness | `trip/` | Device / `codex/device` |
-| Canonical APIs and composition | `contracts/`, `MainActivity.kt`, `BacktrailViewModel.kt` | Integration owner |
+On this prepared Mac:
 
-The integration owner also owns Gradle files, manifest, shared resources, and product/decision documents. Branch from the same committed baseline in separate clones or worktrees. Verify the first real photo → inference → validated display on the Pixel before expanding the app. Do not treat the bootstrap as a device-validated integration baseline.
+```sh
+source .tooling/env.sh
+./gradlew --offline :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+adb devices -l
+# Replace PIXEL_SERIAL with the physical device's serial.
+adb -s PIXEL_SERIAL install -r app/build/outputs/apk/debug/app-debug.apk
+adb -s PIXEL_SERIAL shell am start -n com.backtrail.app/.MainActivity
+```
 
-Read [AGENTS.md](AGENTS.md), [PRODUCT](docs/PRODUCT.txt), [CONTRACTS](docs/CONTRACTS.txt), and [WORKFLOW](docs/WORKFLOW.txt). The original role prompts are in [prompts](prompts/).
+Use **Prepare** to grant permissions and import the verified model. Use **Explore demo** for isolated, labelled replay; exit it before a real walk. [Exact model transfer and physical-phone acceptance steps](docs/SETUP.md).
+
+## What is proven
+
+- Gemma 4 E2B is fully downloaded, size/SHA-256 verified, and loaded from a local Mac path. Actual text, image description and bounded-memory retrieval passed on the Mac GPU with network access denied.
+- The Android app builds offline. Unit tests and lint pass. It launches in an API 36 ARM64 emulator; simulated GPS goes through Android's location service and persists. CameraX produced a saved original JPEG. Process relaunch preserved the outing/photo and correctly paused recording.
+- Native Android and browser layouts were inspected, including keyboard and larger-text/error states. iPhone SE Simulator Safari was used to fix and retest a real software-keyboard issue.
+- **No physical phone was connected.** Model installation, Pixel inference, sensor alignment, screen-locked GPS, battery cost and the full physical offline loop remain unverified. Emulator inputs are not field measurements.
+
+Read the [preparation handoff](docs/PREPARATION-STATUS.md) for actual results, limitations, next three actions and demo plan. [Model evidence](docs/MODEL-READINESS.md) and [organizer rules](docs/EVENT-RULES-CHECK.md) distinguish requirements from suggestions. No fine-tuning or extra embedding model is required by this implementation.
+
+## Project boundaries
+
+Android is Kotlin/Compose, CameraX 1.4.2 and LiteRT-LM 0.18.0. App ID remains `com.backtrail.app` to preserve the starter. The runtime has no Internet permission. Weights, SDKs, recordings and generated APKs are excluded from Git. The prepared map pack covers a small Hillsborough region, not the world. Outside coverage, recorded traces remain visible.
+
+AR is a core screen: real camera + location + rear-camera orientation, approximate bearing, straight-line distance and the original saved photo. It has no ground anchors or automatic visual localization. Gemma proposes saved IDs and descriptions; the user recognizes/ confirms a landmark and controls route progress. GPS recording remains independent of inference.
+
+Read [AGENTS.md](AGENTS.md), [PRODUCT](docs/PRODUCT.txt), [CONTRACTS](docs/CONTRACTS.txt) and [DECISIONS](docs/DECISIONS.txt). Earlier bootstrap documents are preserved under `docs/history/`; latest user requirements are copied in [TRAVIS-BUILD-BRIEF](docs/TRAVIS-BUILD-BRIEF.txt). Private GitHub repository: [sdmad737/backtrail](https://github.com/sdmad737/backtrail). This preparation pass is committed locally, not published.

@@ -1,3 +1,5 @@
+> **Updated handoff:** The later implementation pass is recorded in [PREPARATION-STATUS.md](PREPARATION-STATUS.md) and [SETUP.md](SETUP.md). This earlier checklist remains useful research history; its bootstrap-only implementation statements are superseded.
+
 # Preparation for Saturday, October 24
 
 Checked October 23, 2026 Pacific against the full organizer resource hub, technical primer, event page, linked LiteRT Developer Handbook and Android sample guide. The app's current name remains Backtrail; Travis was discussed but has not been applied to the app or repository.

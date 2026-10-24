@@ -1,0 +1,61 @@
+BACKTRAIL — MINIMUM SHARED INTERFACES
+Canonical Kotlin types now live in app/src/main/java/com/backtrail/app/contracts/
+(Models.kt and Ports.kt). All three workstreams use those types. The prose below
+records the intended behavior; implementation/evidence status is in DECISIONS.txt.
+All VisionService operations take an app-created RequestContext and return a
+Flow<InferenceState<T>>. Cancellation propagates through coroutine cancellation;
+the caller presents CANCELLED and invalidates pending work. Imported ImageRef
+capture times may be null (unknown), never invented from the import time.
+
+DATA
+Trip: id, revision, startCheckpointId, orderedCheckpoints, track, endpointMarked.
+Checkpoint: id, ordinal, imagePath, capturedAt, label, fixedFeatures, optional
+position and trackIndex, userConfirmedManeuver, userNotes.
+PositionFix: latitude, longitude, elapsedRealtimeTimestamp, wallTime,
+accuracyMeters; distinguish unavailable, approximate, stale and usable fixes.
+ImageRef: app-owned absolute path, capturedAt and a unique image ID. No giant
+bitmap or model bytes in UI state. File copies/orientation are fixed per request.
+RequestContext: unique sessionId, requestId, tripId, tripRevision, checkpointId.
+VisionAssessment: verdict SUPPORTS_MATCH / DIFFERENT_PLACE /
+INSUFFICIENT_EVIDENCE; matchingFeatures and conflictingFeatures. No directions.
+DestinationProposal: PROPOSE_TARGET with allowed checkpointId,
+ASK_CLARIFICATION, or NO_RECORDED_MATCH. User confirms the referenced photo.
+ReturnReminderProposal: checkpointId from allowed records + short user-intent
+text. Optional P3. User confirms; app state triggers it on return, not the model.
+
+INFERENCE PORT: VisionService
+describe(ImageRef) -> editable checkpoint description.
+resolveDestination(query, allowedCheckpointCatalog) -> DestinationProposal.
+compare(RequestContext, referenceImage, currentImage) -> typed result/error.
+Interpret return reminders only after the three primary operations work.
+The owner chooses coroutine/callback details ONCE in the canonical Kotlin file.
+The public result must distinguish loading, success, invalid result, timeout,
+cancelled and unavailable. No implicit remote or fake fallback.
+
+DEVICE/DATA PORTS
+TripRepository: load/save app-private records and images; atomic metadata writes.
+TrackRecorder: explicit start/stop and observable PositionFix/recording state.
+ReturnController: begin from confirmed endpoint, expected checkpoint/track,
+select validated destination before return, confirm expected checkpoint, undo.
+Image capture: UI obtains a photo through the chosen CameraX integration and
+hands an app-owned file to the repository/inference port.
+
+OWNERSHIP OF ACTIONS
+UI requests actions and renders state; it does not reimplement route math.
+Inference proposes evidence/allowed IDs; it never mutates trip progress.
+ReturnController owns ordering and recorded-maneuver inversion. Destination
+arrival emits ARRIVE, not another turn. GPS guidance is approximate and follows
+the recorded path; it does not certify walkability.
+
+ASYNC INVARIANTS
+Every result carries the app-created RequestContext. A new session has a new
+sessionId even for the same trip. Ignore results whose session, request, trip
+revision or checkpoint no longer matches. Invalid model output changes no route
+state. Explicit confirmation advances at most one checkpoint. Undo invalidates
+pending work. Active route edits require a deliberate new session.
+
+TEST ADAPTERS
+A UI preview may use labelled fixtures through the SAME interface. The normal
+demo path must use the real service or visibly report unavailable. Demonstrate
+the first real integration before expanding screens and never report fixture
+behavior as a model result.

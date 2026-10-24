@@ -1,92 +1,93 @@
-BACKTRAIL — VERIFIED SETUP AND INTEGRATION STATUS
-Owner during bootstrap: this local bootstrap/integration session.
+TRAVIS — VERIFIED PREPARATION, OCTOBER 24, 2026
+Integration owner: this local preparation session. Previous bootstrap evidence is
+preserved verbatim in history/BOOTSTRAP-DECISIONS.txt, including its old limitations.
 
-Repository URL: https://github.com/sdmad737/backtrail (private, sdmad737)
-Working branch: codex/bootstrap; no concurrent writing workstreams started
-Baseline commit: identified by tag bootstrap-v0.1 (build-verified, not phone-verified)
-Selected target phone: Google Pixel planned; exact model/OS/RAM unconfirmed
-Connected devices: adb devices -l returned no devices on October 23, 2026 Pacific
-Android project root: repository root; one application module, app/
-Gradle wrapper: ./gradlew (and gradlew.bat), Gradle 8.13 with SHA-256 pin
-Pinned toolchain: JDK 17, AGP 8.13.2, Kotlin 2.4.21, compile/target SDK 36,
-  min SDK 28, build-tools 35.0.0, ARM64 only, LiteRT-LM 0.18.0
-Other dependency pins: gradle/libs.versions.toml
-Local toolchain: ignored .tooling/; source .tooling/env.sh on bootstrap Mac
-Build/test command: ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
-Build/test result: BUILD SUCCESSFUL; debug APK compiled; 8 unit tests passed.
-Offline preflight: forced rebuild with --offline --rerun-tasks also passed
-  assembleDebug, testDebugUnitTest and lintDebug on October 23, 2026 Pacific.
-  This verifies the Mac's cached build dependencies, not phone operation.
-Lint: 0 errors, 11 warnings (9 dependency/tool updates, ARM64-only ChromeOS
-  support, and conservative free-space check). No warnings were suppressed.
-APK inspection: aapt dump permissions confirmed no INTERNET permission;
-  aapt dump badging confirmed ARM64, min SDK 28 and target SDK 36.
-Git checks: intended-file scope reviewed; generated tools/weights/builds excluded;
-  git diff --cached --check passed after Windows wrapper line-ending normalization.
-Installed integration APK commit: none
+SOURCE AND ARCHITECTURE
+Read the complete supplied travis-build-prompt.txt; copy in TRAVIS-BUILD-BRIEF.txt.
+Keep the existing Kotlin/Compose Android app, com.backtrail.app. AR is core.
+One independent local browser Explore showcase illustrates iPhone/Android design;
+no native iOS implementation or signing/device claim. No Expo migration.
+No fine-tuning, distillation, embedding model, cloud fallback or runtime downloads.
 
-OWNERSHIP (relative to repository root)
-Canonical APIs (integrator):
-  app/src/main/java/com/backtrail/app/contracts/Models.kt
-  app/src/main/java/com/backtrail/app/contracts/Ports.kt
-UI: app/src/main/java/com/backtrail/app/ui/
-AI: app/src/main/java/com/backtrail/app/ai/
-Device: app/src/main/java/com/backtrail/app/trip/
-Shared files (integrator): contracts/, MainActivity.kt, BacktrailViewModel.kt,
-  app/src/main/AndroidManifest.xml, app/src/main/res/, all Gradle/wrapper/catalog
-  files, shared docs and repository instructions
-Tests follow their corresponding owner; bootstrap tests are under app/src/test/.
+REPOSITORY / OWNERSHIP
+Private remote: https://github.com/sdmad737/backtrail
+Integration branch: codex/bootstrap. This pass does not publish or submit code.
+Parallel local worktrees: codex/travis-model (ai/ + model scripts/evidence),
+codex/travis-ui (ui/Travis*), codex/travis-explore (explore/ + sample assets).
+Integrator alone edits contracts/, device/, trip/, MainActivity/TravisViewModel,
+Gradle/manifest, shared assets/docs and installs the integrated emulator build.
+Read-only integration review caught callback ownership, service-stop and alert
+continuity issues; fixes were integrated before final checks. No other checkout
+or developer's branch was reset. Model weights/builds/tools are ignored.
 
-IMPLEMENTATION STATUS
-Compose bootstrap screen: local model import, local photo selection, description,
-  cancellation and explicit loading/failure/unavailable states implemented.
-Model import: app-private copy, expected size + SHA-256 enforced before rename.
-Image input: app-owned JPEG, orientation normalized, longest side <= 1536 pixels;
-  original capture time unknown. Smoke photos are temporary, not saved trips.
-Vision adapter: real LiteRT-LM GPU text/vision API; serialized single-image calls.
-  Each request initializes/closes its engine. Native cancellation is explicit.
-  Blocking native init/cleanup cannot be forcibly interrupted by coroutine timeout.
-  No warm-engine measurement is provided by this bootstrap implementation.
-Validation: strict JSON, bounded text/features, known enums/actions and allowed IDs.
-RequestGate: session/request/trip/revision/checkpoint identity and one-time consumption.
-Two-image comparison/destination operations: explicitly UNAVAILABLE, not implemented.
-TripRepository, TrackRecorder, ReturnController: canonical interfaces only.
-CameraX, persistence, route progress/undo, GNSS, maps/reminders: not implemented.
-No runtime Internet permission, remote inference, telemetry or fixture fallback.
+TOOLCHAINS
+Mac M4 ARM64,16GB RAM. Free disk initially119GiB, after preparation103GiB.
+JDK17.0.21; Gradle8.13 wrapper; AGP8.13.2; Kotlin2.4.21; compile/targetSDK36;
+minSDK28; ARM64; build-tools35.0.0; CameraX1.4.2; LiteRT-LM0.18.0.
+Android project: repository root / app module. Tools/cache: ignored .tooling/.
+Use source .tooling/env.sh then ./gradlew --offline :app:assembleDebug
+:app:testDebugUnitTest :app:lintDebug (one command; see SETUP.md).
+Node for Explore checks on this Mac:
+/Users/shahinmadantschi/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node
+Xcode26.6, iPhoneSE3 iOS18.1 Simulator. No physical phone, no iOS signing identity.
 
-MODEL AND DEVICE EVIDENCE
-Model: gemma-4-E2B-it.litertlm, 2588147712 bytes; metadata retrieved from publisher
-  litert-community/gemma-4-E2B-it-litert-lm at revision
-  1caa527c1e88b55f046fcd8d2b4265606680663d.
-SHA-256: 181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c
-Weights downloaded: yes, models/gemma-4-E2B-it.litertlm (ignored, not in Git).
-Full-file byte count and SHA-256 verified at 2026-10-24 05:39 UTC against the
-  pinned publisher metadata; local receipt: models/download-receipt.json.
-Phone model import/execution: not run. See docs/SETUP.md for preparation.
-Prepared APK: local-data/event-kit/backtrail-bootstrap-6c6dbaa.apk (ignored).
-APK SHA-256: 1ceb9c4c659349c94d37115648dfa81126f32ad42c16ffa6b2e1345958f59328
-Runtime/backend actually executed: none; GPU configured only
-Emulator launch: not run
-Physical phone launch: not run
-Offline single-image inference and cancellation: untested on phone
-Offline two-image comparison: unimplemented and untested
-GNSS record/retrace and screen-off recording: unimplemented and untested
-Cold initialization / warm capture-to-result latency: unmeasured
-Published event draft deadline: October 24, 2026 at 7 p.m. Pacific;
-  finalist selection begins from saved drafts; demos/judging at 8 p.m.
-Any later final cutoff, required materials and demo length: confirm at check-in
+IMPLEMENTED
+Native Map/AR, original CameraX photos, notes, app-private atomic outing JSON,
+user-started foreground GPS recording, pause/end/relaunch handling, gap segments,
+ordered reverse targets/explicit confirmation/undo, independent Find target and
+resume cursor, camera-forward orientation + true-north adjustment, quality gates,
+local Gemma photo description and bounded catalog retrieval, verified model import,
+opt-in pickup/time reminders, deviation notices, isolated labelled Explore mode.
+Bundled USGS raster coverage:121 tiles, zoom12–16,2785869 bytes. Geographic bounds
+west-122.390/south37.549/east-122.345/north37.585. Local full-byte digests recorded;
+USGS provides no independent per-tile digest. Three NPS sample images,810668 bytes.
+All124 assets match manifests and packaged APK bytes. No external fonts/glyphs.
+
+FINAL CHECKS
+Offline assembleDebug/testDebugUnitTest/lintDebug: BUILD SUCCESSFUL.
+17 JVM tests passed:5 route math/reminder state,4 retrieval prompt,3 request gate,
+5 proposal validation. No skipped/failed tests. Lint0errors,22warnings:13 tool/
+dependency-update notices,4 KTX suggestions,3 version-catalog suggestions,
+ARM64 ChromeOS support, conservative storage check. No warnings suppressed.
+Explore pure-state checks and app.js syntax passed with bundled Node.
+APK manifest: no INTERNET permission. LiteRT ARM64 JNI library present.
+APK bytes:73877454
+APK SHA256:03fbe56c9bcb1d0768d4b4cb0a055ff25750caacf3e57db61137290aefec0470
+APK path:app/build/outputs/apk/debug/app-debug.apk (ignored).
+Final APK installed and launched on API36 ARM64 Pixel7 emulator-5554.
+
+MODEL MILESTONES
+A downloaded/integrity-verified-on-Mac: COMPLETE.
+Model local path:models/gemma-4-E2B-it.litertlm
+Bytes:2588147712
+SHA256:181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c
+Publisher/file revision:litert-community/gemma-4-E2B-it-litert-lm /
+6e5c4f1e395deb959c494953478fa5cec4b8008f. Existing bytes also match old metadata
+revision1caa527c1e88b55f046fcd8d2b4265606680663d; redundant download unnecessary.
+Unified tokenizer+LLM+vision/audio encoders/adapters; no missing companion model.
+Host CPU/GPU actually loaded local file. Final GPU test ran under sandbox-exec
+with network denied: text, real NPS-image structured description,3 paraphrases,
+and unrelated/no-match passed. Previous CPU false-negative and malformed outputs
+are retained in evidence. See MODEL-READINESS.md,model-assets.json,model-tests/.
+B installed-on-physical-phone: PENDING, no phone attached.
+C proven-offline-on-physical-phone: PENDING. No NPU execution measured or claimed.
+
+DEVICE / RENDER EVIDENCE
+Android emulator airplane mode on, Wi-Fi disabled: real location service accepted
+three simulated GPS samples, stored segments/gap; CameraX saved a60097-byte virtual
+camera JPEG and note. Capture lacked a fresh location and correctly stored null.
+Process restart preserved3points/1photo and showed recording PAUSED. Normal live
+mode showed missing model explicitly. Model was not imported into emulator.
+Rendered native Map/AR, capture keyboard and scroll, dark130%font, missing map and
+weak-GPS scenarios. Browser rendered390x844,360x800,320x568,1280x900; checked loading,
+no-match/error and larger text. Actual iPhoneSE Simulator Safari Ready/AR/Ask with
+software keyboard: clipping discovered,fixed,retested. No native iOS claim.
+Screenshots under docs/qa/,explore/qa/; detailed raw emulator state in ignored
+local-data/qa/. No physical GPS, camera alignment, background/battery or notification
+delivery measurements. Human recognition is the current visual-confirmation step.
 
 NEXT GATE
-Obtain the Pixel, record exact hardware/OS, transfer the verified model separately,
-install this commit, launch and run the real image smoke test in airplane mode.
-Only after device feasibility is demonstrated should the team expand the first
-photo -> comparison -> explicit checkpoint confirmation integration slice.
-
-2026-10-24 05:17 UTC / bootstrap-v0.1 / Created private remote and one Android
-starter; compiled APK, passed 8 unit tests and lint (0 errors); found no attached
-device / bootstrap owner / Pixel launch and offline image inference pending.
-
-2026-10-24 05:39 UTC / app code 6c6dbaa / Read the full organizer hub and primer,
-event schedule, linked handbook and Android guide; downloaded and verified the
-native E2B model; forced offline rebuild, 8 tests and lint passed / bootstrap
-owner / docs/PREP-TOMORROW.md records remaining human and physical-device steps.
+Physical Pixel install/model import, exact transferred/private digests, cold launch
+with Wi-Fi/cellular off, real photo inference/query, short recorded route + Map/AR
+Find + unchanged retrace cursor + requested pickup + return + process relaunch.
+SETUP.md gives exact steps. PREPARATION-STATUS.md is the concise team handoff.

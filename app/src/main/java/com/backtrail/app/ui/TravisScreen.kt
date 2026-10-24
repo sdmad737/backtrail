@@ -136,7 +136,7 @@ fun TravisScreen(
                                     Text("  Sample movement · controls", fontSize = 11.sp, color = Color(0xFF673D0C))
                                 }
                             }
-                        } else if (state.fixQuality != FixQuality.USABLE) {
+                        } else if (state.fixQuality != FixQuality.USABLE || state.sensorStatus.isNotBlank()) {
                             QualityLabel(state)
                         }
                     }
@@ -200,8 +200,8 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                     Eyebrow(if (state.mode == GuidanceMode.RETRACE) "RETRACING YOUR STEPS" else "FINDING A SAVED PLACE")
                     Text(state.targetTitle, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(
-                        if (state.mode == GuidanceMode.RETRACE) "${distanceLabel(state.remainingMeters)} along recorded route"
-                        else "${distanceLabel(state.distanceMeters)} straight-line distance",
+                        if (state.mode == GuidanceMode.RETRACE) (if(state.remainingMeters==null) "Route distance unavailable" else "~${distanceLabel(state.remainingMeters)} remaining via recorded route")
+                        else if(state.distanceMeters==null) "Distance unavailable" else "${distanceLabel(state.distanceMeters)} straight-line distance",
                         style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant,
                     )
                 }
@@ -210,10 +210,10 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 Text("Your retrace progress is saved.", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
             }
             if (state.canConfirm) {
-                Text("Near the recorded location. Compare the original photo before confirming.", style = MaterialTheme.typography.bodySmall)
+                Text(if(state.targetPhoto.isBlank()) "Near the next recorded waypoint. Confirm to continue." else "Near the recorded location. Compare the original photo before confirming.", style = MaterialTheme.typography.bodySmall)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PrimaryAction(if (state.mode == GuidanceMode.RETRACE) "I recognize this" else "Found this place", "check", Modifier.weight(1f), state.canConfirm) { act(TravisAction.Confirm) }
+                PrimaryAction(if (state.mode == GuidanceMode.RETRACE) (if(state.targetPhoto.isBlank()) "Confirm waypoint" else "I recognize this") else "Found this place", "check", Modifier.weight(1f), state.canConfirm) { act(TravisAction.Confirm) }
                 QuietAction("Undo", "undo", Modifier.widthIn(min = 72.dp)) { act(TravisAction.Undo) }
             }
             val memory = outing.memories.firstOrNull { it.id == state.selectedMemoryId }
@@ -226,13 +226,14 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 else TextButton(onClick = onMemories) { Text("Saved places") }
                 if (state.replay) TextButton(onClick = { act(TravisAction.ReplayNext) }) { Text("Next step") }
             }
+            TextButton(onClick = { act(TravisAction.StopGuidance) }) { Text("Close guidance") }
         }
         outing.phase == OutingPhase.READY && outing.points.isEmpty() -> {
             Eyebrow("YOUR OFFLINE FIELD COMPANION")
             Text("Go a little further.", fontSize = 27.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-.8).sp)
             Text("Keep your trail. Remember the places. Find your way back.", style = MaterialTheme.typography.bodyMedium, color = palette.onSurfaceVariant)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SmallStatus(if (state.mapAvailable) "Map saved" else "No local map", state.mapAvailable)
+                SmallStatus(if (state.fix==null) "Venue map prepared" else if (state.mapAvailable) "Map saved" else "Outside saved map", state.mapAvailable || state.fix==null)
                 SmallStatus(if (state.modelReady) "Gemma ready" else "Gemma needed", state.modelReady)
             }
             PrimaryAction("Start outing", "trail", Modifier.fillMaxWidth()) { act(TravisAction.Start) }
@@ -268,6 +269,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 TextButton(onClick = onMemories) { Text("Places") }
                 if (state.replay) TextButton(onClick = { act(TravisAction.ReplayNext) }) { Text("Next step") }
                 else if (outing.phase != OutingPhase.ENDED) TextButton(onClick = { act(TravisAction.End) }) { Text("End") }
+                else TextButton(onClick = { act(TravisAction.Start) }) { Text("New outing") }
             }
         }
     }
@@ -453,12 +455,12 @@ private fun ReadinessRow(title: String, detail: String, ready: Boolean) {
 @Composable
 internal fun QualityLabel(state: TravisUiState) {
     Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surface) {
-        Text(when (state.fixQuality) {
+        Text(state.sensorStatus.ifBlank { when (state.fixQuality) {
             FixQuality.USABLE -> "GPS ±${state.fix?.accuracy?.toInt() ?: 0} m"
             FixQuality.APPROXIMATE -> "Weak GPS · position approximate"
             FixQuality.STALE -> "Location stale · guidance paused"
             FixQuality.UNAVAILABLE -> "Waiting for a measured location"
-        }, Modifier.padding(horizontal = 10.dp, vertical = 7.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+        } }, Modifier.padding(horizontal = 10.dp, vertical = 7.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 

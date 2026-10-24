@@ -6,13 +6,16 @@ import java.io.File
 import java.security.MessageDigest
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** Imports only the pinned native artifact, without fetching anything at runtime. */
 class ModelStore(private val context: Context) {
+    private val importMutex = Mutex()
     val file = File(context.noBackupFilesDir, "models/$FILE_NAME")
     val ready: Boolean get() = file.isFile && file.length() == SIZE
 
-    suspend fun import(uri: Uri) {
+    suspend fun import(uri: Uri) = importMutex.withLock {
         file.parentFile!!.mkdirs()
         require(file.parentFile!!.usableSpace > SIZE + 128 * 1024 * 1024) { "Not enough free space to import the model." }
         val partial = File(file.parentFile, "$FILE_NAME.partial")

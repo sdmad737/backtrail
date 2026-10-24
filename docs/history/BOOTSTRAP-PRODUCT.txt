@@ -1,0 +1,84 @@
+BACKTRAIL — CURRENT BUILD DECISION
+
+PROMISE
+Backtrail remembers the route, landmarks and things you meant to do on the way
+back, entirely on your phone.
+
+USER
+A walker following a short unfamiliar outdoor route they expect to retrace.
+The initial demonstration uses two or three recognizable junctions with a good
+GNSS view, not an unvalidated expedition or rescue scenario.
+
+ONE INTERACTION LOOP
+Start walk -> record GPS track -> save return-facing landmark photos and notes
+-> select a remembered destination -> follow the recorded trail in reverse
+-> compare a live junction view with its saved reference -> confirm -> arrive.
+An optional simple return reminder attaches the user's own intent to a saved
+checkpoint, for example 'Remind me to collect my jacket here on the way back.'
+
+INTERFACE
+Map is home: downloaded surroundings if available, actual track, position
+quality, start and saved photo pins. Look opens camera comparison. Ask opens a
+bottom sheet for retrieving trip evidence or proposing a supported action.
+Natural language does not replace visible controls or the map.
+
+PRIORITIES
+P0: one shared app compiles, runs and performs real local Gemma image inference.
+P1: record/open a checkpoint; show reference and current photos; validate live
+    comparison; user-confirmed state and undo; save/reopen the route.
+P2: recorded GNSS path, simple return flow, remembered-destination selection,
+    readable map/route screen and recording/permission failure states.
+P3: Match my view saved-photo overlay or divider; one return-reminder action.
+P4: approximate camera compass, checkpoint suggestions, one offline guide card.
+Only advance once the preceding integrated slice works. P0-P2 form the core.
+
+MAP AND AR SCOPE
+Use one prepared offline map region if setup succeeds; a clearly labelled route
+plot is the fallback. A map download is not a new-route planning engine.
+Reference overlays are manually aligned. Do not claim automatic image
+registration, ground-anchored route arrows or GPS-free global localization.
+Return begins at the recorded endpoint on a simple route. No loops, arbitrary
+relocalization, novel shortcuts or autonomous rerouting in the initial build.
+
+GEMMA DOES
+Describe distinctive visible features, resolve a user's description against
+existing recorded checkpoints, compare reference/current images, and interpret
+a small supported intent such as a checkpoint-bound reminder.
+
+ORDINARY CODE DOES
+GPS and heading geometry, distance estimates, route ordering, request identity,
+JSON and semantic validation, persistence, progress, reminder triggers and undo.
+
+USER DOES
+Confirm inferred destinations/actions, correct labels, verify checkpoints and
+control route progress. A possible visual match is not proof of location.
+
+TARGET STACK (PROVISIONAL UNTIL BOOTSTRAP)
+Android / Kotlin / Compose / CameraX / LiteRT-LM 0.18.0 / native Gemma 4 E2B
+gemma-4-E2B-it.litertlm. Local JSON + JPEGs is sufficient. Choose one working
+starter configuration and freeze it. Do not maintain iOS concurrently. If only
+iPhones are available, decide on Swift + a Mac before platform work starts.
+
+EVENT FACTS FROM ORGANIZER EMAIL AND PUBLISHED EVENT PAGE
+October 24, 2026; doors10 a.m., keynotes11 a.m.–noon Pacific; teams3–4; one main
+track; Gemma-based runtime100%on-device; special awards can stack; prototyping
+before arrival is explicitly encouraged; hardware loaners first come first
+served. Enter Mobile AI for the phone build. The published event page says to
+save a project draft by 7 p.m.; finalist selection begins from saved drafts.
+Demos/judging start at 8 p.m. Confirm any later final cutoff, required materials
+and demo length at check-in. Do not invent a judging rubric. Sources and the
+complete preparation checklist are in PREP-TOMORROW.md.
+
+EXCLUDED FROM THE BUILD
+Food/poison/water-safety verdicts, universal survival chatbot, long-distance
+world-anchored AR, live weather, remote rescue, cloud model calls, camera running
+continuously in the pocket, model distillation/fine-tuning, multiple platforms.
+General campfire/knots help can later use curated downloaded guide cards; current
+fire permission cannot be inferred from model memory while offline.
+
+EVIDENCE STATUS
+The local bootstrap added one Android starter and compiled a debug APK. Proposal
+validation and stale-result unit tests run on the development Mac. No emulator
+or phone launch, phone inference or GNSS test has been performed, and no accuracy
+or latency number has been measured for Backtrail. The navigation loop is not yet
+implemented. Read DECISIONS.txt for exact commands, results and remaining work.
