@@ -64,9 +64,55 @@ Answer (v2 prompt): label "Red brick buildings and street scene"; features inclu
 tracks, overhead tram wires, white facade on the left, shop fronts. No vehicles or people.
 Still generic: it does not read the teal "Lalibela" sign. Prompt tuning needs real photos.
 
+### 2026-10-24 14:00 · bench sweep · describe, one photo, 2 runs each · `7f39d31`
+
+| Config | Load ms | Generate ms (cold / warm) | Peak RSS | Outcome |
+|---|---|---|---|---|
+| GPU, prompt v1 | 3,876 | 9,913 / 15,374 | 1,293 MB | success ×2 |
+| GPU, prompt v2 | 6,848 | 11,696 / 8,716 / 8,569 | 1,338 MB | success ×3 |
+| CPU, prompt v2 | 12,079 | 8,924 / 9,089 | 3,154 MB | success ×2 |
+| Tensor G6 build, TENSOR backend | – | – | – | `LiteRtLmJniException` ×2 |
+| Tensor G6 build, NPU backend | – | – | – | `LiteRtLmJniException` ×2 |
+| Tensor G6 build, TENSOR + GPU vision | – | – | – | `LiteRtLmJniException` ×2 |
+
+GPU and CPU generate at about the same speed for this request; GPU loads faster and uses
+far less app memory. **Decision: GPU** for the demo. The accelerator builds do not run with
+LiteRT-LM 0.18.0 here (0.18.1 was published 2026-10-20; untested).
+
+### 2026-10-24 14:00 · bench · EmbeddingGemma 2 740M · `7f39d31`
+
+- TENSOR backend (G6 file): `Unsupported encoder backend: 5`. NPU backend (G6 file):
+  `Failed to allocate tensors`. **GPU (generic file) works.**
+- GPU: load 19,185 ms; text query 95–106 ms; document 104–128 ms; one photo 918 ms;
+  256-dim vectors; process memory 181 → 716 MB. (Model card's 8.3 ms text / 49 ms
+  text+vision figures are for the Tensor TPU path, which did not run here.)
+- Retrieval on the synthetic 4-spot demo trip (labels + notes as text, no photos):
+  top-1 correct 6 of 7 answerable queries; "back to where I parked" ranked the mailbox
+  first and the car park third.
+- **All scores sit in 0.66–0.78, including the two unanswerable queries** ("helicopter pad"
+  0.707, "train station" 0.699). An absolute floor cannot decide "no saved spot matches"; the
+  gap between first and second is the usable signal. Current `SpotRetriever` floor (0.30) is
+  therefore meaningless, and "no match" must not be claimed from embeddings alone.
+
+### 2026-10-24 14:05 · bench · compare · GPU · `052f14b`
+Synthetic smoke set, not accuracy evidence: `junction-a` (sample photo), `junction-b`
+(a crop of the same photo), `porch-a` (unrelated sample photo of a cat on a porch).
+
+| Pair | Expected | Verdict | Generate ms |
+|---|---|---|---|
+| junction-a vs junction-b | same | SUPPORTS_MATCH | 9,423 (load 2,135) |
+| junction-a vs porch-a | different | INSUFFICIENT_EVIDENCE | 10,094 |
+| junction-b vs porch-a | different | INSUFFICIENT_EVIDENCE | 16,883 |
+
+No false "same spot". But on the mismatched pairs the model still listed "buildings, road,
+tracks" as **matching** features (the porch photo has none) and a cat and blue car as
+conflicts. **The feature lists are not reliable evidence on non-matches**: the UI should show
+reasons only with SUPPORTS_MATCH, and a match should also require photo-embedding agreement
+once that is calibrated on real pairs.
+
 ## Open questions
 
-- Which Tensor G6 path the runtime accepts (TENSOR vs NPU backend) — sweep running.
+- Whether LiteRT-LM 0.18.1 runs the Tensor G6 builds.
 - EmbeddingGemma latency on device, and whether photo embeddings separate same-place from
   different-place pairs — needs photo pairs taken at the demo route.
 - `SpotRetriever` and `AlignmentMeter` thresholds are placeholders until calibrated here.
