@@ -33,7 +33,10 @@ data class SmokeState(
 class BacktrailViewModel(application: Application) : AndroidViewModel(application) {
     private val models = ModelStore(application)
     private val photos = PhotoImporter(application)
-    private val vision: VisionService = LocalVisionService(models.file, application.cacheDir)
+    private val vision by lazy {
+        val (file, backend) = models.preferred ?: (models.file to com.backtrail.app.ai.InferenceBackend.GPU)
+        LocalVisionService(file, application.cacheDir, backend, nativeLibraryDir = application.applicationInfo.nativeLibraryDir)
+    }
     private val gate = RequestGate()
     private val sessionId = UUID.randomUUID().toString()
     private var inferenceJob: Job? = null
@@ -104,6 +107,11 @@ class BacktrailViewModel(application: Application) : AndroidViewModel(applicatio
                 mutableState.update { it.copy(busy = false, canCancel = false) }
             }
         }
+    }
+
+    override fun onCleared() {
+        // Releases the multi-gigabyte native engine that is now kept between photos.
+        vision.close()
     }
 
     fun cancel() {
