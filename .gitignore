@@ -1,0 +1,34 @@
+# Local build tools, Android/IDE state and generated files
+.tooling/
+.gradle/
+.kotlin/
+.idea/
+**/build/
+local.properties
+*.iml
+.DS_Store
+captures/
+.cxx/
+.externalNativeBuild/
+
+# Model weights, local recordings and device measurements
+*.litertlm
+*.tflite
+*.gguf
+*.safetensors
+*.onnx
+models/
+local-data/
+
+# Credentials and signing material
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pem
+keystore.properties
+secrets.properties
+*.apk
+*.aab

@@ -1,0 +1,77 @@
+BACKTRAIL — VERIFIED SETUP AND INTEGRATION STATUS
+Owner during bootstrap: this local bootstrap/integration session.
+
+Repository URL: https://github.com/sdmad737/backtrail (private, sdmad737)
+Working branch: codex/bootstrap; no concurrent writing workstreams started
+Baseline commit: identified by tag bootstrap-v0.1 (build-verified, not phone-verified)
+Selected target phone: Google Pixel planned; exact model/OS/RAM unconfirmed
+Connected devices: adb devices -l returned no devices on October 23, 2026 Pacific
+Android project root: repository root; one application module, app/
+Gradle wrapper: ./gradlew (and gradlew.bat), Gradle 8.13 with SHA-256 pin
+Pinned toolchain: JDK 17, AGP 8.13.2, Kotlin 2.4.21, compile/target SDK 36,
+  min SDK 28, build-tools 35.0.0, ARM64 only, LiteRT-LM 0.18.0
+Other dependency pins: gradle/libs.versions.toml
+Local toolchain: ignored .tooling/; source .tooling/env.sh on bootstrap Mac
+Build/test command: ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+Build/test result: BUILD SUCCESSFUL; debug APK compiled; 8 unit tests passed.
+Lint: 0 errors, 11 warnings (9 dependency/tool updates, ARM64-only ChromeOS
+  support, and conservative free-space check). No warnings were suppressed.
+APK inspection: aapt dump permissions confirmed no INTERNET permission;
+  aapt dump badging confirmed ARM64, min SDK 28 and target SDK 36.
+Git checks: intended-file scope reviewed; generated tools/weights/builds excluded;
+  git diff --cached --check passed after Windows wrapper line-ending normalization.
+Installed integration APK commit: none
+
+OWNERSHIP (relative to repository root)
+Canonical APIs (integrator):
+  app/src/main/java/com/backtrail/app/contracts/Models.kt
+  app/src/main/java/com/backtrail/app/contracts/Ports.kt
+UI: app/src/main/java/com/backtrail/app/ui/
+AI: app/src/main/java/com/backtrail/app/ai/
+Device: app/src/main/java/com/backtrail/app/trip/
+Shared files (integrator): contracts/, MainActivity.kt, BacktrailViewModel.kt,
+  app/src/main/AndroidManifest.xml, app/src/main/res/, all Gradle/wrapper/catalog
+  files, shared docs and repository instructions
+Tests follow their corresponding owner; bootstrap tests are under app/src/test/.
+
+IMPLEMENTATION STATUS
+Compose bootstrap screen: local model import, local photo selection, description,
+  cancellation and explicit loading/failure/unavailable states implemented.
+Model import: app-private copy, expected size + SHA-256 enforced before rename.
+Image input: app-owned JPEG, orientation normalized, longest side <= 1536 pixels;
+  original capture time unknown. Smoke photos are temporary, not saved trips.
+Vision adapter: real LiteRT-LM GPU text/vision API; serialized single-image calls.
+  Each request initializes/closes its engine. Native cancellation is explicit.
+  Blocking native init/cleanup cannot be forcibly interrupted by coroutine timeout.
+  No warm-engine measurement is provided by this bootstrap implementation.
+Validation: strict JSON, bounded text/features, known enums/actions and allowed IDs.
+RequestGate: session/request/trip/revision/checkpoint identity and one-time consumption.
+Two-image comparison/destination operations: explicitly UNAVAILABLE, not implemented.
+TripRepository, TrackRecorder, ReturnController: canonical interfaces only.
+CameraX, persistence, route progress/undo, GNSS, maps/reminders: not implemented.
+No runtime Internet permission, remote inference, telemetry or fixture fallback.
+
+MODEL AND DEVICE EVIDENCE
+Model: gemma-4-E2B-it.litertlm, 2588147712 bytes; metadata retrieved from publisher
+  litert-community/gemma-4-E2B-it-litert-lm at revision
+  1caa527c1e88b55f046fcd8d2b4265606680663d.
+SHA-256: 181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c
+Weights downloaded/imported/executed here: no. See docs/SETUP.md for preparation.
+Runtime/backend actually executed: none; GPU configured only
+Emulator launch: not run
+Physical phone launch: not run
+Offline single-image inference and cancellation: untested on phone
+Offline two-image comparison: unimplemented and untested
+GNSS record/retrace and screen-off recording: unimplemented and untested
+Cold initialization / warm capture-to-result latency: unmeasured
+Actual event submission deadline and format: confirm at check-in
+
+NEXT GATE
+Obtain the Pixel, record exact hardware/OS, transfer the verified model separately,
+install this commit, launch and run the real image smoke test in airplane mode.
+Only after device feasibility is demonstrated should the team expand the first
+photo -> comparison -> explicit checkpoint confirmation integration slice.
+
+2026-10-24 05:17 UTC / bootstrap-v0.1 / Created private remote and one Android
+starter; compiled APK, passed 8 unit tests and lint (0 errors); found no attached
+device / bootstrap owner / Pixel launch and offline image inference pending.

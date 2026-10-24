@@ -1,0 +1,20 @@
+Read AGENTS.md, docs/PRODUCT.txt, docs/CONTRACTS.txt and docs/DECISIONS.txt. You
+own trip/, device/data interfaces, composition root, shared build/manifest files
+and integration. Your feature branch is codex/device; main is the tested shared
+integration branch, not a scratch working directory.
+
+First task: persist one checkpoint and its photo; expose ReturnController state,
+explicit confirmation and undo. Wire the UI/inference ports together as soon as
+each small slice is ready. Add GNSS recording and route display data after the
+first real photo -> model -> UI loop works. No new-route planning or fake GPS.
+
+Enforce unique session/request/revision freshness and allowed checkpoint IDs.
+Implement permission and lifecycle states visibly. Screen-off recording needs
+the actual location foreground-service path; report it as unimplemented until
+tested. Model weights and machine-specific paths stay out of Git.
+
+Materialize any shared contract change once, communicate it, and let the other
+owners adapt. Review/merge one small handoff at a time, run relevant integrated
+checks, and coordinate installs on the target phone. Do not edit another owner's
+active files to fix a problem without coordinating the handoff. Update verified
+facts in docs/DECISIONS.txt. Report the last known working commit and next blocker.

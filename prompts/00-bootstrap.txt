@@ -1,0 +1,21 @@
+Read AGENTS.md, docs/PRODUCT.txt and docs/CONTRACTS.txt. You are the bootstrap and
+integration owner for Backtrail. Inspect this checkout before changing it. If an
+Android app already exists, preserve its working structure; do not create a
+second project. If none exists, establish one small native Android starter using
+the verified local model integration path. This handoff folder alone is not an app.
+
+Goal: one app builds and launches, shared interface types compile, and the team
+has clear file ownership. Prioritize a real local single-image Gemma smoke test
+on a connected phone before broad UI work. If no phone is attached, state that
+explicitly and continue build/setup work without claiming device feasibility.
+
+Materialize the minimum canonical contracts from docs/CONTRACTS.txt. Establish
+the actual ui/, ai/ and trip/ package areas and one composition root. Record
+build/test commands, dependency pins, contract paths and ownership in
+docs/DECISIONS.txt. Keep weights and machine-specific files out of Git.
+
+Prepare the smallest baseline for the three role branches; do not implement the
+entire product or add speculative features. Run relevant compile/checks and
+report actual results. Commit the coherent baseline locally when ready. Do not
+publish a new public repository, overwrite existing code or claim model tests
+that did not run. The team will supply/connect its shared Git remote.

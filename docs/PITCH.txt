@@ -1,0 +1,148 @@
+BACKTRAIL — PITCH AND FEATURE PRIORITIES
+
+THE PITCH TO COMMIT TO
+Backtrail remembers the route, landmarks and things you meant to do on the way
+back, entirely on your phone.
+
+The hero is a connected workflow, not a claim to have the most features:
+1. 'Remember this place and remind me to get my jacket on the way back.'
+2. 'Take me back to the car.'
+3. The app retrieves the real records, follows the recorded return path, helps
+   compare the confusing junction with its saved view, and surfaces the reminder.
+
+Gemma interprets intent, retrieves personal evidence and interprets a fresh
+scene. Normal code controls route geometry, state, reminder triggers and timing.
+The user's confirmation controls destination/action acceptance and progress.
+
+WHY THIS IS WORTH TESTING
+An ordinary map already provides route geometry. Existing apps also offer photo
+waypoints, offline navigation and AR views. The proposed advantage is using the
+meaning of a person's own trip records to retrieve the right evidence and help
+complete a return task. This is a testable hypothesis, not a claim of originality
+or a guarantee of winning.
+
+RANKED FEATURE IDEAS
+
+1. REMEMBER THIS FOR THE WAY BACK — core differentiator
+   User: 'I left my jacket on this bench. Remind me when we come back.'
+   Gemma: extracts a note/action bound to a current or identified saved checkpoint.
+   Code: validates the checkpoint, stores the confirmed reminder, triggers it when
+   the user returns to/explicitly confirms that checkpoint.
+   Show: source photo + 'You told us your jacket was here.' Do not claim that the
+   camera verifies it is still there unless a separate observation supports it.
+
+2. FIND A PLACE BY WHAT YOU REMEMBER — core
+   User: 'The bench before the wooden bridge.'
+   Gemma: resolves description and ordering against the actual trip catalog.
+   App: pans to the saved pin, opens its actual photo, offers Return here.
+   Objection: if a simple label match performs equally well, the model adds less.
+
+3. MATCH MY VIEW — core camera differentiation
+   User: returning to a confusing fork.
+   UI: saved return-facing photo over live preview, opacity slider or Then/Now
+   divider. Alignment is manual until proven otherwise.
+   Gemma: compares fresh/saved images and exposes visible evidence or uncertainty.
+   Code/user: explicit confirmation advances the recorded route. Highest model
+   feasibility risk; test first on the actual phone.
+
+4. RETURN WITH A REMEMBERED TASK — simple extension
+   User: 'Back to the car, and remind me about my jacket by the bridge.'
+   Gemma: proposes a valid return destination and existing checkpoint reminder.
+   Code: accepts only a reminder on the recorded return path. No arbitrary
+   multi-stop route optimization or invented alternate trail.
+
+5. IMPROVE THE MEMORY WHILE RECORDING — extension
+   App: 'You changed direction. Save a return photo?'
+   Rules: movement/heading quality, cooldown and dismissal; not a camera-free
+   claim to have seen a fork.
+   Gemma: after capture, suggest a more distinguishing fixed feature if the view
+   is generic. Ordinary image checks can detect blur. Avoid constant prompts.
+
+6. SHOW THE EVIDENCE — essential interaction quality
+   Every answer links to an actual photo, user note, measured route fact or
+   downloaded guide. The app preserves which facts came from which source.
+   A model description never becomes a measured position or a confirmed fact.
+
+7. THE MAP REMEMBERS THE WALK — core interface
+   Pan/zoom a prepared offline region, show actual GPS trail and photo pins.
+   Swipe the photo strip to move the highlighted map position through the trip.
+   Gemma is not needed for drawing the map. The model's role is semantic access
+   to these records. No claim that maps, photo pins or GPS retracing are new.
+
+8. RETURN TO MY EARLIER OBSERVATION — extension
+   User: 'Those planks were slippery; remind me when we come back.'
+   Store and resurface the user's note at the recorded place. The message says
+   'You marked this earlier' rather than claiming automatic hazard assessment.
+
+9. CAMERA COMPASS — first rendering enhancement
+   Approximate indicator toward the next waypoint along the recorded trail,
+   reference landmark and distance over camera preview.
+   Code: heading, true/magnetic north alignment, location quality and sensor axes.
+   This is not ground-anchored AR or proof of a walkable straight-line path.
+
+10. READ THE SIGN WE PASSED — stretch
+    Retrieve a saved sign, show its image and bundled OCR text, and let Gemma
+    explain the evidence. Preserve user corrections. Do not silently invent
+    route distances, access permissions or unseen words.
+
+11. A SMALL CONVERSATIONAL FIELD GUIDE — stretch after navigation
+    Ask how to tie a useful knot, set up a simple tarp, or build/extinguish a
+    permitted campfire. Retrieve a curated downloaded guide with source/date,
+    explain terms, and show step cards plus original diagrams.
+    A saved bulletin does not establish current fire restrictions. A general
+    survival chatbot is not the reason to choose Backtrail.
+
+12. ASK ABOUT RETURN TIME — stretch
+    Interpret 'How far back is camp?' or 'Could I return before four?'
+    Ordinary code estimates from recorded distance and explicit pace assumptions.
+    Present uncertainty; do not let the LLM invent exact distances or a reliable
+    wilderness arrival guarantee.
+
+LATER, NOT AN EVENT PROMISE
+Ground-anchored AR through long routes, relocalization after arbitrary wandering,
+multiple trips/regions, voice input, long-hike battery validation and nature
+field notes. No edible/not-poisonous, drinkable-water or safe-crossing verdicts.
+
+45–60 SECOND PITCH, AFTER THE DEMONSTRATED BEHAVIOR EXISTS
+'On an unfamiliar walk, you remember details: the fork with the blue sign,
+where you stopped, or something to collect on the way back. Backtrail keeps those
+details with your route, entirely on your phone. Tell it, remember this place
+and remind me when we return. Later, ask for the place in your own words. It
+retrieves your actual photo, shows the recorded route, and helps compare the
+return view with what you saved. Let's turn off connectivity, let you choose a
+destination, and change something in the scene. You will see the evidence it
+uses, or where it cannot tell.'
+
+THE DEMO
+Record a short permitted outdoor route and genuine photos. Clearly identify any
+pre-recorded route data. Disable Wi-Fi/cellular. Let the judge choose a saved
+place descriptively. Show the map move to the real record. Compare a live scene
+after the judge moves or obscures something. Show evidence/uncertainty. Confirm
+the checkpoint and surface a previously user-confirmed return reminder.
+No canned model results, hidden laptop inference or simulated GPS presented as
+real. If the venue cannot support live GPS movement, label that limitation and
+use the photo loop honestly.
+
+HOW TO MAKE THE ENTRY STRONGER
+Prove one useful situation, the model's connected roles, fully local operation,
+and a judge-controlled variation. Make failure/uncertainty understandable. Keep
+the demo repeatable and the sources inspectable. These are recommendations, not
+an invented event rubric or winning probabilities.
+
+GO / NO-GO
+If actual visual comparison repeatedly confuses wrong places, stop polishing
+that claim. If semantic recall/reminders add no value over photo pins, broadening
+the chatbot will not repair the core product. Evaluate with real users/devices
+before asserting time saved, reliability or long-term demand.
+
+COMPETITOR EVIDENCE (checked October 24, 2026)
+AllTrails offline turn-by-turn and upcoming landmarks:
+https://support.alltrails.com/hc/en-gb/articles/50085350563476-Turn-by-turn-directions
+Gaia GPS photo waypoints:
+https://help.gaiagps.com/hc/en-us/articles/115003526347-Take-or-Add-Photo-Picture-in-Android
+PeakFinder offline panoramas and camera overlays:
+https://www.peakfinder.com/mobile/
+ARCore anchor scope:
+https://developers.google.com/ar/develop/anchors
+Offline map packs:
+https://maplibre.org/maplibre-compose/offline/

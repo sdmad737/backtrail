@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Backtrail</string>
+    <style name="Theme.Backtrail" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:colorAccent">#315D46</item>
+    </style>
+</resources>

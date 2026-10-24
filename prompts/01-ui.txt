@@ -1,0 +1,19 @@
+Read AGENTS.md, docs/PRODUCT.txt, docs/CONTRACTS.txt and the verified setup in
+docs/DECISIONS.txt. You own the UI workstream on codex/ui, in the actual paths
+assigned there. Use the canonical interfaces; do not create parallel data models.
+
+First task: implement the one-checkpoint interaction using the existing service
+ports: open saved reference -> capture a current image -> show loading -> render
+validated match/different/unknown/error -> explicit confirmation -> undo.
+Make reference and current images easy to compare. Use labelled preview fixtures
+only where needed for development; the normal flow uses the real service or
+shows unavailable. Preserve accessible controls and app state.
+
+After integration works, add the map/photo strip, destination-selection card and
+manual Then/Now overlay. Do not start ground-anchored AR or a general chatbot.
+Report exact shared dependency/manifest/interface needs to the integrator and
+continue independent owned work rather than editing shared files silently.
+
+Deliver the smallest working slice, relevant build/check results, changed paths
+and remaining untested device behavior. Commit to your branch and provide the
+commit for integration; do not merge main.

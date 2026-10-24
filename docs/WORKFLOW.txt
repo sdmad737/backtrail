@@ -1,0 +1,116 @@
+THREE PEOPLE, THREE CODEX SESSIONS, ONE APP
+
+RECOMMENDED: THREE LAPTOPS
+Use one shared Git remote, one local clone per person, one branch and one Codex
+session per person. Each person uses their own account/session. Separate clones
+already isolate working files; worktrees are not required for this arrangement.
+Do not share a live checkout through iCloud, Dropbox or a network folder.
+
+BOOTSTRAP TOGETHER
+1. Pick the actual phone/platform and one starter. Compile/launch one app.
+2. Place AGENTS.md and this concise handoff in the app repository.
+3. Materialize the small interfaces and folder ownership from CONTRACTS.txt.
+4. Commit the working baseline and publish it to the team-controlled remote.
+5. Everyone branches from that SAME baseline, then starts their role prompt.
+
+Commands below are examples to run on YOUR machines, not commands executed here.
+Replace the example remote with the team's real repository. They assume the
+bootstrap commit exists on main and each working directory is clean.
+
+On each laptop:
+    git clone <YOUR_TEAM_REPOSITORY_URL> backtrail
+    cd backtrail
+    git switch main
+    git pull --ff-only
+
+Then run ONLY the branch creation matching your role:
+    git switch -c codex/ui
+    git switch -c codex/inference
+    git switch -c codex/device
+
+Open that folder in Codex or start the CLI from that directory. Paste the
+corresponding prompts/01,02,03 file. A separate chat is not filesystem isolation
+if it opens the same checkout as another writing agent.
+
+ONE MAC WITH MULTIPLE WRITING SESSIONS
+Use worktrees if one laptop runs all three sessions. In the baseline repository,
+after committing the shared baseline and while the intended base is checked out:
+    git worktree add -b codex/ui ../backtrail-ui HEAD
+    git worktree add -b codex/inference ../backtrail-inference HEAD
+    git worktree add -b codex/device ../backtrail-device HEAD
+    git worktree list
+
+Open each worktree as a separate Codex workspace/session. Keep the original
+backtrail checkout for main/integration. The branch names must not already exist;
+if they do, inspect git branch/worktree list and use the existing worktrees.
+Do not force a branch checkout that another worktree is using.
+The app's built-in worktree mode is also suitable if available in your version;
+verify the actual folder and branch rather than relying on the chat name.
+
+Worktrees share Git objects/history, not uncommitted source changes. They do not
+prevent incompatible interfaces or conflicts in the same logical files. Ownership
+still matters. They are not security sandboxes.
+
+SMALL HANDOFFS
+After one coherent slice, the owner inspects the diff, runs relevant checks,
+stages the intended files (not the entire disk), commits and pushes their branch.
+Example for inference, after staging its intended changes:
+    git diff --check
+    git commit -m "Add local checkpoint comparison"
+    git push -u origin codex/inference
+
+Send a concise handoff to the integration owner:
+    Commit/branch:
+    What works:
+    Exact checks and results:
+    Not tested:
+    Shared change needed:
+
+Only the integration owner merges main. Use a small PR or review the diff in
+person; do not create a heavyweight release process for a one-day event.
+For an ordinary merge from a remote branch (clean integration checkout):
+    git fetch origin
+    git switch main
+    git pull --ff-only origin main
+    git merge --no-ff origin/codex/inference
+Run the actual recorded build/tests and relevant phone smoke test. Push main
+only after it is coherent. If conflicts occur, resolve them deliberately with
+the author. Never blindly accept all ours/theirs or force-reset someone else's work.
+
+In a same-Mac worktree setup, merge the local branch codex/inference instead of
+origin/codex/inference. Do not mix local-only and remote commands by accident.
+
+KEEP BRANCHES CURRENT
+After committing/cleaning a task boundary, each owner fetches and merges main:
+    git fetch origin
+    git merge origin/main
+Use normal merges for this short collaboration. Avoid force-pushing or rewriting
+already shared branch history. New main commits are not automatic context updates:
+tell the session which interface/decision changed and let it read the files.
+
+INTEGRATION RHYTHM
+Every roughly 30–45 minutes, do a short handoff and integrate the smallest ready
+slice. Do not interrupt agents just to report empty status. Each human says what
+works, the blocker and any needed interface change. The first real checkpoint loop
+must work before the team expands maps, AR or field guides.
+
+ONE PHONE IS A SHARED RESOURCE
+Keep the current integrated build on it. Schedule short individual experiment
+slots; installing the same application ID from another branch replaces the app.
+Never run competing adb install/force-stop commands. Use an emulator for suitable
+UI work but do not treat emulator performance as a phone inference benchmark.
+Use one heavy Gradle build at a time on a memory-constrained Mac; reading/editing
+can stay parallel while builds and device tests are serialized when needed.
+
+NO GIANT AGENT SWARM
+Three owned coding sessions are enough to start. A fourth session can review a
+diff or investigate a document read-only. Additional writers are useful only
+after someone gives them isolated paths and an explicit task. Agents launched
+from this research chat are not automatically editing the repository on your Mac.
+
+EXTERNAL ACTIONS
+The shared private remote is https://github.com/sdmad737/backtrail. See
+DECISIONS.txt for the actual published baseline and verification status. No
+teammates have been contacted or invited. Use the workflow with your own access.
+Local coding agents can work without runtime API keys for
+the app. The app's offline runtime is distinct from the tools used to develop it.

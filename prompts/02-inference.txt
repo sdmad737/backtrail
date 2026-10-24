@@ -1,0 +1,19 @@
+Read AGENTS.md, docs/PRODUCT.txt, docs/CONTRACTS.txt and docs/DECISIONS.txt. You
+own ai/ on codex/inference. Use the pinned working runtime and canonical ports.
+
+First task: real local single-image description, then reference/current two-image
+comparison returning a validated VisionAssessment. Implement model import/path
+handling, serialized engine use, short conversations, cancellation, request
+context and explicit unavailable/error states. Keep all inference on the phone.
+
+Validate enum/shape/lengths and do not trust model-generated IDs or probabilities.
+Model output must never advance a checkpoint. Log cold initialization separately
+from warm end-to-end interaction time without exposing private photos in logs.
+Add destination resolution against a small supplied checkpoint catalog after the
+comparison loop is integrated. Optional reminder parsing comes later.
+
+Coordinate phone testing with the integrator. If no target device is available,
+state exactly what was compiled or inspected and what remains untested. Propose
+needed shared dependency changes to the integrator, then continue owned work.
+Run relevant checks; commit a small coherent slice and report its evidence. Do
+not merge main or add a remote/fake inference fallback.
