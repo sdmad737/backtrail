@@ -169,3 +169,27 @@ exists) and say it is on the phone.
 - **Not measured at all:** battery and thermals, behaviour under repeated back-to-back calls
   beyond the logged runs, and accuracy of any feature on photos outside the one garden route
   and three sample images.
+
+## "Hey Travis, am I going the right way?" — `RightWayCheck.check(Input)`
+
+Pure code, no model call (instant). Answers YES / NO / NOT_SURE with a one-line `summary`
+and `reasons`, each tagged GPS, COMPASS, CAMERA or STEPS so the UI can separate measured
+facts from what the camera saw. Status: unit-tested (8 tests), not yet run in the app.
+
+- Weak GPS → NOT_SURE ("GPS is weak here… compare with your saved photos").
+- More than max(25 m, 2× accuracy) from the recorded trail → NO, with the distance.
+- Direction: GPS walking direction if you moved > 8 m in the last ~30 s, else the compass
+  if reliable. Within 45° of the next trail point → YES; 120°+ away → NO; between → NOT_SURE.
+- Camera (optional): pass `LocalVisionService.compare(liveFrame, expectedSpotPhoto)`'s verdict.
+  A match adds a reason; DIFFERENT_PLACE downgrades YES to NOT_SURE; the camera alone never
+  makes YES.
+- Steps (optional): informational only. Needs a step-counter sensor + ACTIVITY_RECOGNITION
+  permission, which the app does not request yet.
+
+Wiring in `TravisViewModel.refresh()` (RETRACE mode): `trail = outing.points`,
+`targetIndex = outing.retraceIndex`, `targetName = nearestMemory?.title`; keep a 30-second
+ring buffer of `LiveSensors.fix` values for `recentFixes`; `compassHeading =
+LiveSensors.heading.value`, `compassReliable = LiveSensors.headingReliable.value`; on the
+"Am I going the right way?" button (or voice), optionally grab one CameraX frame and run
+`compare` against `nearestMemory.photoPath` for `visual`. Never let the language model
+rewrite the yes/no answer; it may only be read aloud.
