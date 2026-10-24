@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,8 +22,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -32,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.backtrail.app.contracts.*
+import com.backtrail.app.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -87,7 +91,7 @@ fun TravisScreen(
                     Modifier.fillMaxWidth().padding(start = 20.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TravisGlyph("trail", Modifier.size(31.dp), palette.primary)
+                    TravisLogo(Modifier.width(38.dp).height(34.dp))
                     Spacer(Modifier.width(9.dp))
                     Column(Modifier.weight(1f)) {
                         Text("travis", fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.5).sp)
@@ -216,7 +220,39 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 PrimaryAction(if (state.mode == GuidanceMode.RETRACE) (if(state.targetPhoto.isBlank()) "Confirm waypoint" else "I recognize this") else "Found this place", "check", Modifier.weight(1f), state.canConfirm) { act(TravisAction.Confirm) }
                 QuietAction("Undo", "undo", Modifier.widthIn(min = 72.dp)) { act(TravisAction.Undo) }
             }
-            val memory = outing.memories.firstOrNull { it.id == state.selectedMemoryId }
+            val memory = outing.retraceIndex?.let { expectedIndex -> outing.memories.firstOrNull { it.routeIndex==expectedIndex } }
+            if(memory!=null && state.mode==GuidanceMode.RETRACE) {
+                OutlinedButton(onClick={act(TravisAction.CompareCurrentPhoto(memory.id))},enabled=!state.busy && (state.modelReady || state.replay) && (state.cameraAllowed || state.replay),modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
+                    Text(if(state.comparisonVerdict==null)"Compare with a current photo" else "Take another comparison photo")
+                }
+                when(state.comparisonVerdict) {
+                    "SUPPORTS_MATCH" -> Surface(color=palette.surfaceContainer,shape=RoundedCornerShape(14.dp)) { Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                        Text("This looks like the same spot.",fontWeight=FontWeight.SemiBold)
+                        state.comparisonReasons.forEach { Text("• $it",style=MaterialTheme.typography.bodySmall) }
+                        Text("Gemma's comparison is supporting evidence, not a location fix.",style=MaterialTheme.typography.labelSmall,color=palette.onSurfaceVariant)
+                    } }
+                    "DIFFERENT_PLACE","INSUFFICIENT_EVIDENCE" -> Surface(color=palette.surfaceContainer,shape=RoundedCornerShape(14.dp)) { Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                        Text("Not sure this is the same spot.",fontWeight=FontWeight.SemiBold)
+                        Text("Try another photo, or use the saved photo and your own judgment.",style=MaterialTheme.typography.bodySmall,color=palette.onSurfaceVariant)
+                    } }
+                    "ERROR" -> Text(state.inferenceMessage,style=MaterialTheme.typography.bodySmall,color=palette.onSurfaceVariant)
+                }
+            }
+            if(state.mode==GuidanceMode.RETRACE) {
+                OutlinedButton(onClick={act(TravisAction.CheckDirection)},enabled=outing.retraceIndex!=null,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
+                    Text("Am I going the right way?")
+                }
+                state.rightWayResult?.let { result ->
+                    Surface(color=palette.surfaceContainer,shape=RoundedCornerShape(14.dp)) {
+                        Column(Modifier.fillMaxWidth().padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                            Text(result.summary,fontWeight=FontWeight.Medium)
+                            result.reasons.forEach { reason ->
+                                Text("${reason.source.name.lowercase().replaceFirstChar { it.uppercase() }} · ${reason.text}",style=MaterialTheme.typography.bodySmall,color=palette.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
             if (memory != null && memory.pickup !in listOf(PickupPhase.NONE, PickupPhase.COLLECTED)) {
                 OutlinedButton(onClick = { act(TravisAction.Collect(memory.id)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("I collected it") }
             }
@@ -229,8 +265,13 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
             TextButton(onClick = { act(TravisAction.StopGuidance) }) { Text("Close guidance") }
         }
         outing.phase == OutingPhase.READY && outing.points.isEmpty() -> {
-            Eyebrow("YOUR OFFLINE FIELD COMPANION")
-            Text("Go a little further.", fontSize = 27.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-.8).sp)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TravisLogo(Modifier.width(62.dp).height(56.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Eyebrow("YOUR OFFLINE FIELD COMPANION")
+                    Text("Go a little further.", fontSize = 27.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-.8).sp)
+                }
+            }
             Text("Keep your trail. Remember the places. Find your way back.", style = MaterialTheme.typography.bodyMedium, color = palette.onSurfaceVariant)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SmallStatus(if (state.fix==null) "Venue map prepared" else if (state.mapAvailable) "Map saved" else "Outside saved map", state.mapAvailable || state.fix==null)
@@ -276,6 +317,16 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
 }
 
 @Composable
+internal fun TravisLogo(modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(R.drawable.travis_logo),
+        contentDescription = "Travis trail logo",
+        modifier = modifier,
+        contentScale = ContentScale.Fit,
+    )
+}
+
+@Composable
 private fun CaptureSheet(state: TravisUiState, act: (TravisAction) -> Unit, camera: @Composable (Modifier) -> Unit) {
     var note by rememberSaveable { mutableStateOf("") }
     var pickup by rememberSaveable { mutableStateOf(false) }
@@ -317,23 +368,33 @@ private fun CaptureSheet(state: TravisUiState, act: (TravisAction) -> Unit, came
 @Composable
 private fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: () -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
+    var mode by rememberSaveable { mutableStateOf(state.assistantMode) }
+    var selectedPhotoId by rememberSaveable { mutableStateOf(state.outing.memories.lastOrNull()?.id.orEmpty()) }
     Eyebrow(if (state.replay) "EXPLORE · SAMPLE ANSWERS" else "GEMMA · ON THIS PHONE")
-    Text("What are you looking for?", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-    Text("Search the places and details you saved on this outing.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-    if (state.outing.memories.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        state.outing.memories.take(5).forEach { memory ->
-            Column(Modifier.width(84.dp)) {
-                TravisPhoto(memory.photoPath, memory.title, Modifier.size(84.dp).clip(RoundedCornerShape(12.dp)))
-                Text(memory.title, style = MaterialTheme.typography.labelSmall, maxLines = 2, modifier = Modifier.padding(top = 5.dp))
+    Text(if(mode==AssistantMode.FIND_PLACE) "What are you looking for?" else if(mode==AssistantMode.TRIP_QUESTION) "Ask about this outing." else "Ask about a saved photo.", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+    Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+        listOf(AssistantMode.FIND_PLACE to "Find a place",AssistantMode.TRIP_QUESTION to "Ask about trip",AssistantMode.PHOTO_QUESTION to "Ask about photo").forEach { (item,title)->
+            FilterChip(selected=mode==item,onClick={mode=item},label={Text(title)},enabled=!state.busy)
+        }
+    }
+    Text(when(mode){AssistantMode.FIND_PLACE->"Choose from the places and details you saved.";AssistantMode.TRIP_QUESTION->"Gemma answers from up to four recent saved places. The current app does not run semantic ranking.";AssistantMode.PHOTO_QUESTION->"Choose an original saved photo. Gemma's answer is a guess, not a location fact."}, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    if (mode==AssistantMode.PHOTO_QUESTION && state.outing.memories.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        state.outing.memories.takeLast(8).forEach { memory ->
+            val selected=selectedPhotoId==memory.id
+            Surface(onClick={selectedPhotoId=memory.id},shape=RoundedCornerShape(13.dp),color=if(selected)MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,enabled=!state.busy) {
+                Column(Modifier.width(84.dp).padding(6.dp)) {
+                    TravisPhoto(memory.photoPath, "Saved photo of ${memory.title}", Modifier.size(72.dp).clip(RoundedCornerShape(10.dp)))
+                    Text(memory.title, style = MaterialTheme.typography.labelSmall, maxLines = 2, modifier = Modifier.padding(top = 5.dp))
+                }
             }
         }
     }
     OutlinedTextField(
         value = query, onValueChange = { query = it.take(500) }, modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text("Where did I leave my jacket?") }, label = { Text("Ask about your outing") },
-        shape = RoundedCornerShape(16.dp), maxLines = 3,
+        placeholder = { Text(when(mode){AssistantMode.FIND_PLACE->"Where did I leave my jacket?";AssistantMode.TRIP_QUESTION->"What did I mean to collect?";AssistantMode.PHOTO_QUESTION->"What is the sign beside this path?"}) }, label = { Text("Your question") },
+        shape = RoundedCornerShape(16.dp), maxLines = 3, enabled=!state.busy,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { if (query.isNotBlank() && !state.busy) act(TravisAction.Ask(query)) }),
+        keyboardActions = KeyboardActions(onSearch = { if (query.isNotBlank() && !state.busy) submitAssistant(mode,selectedPhotoId,query,act) }),
     )
     if (!state.modelReady && !state.replay) {
         Text("Gemma is not imported yet. Your route and saved photos remain available.", style = MaterialTheme.typography.bodySmall)
@@ -342,23 +403,38 @@ private fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: (
     if (state.busy) {
         LinearProgressIndicator(Modifier.fillMaxWidth())
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(if (state.replay) "Sample loading state" else "Reading your saved memories…", Modifier.weight(1f))
+            Text(state.inferenceMessage.ifBlank { if (state.replay) "Sample loading state" else "Working with saved places on this phone…" }, Modifier.weight(1f))
             TextButton(onClick = { act(TravisAction.CancelInference) }) { Text("Cancel") }
         }
-    } else PrimaryAction("Find in my memories", "spark", Modifier.fillMaxWidth(), query.isNotBlank() && (state.modelReady || state.replay)) { act(TravisAction.Ask(query)) }
-    if (state.answer.isNotBlank()) {
-        Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(17.dp)) {
+    } else PrimaryAction(when(mode){AssistantMode.FIND_PLACE->"Find in my memories";AssistantMode.TRIP_QUESTION->"Ask about this outing";AssistantMode.PHOTO_QUESTION->"Ask about this photo"}, "spark", Modifier.fillMaxWidth(), query.isNotBlank() && (mode!=AssistantMode.PHOTO_QUESTION || selectedPhotoId.isNotBlank()) && (state.modelReady || state.replay)) { submitAssistant(mode,selectedPhotoId,query,act) }
+    if (state.answer.isNotBlank() && state.assistantMode==mode) {
+        Surface(color = if(state.answerGrounded==false)MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(17.dp),border=if(state.answerGrounded==false)BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant)else null) {
             Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Eyebrow(if (state.replay) "SAMPLE RESPONSE" else "FROM YOUR SAVED RECORDS")
+                Eyebrow(when { state.answerStatus==AssistantAnswerStatus.SAMPLE -> "SAMPLE RESPONSE";state.safetyRefusal -> "PHOTO SAFETY LIMIT";state.answerStatus==AssistantAnswerStatus.UNAVAILABLE -> "MODEL UNAVAILABLE";state.answerStatus==AssistantAnswerStatus.FAILURE -> "COULD NOT ANSWER";state.answerGrounded==false -> "NOT FOUND IN SAVED PLACES";state.answerConfidence!=null -> "${state.answerConfidence} · PHOTO ANSWER";state.answerStatus==AssistantAnswerStatus.LIVE -> "GEMMA 4 · LOCAL RESULT";else -> "SAVED PLACE STATUS" })
                 Text(state.answer, style = MaterialTheme.typography.bodyMedium)
+                if(state.answerConfidence!=null && !state.safetyRefusal) Text(if(state.answerConfidence=="LOW")"A guess" else "Travis thinks",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                if(state.inferenceMessage.isNotBlank()) Text(state.inferenceMessage,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
-    state.resultIds.mapNotNull { id -> state.outing.memories.firstOrNull { it.id == id } }.forEach { memory ->
-        MemoryCard(memory, state.replay, onClick = { act(TravisAction.SelectMemory(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); close() }, actionLabel = "Find in AR")
+    if(state.assistantMode==mode) state.resultIds.mapNotNull { id -> state.outing.memories.firstOrNull { it.id == id } }.forEach { memory ->
+        if(mode==AssistantMode.PHOTO_QUESTION) {
+            TravisPhoto(memory.photoPath,"Original saved photo of ${memory.title}",Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(16.dp)))
+        } else MemoryCard(memory, state, onClick = { act(TravisAction.SelectMemory(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); close() }, actionLabel = "Find in AR", act=act)
     }
-    if (state.answer.isNotBlank() && state.resultIds.isEmpty() && !state.busy) {
+    if(mode==AssistantMode.FIND_PLACE && state.answerStatus==AssistantAnswerStatus.LIVE && state.resultIds.isNotEmpty()) {
+        TextButton(onClick={act(TravisAction.DismissAssistantResult)}) { Text("Not it") }
+    }
+    if (state.answer.isNotBlank() && state.assistantMode==mode && state.resultIds.isEmpty() && !state.busy) {
         Text("No selected place. Browse your original saved photos to choose one yourself.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+private fun submitAssistant(mode:AssistantMode,photoId:String,query:String,act:(TravisAction)->Unit) {
+    when(mode) {
+        AssistantMode.FIND_PLACE -> act(TravisAction.Ask(query))
+        AssistantMode.TRIP_QUESTION -> act(TravisAction.AskAboutTrip(query))
+        AssistantMode.PHOTO_QUESTION -> if(photoId.isNotBlank()) act(TravisAction.AskAboutPhoto(photoId,query))
     }
 }
 
@@ -371,26 +447,62 @@ private fun MemoriesSheet(state: TravisUiState, act: (TravisAction) -> Unit, clo
         PrimaryAction("Save your first place", "camera", Modifier.fillMaxWidth()) { close(); act(TravisAction.Capture) }
     }
     state.outing.memories.reversed().forEach { memory ->
-        MemoryCard(memory, state.replay, onClick = { act(TravisAction.SelectMemory(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); close() }, actionLabel = "Find in AR")
+        MemoryCard(memory, state, onClick = { act(TravisAction.SelectMemory(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); close() }, actionLabel = "Find in AR",act=act)
     }
 }
 
 @Composable
-private fun MemoryCard(memory: Memory, replay: Boolean, onClick: () -> Unit, actionLabel: String) {
+private fun MemoryCard(memory: Memory, state:TravisUiState, onClick: () -> Unit, actionLabel: String, act:(TravisAction)->Unit) {
+    val replay=state.replay
+    var editing by rememberSaveable(memory.id) { mutableStateOf(false) }
+    var titleDraft by rememberSaveable(memory.id) { mutableStateOf(memory.title) }
+    var descriptionDraft by rememberSaveable(memory.id) { mutableStateOf(memory.description) }
+    var featuresExpanded by rememberSaveable(memory.id) { mutableStateOf(false) }
     Surface(shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), color = MaterialTheme.colorScheme.surface) {
         Column {
             TravisPhoto(memory.photoPath, "Original saved photo of ${memory.title}", Modifier.fillMaxWidth().height(150.dp))
             Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                if(editing) {
+                    OutlinedTextField(titleDraft,{titleDraft=it.take(80)},Modifier.fillMaxWidth(),label={Text("Place name")},singleLine=true)
+                    OutlinedTextField(descriptionDraft,{descriptionDraft=it.take(1000)},Modifier.fillMaxWidth(),label={Text("Gemma features · editable")},minLines=2,maxLines=4)
+                    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick={editing=false}) { Text("Cancel") }
+                        Button(onClick={act(TravisAction.UpdateMemory(memory.id,titleDraft,descriptionDraft));editing=false}) { Text("Save edits") }
+                    }
+                } else Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(memory.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(if (replay) "SAMPLE" else SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(memory.capturedAt)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (memory.note.isNotBlank()) Text("Your note: ${memory.note}", style = MaterialTheme.typography.bodyMedium)
-                if (memory.description.isNotBlank()) Text("${if (replay) "Sample description" else "Gemma observation"}: ${memory.description}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                else Text(memory.indexing, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (memory.description.isNotBlank() && !editing) {
+                    TextButton(onClick={featuresExpanded=!featuresExpanded},contentPadding=PaddingValues(0.dp)) { Text("${if (replay) "Sample description" else "Gemma 4 · local result"} · ${if(featuresExpanded)"hide details" else "show features"}") }
+                    if(featuresExpanded) memory.description.split(" · ").filter(String::isNotBlank).forEach { Text("• $it",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
+                } else if(!editing) Text(if(state.describingMemoryId==memory.id)state.inferenceMessage else memory.indexing, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (memory.point == null) Text("Location not recorded", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                 if (memory.pickup != PickupPhase.NONE) Text("Pickup · ${memory.pickup.name.lowercase().replace('_', ' ')}", style = MaterialTheme.typography.labelMedium)
+                if(!replay && memory.indexing.startsWith("Gemma 4") && memory.description.isBlank()) Text("Unclear view · add your own note or edit this place.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                if(state.retryDescriptionId==memory.id) {
+                    Text("Photo preserved. ${state.inferenceMessage}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(onClick={act(TravisAction.RetryDescription(memory.id))},enabled=!state.busy) { Text("Try description again") }
+                }
+                if(!replay && memory.note.isNotBlank() && memory.pickup==PickupPhase.NONE) TextButton(onClick={act(TravisAction.SuggestReminder(memory.id))},enabled=!state.busy) { Text("Check note for a return reminder") }
+                if(!state.busy && state.reminderMessageMemoryId==memory.id && state.inferenceMessage.isNotBlank()) Text(state.inferenceMessage,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                statePendingReminder(memory,state.pendingReminder,act)
+                if(!replay && !editing) TextButton(onClick={editing=true}) { Text("Edit place name and description") }
                 PrimaryAction(actionLabel, "ar", Modifier.fillMaxWidth(), memory.point != null, onClick)
+            }
+        }
+    }
+}
+
+@Composable
+private fun statePendingReminder(memory:Memory,suggestion:ReminderSuggestion?,act:(TravisAction)->Unit) {
+    if(suggestion?.memoryId==memory.id) Surface(color=MaterialTheme.colorScheme.surfaceContainer,shape=RoundedCornerShape(14.dp)) {
+        Column(Modifier.padding(12.dp),verticalArrangement=Arrangement.spacedBy(6.dp)) {
+            Text("Remind me on the way back: ${suggestion.task}",fontWeight=FontWeight.Medium)
+            Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                Button(onClick={act(TravisAction.ConfirmReminder)}) { Text("Add reminder") }
+                TextButton(onClick={act(TravisAction.DismissReminder)}) { Text("Dismiss") }
             }
         }
     }

@@ -4,6 +4,10 @@
 
 This repository contains one **native Android application** and a polished **interactive browser Explore demo** for iPhone/Android-sized screens. The native app now includes CameraX, GPS recording, persistent outings, offline raster maps, ordered retrace, approximate camera guidance and local reminders. Native iOS is not implemented.
 
+For backend work, start with the [current backend handoff](docs/BACKEND-HANDOFF.md):
+setup, integrated features, validation, and remaining lifecycle/device work.
+Use `origin/main` as the shared baseline.
+
 ## Start UI work on another laptop
 
 ```sh
@@ -45,9 +49,9 @@ Use **Prepare** to grant permissions and import the verified model. Use **Explor
 - Gemma 4 E2B is fully downloaded, size/SHA-256 verified, and loaded from a local Mac path. Actual text, image description and bounded-memory retrieval passed on the Mac GPU with network access denied.
 - The Android app builds offline. Unit tests and lint pass. It launches in an API 36 ARM64 emulator; simulated GPS goes through Android's location service and persists. CameraX produced a saved original JPEG. Process relaunch preserved the outing/photo and correctly paused recording.
 - Native Android and browser layouts were inspected, including keyboard and larger-text/error states. iPhone SE Simulator Safari was used to fix and retest a real software-keyboard issue.
-- **Physical offline validation is pending.** The baseline APK was installed on a Pixel 11 Pro and the baseline model reached its Downloads folder with a matching full checksum. Private model import and phone inference remain unverified; the phone is currently unavailable. Sensor alignment, screen-locked physical GPS, battery cost and the full physical offline loop still need testing. Emulator inputs are not field measurements.
+- The inference teammate recorded offline Pixel 11 Pro / Tensor G6 NPU benchmarks in [INFERENCE-LOG.md](docs/INFERENCE-LOG.md). The previous UI integration was installed and launched with its local models preserved. Full integrated app-flow and outdoor acceptance remain pending; sensor alignment, screen-locked physical GPS and battery cost are not established by those benchmarks.
 
-The event-time [device integration handoff](docs/DEVICE-INTEGRATION.txt) records the latest checks. The [Tensor G6 handoff](docs/TENSOR-G6-HANDOFF.txt) covers the newly downloaded NPU candidate and its unresolved runtime dependency.
+The [backend handoff](docs/BACKEND-HANDOFF.md) records validation of the combined source. Earlier [device integration evidence](docs/DEVICE-INTEGRATION.txt) and the [Tensor G6 handoff](docs/TENSOR-G6-HANDOFF.txt) retain their original scope; the matching Tensor runtime is now integrated.
 
 Read the [preparation handoff](docs/PREPARATION-STATUS.md) for actual results, limitations, next three actions and demo plan. [Model evidence](docs/MODEL-READINESS.md) and [organizer rules](docs/EVENT-RULES-CHECK.md) distinguish requirements from suggestions. No fine-tuning or extra embedding model is required by this implementation.
 

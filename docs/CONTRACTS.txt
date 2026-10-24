@@ -32,7 +32,11 @@ CameraHeading: rotation vector rear-camera -Z projection; geomagnetic declinatio
 for true north; unstable/near-vertical projection fails closed. Physical calibration
 and portrait/landscape behavior require Pixel measurements.
 OfflineTrailMap: bundled XYZ rasters, geographic trace, pan/zoom, no network path.
-LocalVisionService: one serialized local request with strict result validation.
+LocalVisionService: one serialized local request with strict result validation,
+using a cached engine. The live app selects G6/NPU when that pinned model is
+present, otherwise generic/GPU. Relaunch after changing the imported model:
+the current lazy service keeps its first model/backend selection. Native close
+may block its caller; see INTEGRATION-READY.txt for remaining lifecycle work.
 ExploreFixture and the separate browser ReplayAdapter are explicitly opt-in samples.
 
 ASYNC INVARIANTS
@@ -74,5 +78,7 @@ EVIDENCE
 JVM route-state, stale-result and proposal-validation tests; Explore pure-state
 checks; emulator camera/persistence/GPS; browser/iPhone Simulator render checks.
 Baseline APK install and model-to-Downloads integrity were verified on a Pixel.
-Private import, offline inference and physical navigation remain unverified. See
-DEVICE-INTEGRATION.txt for current checks and PREPARATION-STATUS.md for prior work.
+The inference owner's INFERENCE-LOG.md reports private Pixel/NPU benchmarks.
+Integrated live-app offline inference and physical navigation acceptance remain
+unverified. See DEVICE-INTEGRATION.txt for current checks and
+PREPARATION-STATUS.md for prior work.
