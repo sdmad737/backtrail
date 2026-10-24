@@ -8,7 +8,7 @@ outside Git. A physical Pixel is now USB-connected; installation and offline
 inference have not been verified. Earlier preparation evidence below is historical.
 Before publication, a fresh export of tracked source built successfully using the
 Mac's cached JDK/SDK/Gradle dependencies: assembleDebug, 17 unit tests (0 failures),
-and lintDebug (0 errors, 22 warnings). Explore state/syntax checks also passed.
+and lintDebug (0 errors, 11 warning entries). Explore state/syntax checks also passed.
 This verifies the source without project-local .tooling or local.properties;
 first-time dependency download on a teammate's computer remains their setup step.
 
