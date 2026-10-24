@@ -1,0 +1,66 @@
+{
+  "hardware": "macOS-27.0.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "runtime": "litert-lm-api 0.18.0",
+  "backend": "cpu",
+  "model_path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it.litertlm",
+  "started_at_utc": "2026-10-24T07:53:26Z",
+  "context_tokens": 4096,
+  "max_output_tokens": 384,
+  "thinking": false,
+  "tests": [
+    {
+      "name": "retrieval_jacket",
+      "started_at_utc": "2026-10-24T07:53:26Z",
+      "raw_response": "{\"action\":\"PROPOSE_TARGET\",\"checkpointId\":\"junction\"}",
+      "seconds": 1.93,
+      "expected": {
+        "action": "PROPOSE_TARGET",
+        "checkpointId": "junction"
+      },
+      "pass": true
+    },
+    {
+      "name": "retrieval_water",
+      "started_at_utc": "2026-10-24T07:53:28Z",
+      "raw_response": "{\"action\":\"creek\",\"checkpointId\":\"creek\"}",
+      "seconds": 1.08,
+      "expected": {
+        "action": "PROPOSE_TARGET",
+        "checkpointId": "creek"
+      },
+      "pass": false
+    },
+    {
+      "name": "retrieval_car",
+      "started_at_utc": "2026-10-24T07:53:29Z",
+      "raw_response": "{\"action\":\"PROPOSE_TARGET\",\"checkpointId\":\"car\"}",
+      "seconds": 1.107,
+      "expected": {
+        "action": "PROPOSE_TARGET",
+        "checkpointId": "car"
+      },
+      "pass": true
+    },
+    {
+      "name": "retrieval_no_match",
+      "started_at_utc": "2026-10-24T07:53:30Z",
+      "raw_response": "{\"action\":\"NO_RECORDED_MATCH\"}",
+      "seconds": 0.996,
+      "expected": {
+        "action": "NO_RECORDED_MATCH"
+      },
+      "pass": true
+    }
+  ],
+  "evidence": "Host inference only. Retrieval catalog is a synthetic test fixture.",
+  "bundle_input_modalities": {
+    "text": true,
+    "vision": true,
+    "audio": true,
+    "video": false
+  },
+  "bundle_max_vision_tokens": 280,
+  "engine_initialization_seconds": 0.159,
+  "finished_at_utc": "2026-10-24T07:53:31Z"
+}

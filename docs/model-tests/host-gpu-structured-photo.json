@@ -1,0 +1,35 @@
+{
+  "hardware": "macOS-27.0.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "runtime": "litert-lm-api 0.18.0",
+  "backend": "gpu",
+  "structured_image": true,
+  "model_path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it.litertlm",
+  "started_at_utc": "2026-10-24T07:58:15Z",
+  "constrained": false,
+  "context_tokens": 4096,
+  "max_output_tokens": 384,
+  "thinking": false,
+  "tests": [
+    {
+      "name": "image",
+      "started_at_utc": "2026-10-24T07:58:16Z",
+      "raw_response": "```json\n{\n  \"label\": \"Autumn river scene with a stone arch bridge\",\n  \"fixedFeatures\": [\n    \"Stone arch bridge spanning the river\",\n    \"Flowing river with clear, brownish water\",\n    \"Rocky riverbed and large boulders in the foreground\",\n    \"Dense forest with vibrant autumn foliage\",\n    \"Trees displaying bright orange and yellow leaves\",\n    \"Stone retaining walls on the riverbanks\",\n    \"Overhanging tree branches on the right side\",\n    \"Reflections of the bridge and trees in the water\"\n  ]\n}\n```",
+      "seconds": 3.774,
+      "pass": false,
+      "error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+    }
+  ],
+  "evidence": "Host inference only. Retrieval catalog is a synthetic test fixture.",
+  "image_path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/.tooling/worktrees/explore/explore/assets/stone-bridge.jpg",
+  "image_sha256": "a42ae9075bab7c9c603490cecea4320a797b2378b5d69bb7701059b3238f0c18",
+  "bundle_input_modalities": {
+    "text": true,
+    "vision": true,
+    "audio": true,
+    "video": false
+  },
+  "bundle_max_vision_tokens": 280,
+  "engine_initialization_seconds": 0.632,
+  "finished_at_utc": "2026-10-24T07:58:20Z"
+}

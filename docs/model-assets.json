@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "prepared_at_utc": "2026-10-24T07:57:56.985829+00:00",
+  "selected_implementation": "Android Kotlin LiteRT-LM 0.18.0 with Gemma 4 E2B; bounded catalog retrieval; no embedding model.",
+  "assets": [
+    {
+      "model_id": "litert-community/gemma-4-E2B-it-litert-lm",
+      "revision": "6e5c4f1e395deb959c494953478fa5cec4b8008f",
+      "filename": "gemma-4-E2B-it.litertlm",
+      "bytes": 2588147712,
+      "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+      "host_path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it.litertlm",
+      "source": "https://huggingface.co/api/models/litert-community/gemma-4-E2B-it-litert-lm/revision/6e5c4f1e395deb959c494953478fa5cec4b8008f?blobs=true",
+      "verified_at_utc": "2026-10-24T07:57:56.985829+00:00",
+      "status": "downloaded_integrity_verified",
+      "phone_installed": false,
+      "phone_offline_tested": false,
+      "kind": "model_bundle",
+      "license": "Apache-2.0 declared by artifact publisher",
+      "required_modalities": [
+        "text",
+        "vision"
+      ],
+      "bundle_modalities": [
+        "text",
+        "vision",
+        "audio"
+      ],
+      "sdk_version": "0.18.0",
+      "tested_backend": [
+        "macOS CPU",
+        "macOS GPU/WebGPU"
+      ],
+      "phone_path": "/data/user/0/com.backtrail.app/no_backup/models/gemma-4-E2B-it.litertlm",
+      "download_source": "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/6e5c4f1e395deb959c494953478fa5cec4b8008f/gemma-4-E2B-it.litertlm",
+      "companion_assets_required": [],
+      "bundle_components": [
+        "tokenizer and metadata",
+        "LLM weights",
+        "vision encoder",
+        "vision adapter",
+        "audio encoder and adapter (unused)"
+      ],
+      "previous_download_revision": "1caa527c1e88b55f046fcd8d2b4265606680663d",
+      "revision_note": "Existing downloaded bytes match both the previous metadata revision and the handoff file-changing revision exactly.",
+      "verification_status": "downloaded_integrity_verified"
+    },
+    {
+      "kind": "host_runtime",
+      "model_id": null,
+      "revision": "0.18.0",
+      "filename": "litert_lm_api-0.18.0-py3-none-macosx_12_0_arm64.whl",
+      "bytes": 21430649,
+      "sha256": "9fd0c55835e469a035c1b75cde4797b26292963c2c36d9fcdfceb965ffa08a37",
+      "source": "https://pypi.org/pypi/litert-lm-api/0.18.0/json",
+      "license": "Apache-2.0",
+      "required_modalities": [
+        "text",
+        "vision"
+      ],
+      "sdk_version": "0.18.0",
+      "tested_backend": [
+        "macOS CPU",
+        "macOS GPU/WebGPU"
+      ],
+      "host_path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/.tooling/model-readiness/wheels/litert_lm_api-0.18.0-py3-none-macosx_12_0_arm64.whl",
+      "phone_path": null,
+      "verification_status": "downloaded_integrity_verified",
+      "phone_tested": false
+    },
+    {
+      "kind": "android_runtime",
+      "model_id": null,
+      "revision": "0.18.0",
+      "filename": "litertlm-android-0.18.0.aar",
+      "bytes": 20905807,
+      "sha256": "706cbb8a87739b2818111bf3a19a78b8f7781586d10f80adf3415581fab7595f",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litertlm/litertlm-android/0.18.0/litertlm-android-0.18.0.aar.sha256",
+      "license": "Apache-2.0",
+      "required_modalities": [
+        "text",
+        "vision"
+      ],
+      "sdk_version": "0.18.0",
+      "tested_backend": [],
+      "host_path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/.tooling/gradle-home/caches/modules-2/files-2.1/com.google.ai.edge.litertlm/litertlm-android/0.18.0/e5f46fb1d0aafce5d2f27e8b3c7b9dea45de6f77/litertlm-android-0.18.0.aar",
+      "phone_path": "Packaged in the APK as lib/arm64-v8a/liblitertlm_jni.so",
+      "verification_status": "downloaded_integrity_verified",
+      "phone_tested": false
+    }
+  ],
+  "milestones": {
+    "A_downloaded_integrity_verified_on_mac": true,
+    "host_local_text_image_inference": true,
+    "host_network_denied_gpu_test": true,
+    "B_installed_on_physical_phone": false,
+    "C_proven_offline_on_physical_phone": false,
+    "host_structured_image_and_three_memory_queries_passed": true
+  },
+  "physical_device_status": "No Android or iOS physical device connected during preparation.",
+  "runtime_notes": [
+    "Single unified bundle; no separate tokenizer, vision projector, or embedding model required.",
+    "Host Python wheel has no PyPI dependencies.",
+    "Android AAR and its Gradle dependencies resolved; offline Kotlin compile and unit tests passed.",
+    "Model import validates full bytes and SHA-256 before app-private rename."
+  ],
+  "final_host_evidence": "docs/model-tests/host-gpu-final.json"
+}
