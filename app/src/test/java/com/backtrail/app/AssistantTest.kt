@@ -57,6 +57,14 @@ class AssistantTest {
         val names = mapOf("s1" to "Stone walkway and lamp post")
         assertEquals("\"Stone walkway and lamp post\" had a lamp post.", AssistantValidator.tripAnswer(raw, idMap, names).answer)
         assertEquals("You can close it at a saved spot.", AssistantValidator.cleanAnswer("You can close it at s9.", names))
+        assertEquals(
+            "The bottle is on the fire bowl at the pergola.",
+            AssistantValidator.cleanAnswer("The bottle is on the fire bowl at the pergola (s1).", names),
+        )
+        assertEquals(
+            "A lamp post near the walkway, and steps by the tree.",
+            AssistantValidator.cleanAnswer("A lamp post near the walkway (sourceIds: [s1]), and steps by the tree (sourceIds: [s3]).", names),
+        )
     }
 
     @Test fun `trip answer rejects blank overlong fenced unknown-key and malformed output`() {

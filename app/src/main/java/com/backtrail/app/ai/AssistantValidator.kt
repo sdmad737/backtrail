@@ -22,13 +22,19 @@ object AssistantValidator {
         return TripAnswer(cleanAnswer(parsed.answer, names), cited.map { idMap.getValue(it) }, parsed.grounded && cited.isNotEmpty())
     }
 
-    private val LEAKED_FIELDS = Regex("\\s*(sourceIds|grounded)\\s*:.*$", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+    /** "sourceIds: [s1]", "(grounded: true)" or "sourceIds:s2" copied into the prose, anywhere. */
+    private val LEAKED_FIELDS = Regex("\\s*\\(?\\s*\\b(?:sourceIds|grounded)\\b\\s*:\\s*\\[?[^\\]).]*\\]?\\s*\\)?", RegexOption.IGNORE_CASE)
+    /** A parenthetical id list such as "(s1)" or "(s1 and s3)": dropped, the citation is shown separately. */
+    private val ID_PARENS = Regex("\\s*\\(\\s*s\\d+(?:\\s*(?:,|and)\\s*s\\d+)*\\s*\\)")
     private val SHORT_ID = Regex("\\b(?:[Ss]pot\\s+)?s(\\d+)\\b")
 
-    internal fun cleanAnswer(answer: String, names: Map<String, String>): String {
-        val withoutFields = answer.replace(LEAKED_FIELDS, "").trim()
-        return withoutFields.replace(SHORT_ID) { m -> names["s${m.groupValues[1]}"]?.let { "\"$it\"" } ?: "a saved spot" }.trim()
-    }
+    internal fun cleanAnswer(answer: String, names: Map<String, String>): String = answer
+        .replace(LEAKED_FIELDS, "")
+        .replace(ID_PARENS, "")
+        .replace(SHORT_ID) { m -> names["s${m.groupValues[1]}"]?.let { "\"$it\"" } ?: "a saved spot" }
+        .replace(Regex("\\s+([.,;!?])"), "$1")
+        .replace(Regex("\\s{2,}"), " ")
+        .trim()
 
     fun photoAnswer(raw: String): PhotoAnswer {
         val parsed = decode<PhotoAnswerJson>(raw)
