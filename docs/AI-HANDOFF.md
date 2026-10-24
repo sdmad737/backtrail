@@ -21,7 +21,7 @@ airplane mode, with Gemma 4 E2B and EmbeddingGemma 2 running on the Tensor G6 NP
 | Safety refusal (eat, drink, touch, dangerous) | built into `askAboutPhoto` | instant for typed questions | Verified on Pixel | Yes |
 | Reminder from a note | `LocalVisionService.parseReminder` | 4.6–5.9 s | Verified on Pixel (3 of 3 correct) | Yes, user confirms Add or Dismiss |
 | Voice questions | `Question.Audio(wav)` into any of the above | ~8.6 s | Verified on Pixel with a generated WAV | **No** (no mic recording yet) |
-| Am I going the right way? | `RightWayCheck.check` | instant, no model | Unit-tested (8 tests), **not run on a walk** | **No** |
+| Am I going the right way? | `RightWayCheck.check` | instant, no model | Unit-tested (8 tests), **not run on a walk** | Yes, deterministic GPS/compass check in retrace mode |
 | Lining-up meter while aiming the camera | `LocalEmbedder.embedImage` + `AlignmentMeter.update` | ~0.3 s per frame | Embedder verified; meter thresholds **not calibrated** | **No** |
 
 "Verified on Pixel" means a benchmark test ran the real model on the phone. UI wiring is
@@ -206,6 +206,9 @@ The UI shows source photos for grounded answers, uses a calm card for safety ref
 comparison reasons on non-matches, and requires an explicit user action to add a reminder or
 continue guidance. Explore paths remain visibly labelled samples.
 
+Retrace also exposes the deterministic `RightWayCheck`, which reports YES, NO, or NOT_SURE
+with GPS, compass, and optional camera evidence sources. This is still unvalidated on a walk.
+
 Trip questions use at most four recent places because the product excludes an extra embedding
 model. Voice input is also excluded from the current product scope. The alignment meter stays
 hidden because its thresholds are uncalibrated. Run the app's own flows on the Pixel separately
@@ -213,10 +216,8 @@ from benchmark and compilation evidence.
 
 ## 6. What's left to build
 
-1. **"Am I going the right way?" (4.8):** expose `RightWayCheck` in retrace mode and retain a
-   rolling 30-second window of measured fixes.
-2. Optional: microphone recording (4.7), only if product scope adds voice input.
-3. Optional: lining-up meter (4.9) and step counter; both need product selection and
+1. Optional: microphone recording (4.7), only if product scope adds voice input.
+2. Optional: lining-up meter (4.9) and step counter; both need product selection and
    calibration/permission work.
 
 Before the demo, tap through each wired feature once on the Pixel in airplane mode, and note

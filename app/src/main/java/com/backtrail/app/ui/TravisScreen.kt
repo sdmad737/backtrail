@@ -220,8 +220,8 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 PrimaryAction(if (state.mode == GuidanceMode.RETRACE) (if(state.targetPhoto.isBlank()) "Confirm waypoint" else "I recognize this") else "Found this place", "check", Modifier.weight(1f), state.canConfirm) { act(TravisAction.Confirm) }
                 QuietAction("Undo", "undo", Modifier.widthIn(min = 72.dp)) { act(TravisAction.Undo) }
             }
-            val memory = outing.memories.firstOrNull { it.id == state.selectedMemoryId }
-            if(memory!=null && state.mode==GuidanceMode.FIND_LANDMARK) {
+            val memory = outing.retraceIndex?.let { expectedIndex -> outing.memories.firstOrNull { it.routeIndex==expectedIndex } }
+            if(memory!=null && state.mode==GuidanceMode.RETRACE) {
                 OutlinedButton(onClick={act(TravisAction.CompareCurrentPhoto(memory.id))},enabled=!state.busy && (state.modelReady || state.replay) && (state.cameraAllowed || state.replay),modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
                     Text(if(state.comparisonVerdict==null)"Compare with a current photo" else "Take another comparison photo")
                 }
@@ -236,6 +236,21 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                         Text("Try another photo, or use the saved photo and your own judgment.",style=MaterialTheme.typography.bodySmall,color=palette.onSurfaceVariant)
                     } }
                     "ERROR" -> Text(state.inferenceMessage,style=MaterialTheme.typography.bodySmall,color=palette.onSurfaceVariant)
+                }
+            }
+            if(state.mode==GuidanceMode.RETRACE) {
+                OutlinedButton(onClick={act(TravisAction.CheckDirection)},enabled=outing.retraceIndex!=null,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
+                    Text("Am I going the right way?")
+                }
+                state.rightWayResult?.let { result ->
+                    Surface(color=palette.surfaceContainer,shape=RoundedCornerShape(14.dp)) {
+                        Column(Modifier.fillMaxWidth().padding(12.dp),verticalArrangement=Arrangement.spacedBy(5.dp)) {
+                            Text(result.summary,fontWeight=FontWeight.Medium)
+                            result.reasons.forEach { reason ->
+                                Text("${reason.source.name.lowercase().replaceFirstChar { it.uppercase() }} · ${reason.text}",style=MaterialTheme.typography.bodySmall,color=palette.onSurfaceVariant)
+                            }
+                        }
+                    }
                 }
             }
             if (memory != null && memory.pickup !in listOf(PickupPhase.NONE, PickupPhase.COLLECTED)) {
@@ -407,6 +422,9 @@ private fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: (
             TravisPhoto(memory.photoPath,"Original saved photo of ${memory.title}",Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(16.dp)))
         } else MemoryCard(memory, state, onClick = { act(TravisAction.SelectMemory(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); close() }, actionLabel = "Find in AR", act=act)
     }
+    if(mode==AssistantMode.FIND_PLACE && state.answerStatus==AssistantAnswerStatus.LIVE && state.resultIds.isNotEmpty()) {
+        TextButton(onClick={act(TravisAction.DismissAssistantResult)}) { Text("Not it") }
+    }
     if (state.answer.isNotBlank() && state.assistantMode==mode && state.resultIds.isEmpty() && !state.busy) {
         Text("No selected place. Browse your original saved photos to choose one yourself.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -459,7 +477,7 @@ private fun MemoryCard(memory: Memory, state:TravisUiState, onClick: () -> Unit,
                 if (memory.description.isNotBlank() && !editing) {
                     TextButton(onClick={featuresExpanded=!featuresExpanded},contentPadding=PaddingValues(0.dp)) { Text("${if (replay) "Sample description" else "Gemma 4 · local result"} · ${if(featuresExpanded)"hide details" else "show features"}") }
                     if(featuresExpanded) memory.description.split(" · ").filter(String::isNotBlank).forEach { Text("• $it",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
-                } else if(!editing) Text(memory.indexing, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else if(!editing) Text(if(state.describingMemoryId==memory.id)state.inferenceMessage else memory.indexing, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (memory.point == null) Text("Location not recorded", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                 if (memory.pickup != PickupPhase.NONE) Text("Pickup · ${memory.pickup.name.lowercase().replace('_', ' ')}", style = MaterialTheme.typography.labelMedium)
                 if(!replay && memory.indexing.startsWith("Gemma 4") && memory.description.isBlank()) Text("Unclear view · add your own note or edit this place.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -468,6 +486,7 @@ private fun MemoryCard(memory: Memory, state:TravisUiState, onClick: () -> Unit,
                     TextButton(onClick={act(TravisAction.RetryDescription(memory.id))},enabled=!state.busy) { Text("Try description again") }
                 }
                 if(!replay && memory.note.isNotBlank() && memory.pickup==PickupPhase.NONE) TextButton(onClick={act(TravisAction.SuggestReminder(memory.id))},enabled=!state.busy) { Text("Check note for a return reminder") }
+                if(!state.busy && state.reminderMessageMemoryId==memory.id && state.inferenceMessage.isNotBlank()) Text(state.inferenceMessage,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 statePendingReminder(memory,state.pendingReminder,act)
                 if(!replay && !editing) TextButton(onClick={editing=true}) { Text("Edit place name and description") }
                 PrimaryAction(actionLabel, "ar", Modifier.fillMaxWidth(), memory.point != null, onClick)

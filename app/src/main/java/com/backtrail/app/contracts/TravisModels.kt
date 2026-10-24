@@ -1,5 +1,6 @@
 package com.backtrail.app.contracts
 
+import com.backtrail.app.ai.RightWayCheck
 import kotlinx.serialization.Serializable
 
 @Serializable data class TrailPoint(
@@ -42,6 +43,9 @@ data class TravisUiState(
     val answerGrounded: Boolean? = null, val answerConfidence: String? = null,
     val safetyRefusal: Boolean = false, val pendingReminder: ReminderSuggestion? = null,
     val inferenceMessage: String = "", val retryDescriptionId: String? = null,
+    val describingMemoryId: String? = null,
+    val reminderMessageMemoryId: String? = null,
+    val rightWayResult: RightWayCheck.Result? = null,
     val comparisonVerdict: String? = null, val comparisonReasons: List<String> = emptyList(),
     val notice: String = "", val sensorStatus: String = "", val mapAvailable: Boolean = false,
     val cameraAllowed: Boolean = false, val locationAllowed: Boolean = false,
@@ -68,6 +72,8 @@ sealed interface TravisAction {
     data object DismissNotice : TravisAction
     data class SwitchSurface(val surface: TravisSurface) : TravisAction
     data class SelectMemory(val id: String) : TravisAction
+    data object DismissAssistantResult : TravisAction
+    data object CheckDirection : TravisAction
     data class Ask(val query: String) : TravisAction
     data class AskAboutTrip(val query: String) : TravisAction
     data class AskAboutPhoto(val memoryId: String, val query: String) : TravisAction
