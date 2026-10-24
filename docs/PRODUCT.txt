@@ -33,6 +33,9 @@ model failures. No distillation, fine-tuning or extra embedding model selected.
 Two-image comparison is local supporting evidence only. It never supplies a
 location fix or changes progress; hide comparison reasons unless Gemma returns
 SUPPORTS_MATCH, and let the user decide whether to try again or continue.
+Comparison, trip/photo questions and reminder proposals are wired to the native UI.
+The live app prefers the pinned
+G6/NPU artifact when present, otherwise the pinned generic/GPU artifact.
 
 DETERMINISTIC RESPONSIBILITIES
 GPS service, segment boundaries, true bearing geometry, quality gates, ordered
@@ -60,7 +63,9 @@ A physical Pixel trial is the next gate, not a property proven by compilation.
 
 EVIDENCE
 PREPARATION-STATUS.md records the completed preparation. MODEL-READINESS.md and
-model-assets.json record exact asset integrity and actual host inference. No
-physical offline inference is claimed. Event-time install/transfer and integration
-results are in DEVICE-INTEGRATION.txt. Organizer requirements and sources are in
+model-assets.json record exact asset integrity and actual host inference.
+INFERENCE-LOG.md records the inference teammate's Pixel/NPU benchmark results;
+these are separate from integrated live-app physical acceptance, still pending.
+Event-time install/transfer and integration results are in DEVICE-INTEGRATION.txt.
+Organizer requirements and sources are in
 EVENT-RULES-CHECK.md. Advance preparation is recorded before the event.

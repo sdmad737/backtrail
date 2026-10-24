@@ -1,5 +1,14 @@
 TRAVIS — DEVICE / NAVIGATION INTEGRATION, OCTOBER 24, 2026
 
+MERGED INFERENCE UPDATE
+Main advanced to 362a548 during this pass and was merged into codex/bootstrap.
+It includes live G6/NPU selection, verified G6 import metadata, a cached inference
+engine and additional AI APIs. Build and emulator receipts identify exact tested
+artifacts: 70 JVM tests passed, zero lint errors and 19 emulator checks passed.
+INTEGRATION-READY.txt separates the earlier a45b7aa snapshot review from
+resolved items and remaining integration work. Historical device work below is
+preserved; statements that no ai/dependency code changed refer to that earlier pass.
+
 DELIVERED DURING THE EVENT
 This is the lead/user device workstream on codex/bootstrap, based on 7736052.
 No UI, ai/, public state/action types, dependencies or manifest were changed.
@@ -22,7 +31,7 @@ Unchanged outings do not cause repeated disk rewrites. No model work blocks GPS.
 after initialization; expired fixes become unknown. Changing Find/retrace clears
 notices from the previous guidance mode.
 
-VERIFICATION
+BASELINE VERIFICATION AT 5875671 (CURRENT MERGE RECEIPT ABOVE)
 ./gradlew --offline :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
 BUILD SUCCESSFUL: 36 JVM tests, 0 failures/errors/skips; lint 0 errors, 22 warnings.
 Warnings are existing dependency/tool update and style/compatibility suggestions.
@@ -38,15 +47,20 @@ Passed full baseline model bytes/SHA256 and current APK bytes/SHA256. No device
 commands ran in this host-only check. Exact current APK receipt: build-receipt.json.
 The APK is app/build/outputs/apk/debug/app-debug.apk, ignored by Git.
 
-Emulator acceptance: 15 checks passed on the final APK. See
+Emulator acceptance: 19 checks passed on the final APK. See
 emulator-recording-receipt.json. Final Find screenshot:
 qa/device-integration-find-ar.png (synthetic emulator camera scene).
-Harness: python3 scripts/emulator-recording-smoke.py --serial emulator-5554
+Harness: python3 scripts/emulator-recording-smoke.py --serial emulator-5554 --pickup
 It cold-launches the installed app, grants test permissions, preserves old records,
 ends a previous active outing, and creates a QA outing with injected GPS and a
 virtual-camera photo. It refuses physical serials. Raw local receipts/screenshots
 are under ignored local-data/gps-integration/. Simulated inputs exercise real
 Android APIs, not physical position/orientation accuracy or model inference.
+The added checks prove an opted-in pickup remains quiet at capture, arms after
+departure, posts an actual Android notification on return with the screen asleep,
+and does not repost on further arrival fixes. The tested APK was installed immediately before this run and its local hash
+matches build-receipt.json. The emulator was explicitly targeted; no physical
+phone install took place.
 
 Early harness failures were retained locally: coordinate quantization, ls column
 formatting and Android's location-disabled modal. The first camera Save also
@@ -60,22 +74,34 @@ UI follow-ups for teammate 2: show capture failure notices inside the modal (the
 existing notice sits beneath it), and prefer a nearby/compare-photo presentation
 over a directional arrow when distance is within GPS uncertainty.
 
-PHYSICAL PIXEL — EXACTLY WHAT IS KNOWN
+PHYSICAL PIXEL — OUR EARLIER SETUP RECEIPT
 The Pixel is not currently available. The earlier setup receipt identifies a
 Pixel 11 Pro, Tensor G6, Android 17/API37, build CD1A.260618.001.C2.
 Baseline APK install succeeded; baseline Gemma 4 E2B reached
 /sdcard/Download/gemma-4-E2B-it.litertlm with its full matching digest.
 Evidence: pixel-transfer-receipt.json. The subsequent private-file check failed;
 that is not a successful app-private import. Current integration APK is not yet
-installed on the Pixel. Physical offline inference remains unproven.
+installed on the Pixel. This setup receipt alone proves no physical inference.
+
+NEW TEAMMATE EVIDENCE, OBSERVED AT origin/codex/inference a45b7aa
+docs/INFERENCE-LOG.md on that branch reports successful Pixel/NPU description,
+comparison and embedding benchmarks, including four fresh Pixel photos. These
+are teammate-recorded benchmark results, not a test of the integrated live app.
+The log records airplane mode; an explicit Wi-Fi-off check is not included.
+Our candidate build and precise remaining wiring are in INTEGRATION-READY.txt.
+The old baseline/private-transfer status below is historical and must not be
+used to say that nobody on the team has run inference on the Pixel.
 
 Model milestones:
 A. Baseline downloaded on Mac: complete, exact bytes/hash + real host text/image.
 B. Baseline installed in phone app-private storage: pending. Downloads is verified.
 C. Baseline proven offline on phone: pending.
-G6 NPU candidate: downloaded and hash verified on Mac only. Dispatch runtime,
-private install and any actual inference remain unverified. TENSOR-G6-HANDOFF.txt
-records the guide's useful path and the precise hardware-desk dependency request.
+G6 NPU candidate: model downloaded and hash verified on this Mac. The matching
+2.3.0 dispatch AAR is now downloaded and publisher-SHA256 verified here too.
+Teammate benchmark execution is reported above; the merged live app now selects
+G6/NPU when present, else generic/GPU, and awaits physical verification. Relaunch
+after changing the imported model because the cached service keeps its selection.
+See TENSOR-G6-HANDOFF.txt.
 
 NEXT THREE ACTIONS
 1. Get the Pixel back; install the current APK, complete baseline model import,
@@ -83,8 +109,9 @@ NEXT THREE ACTIONS
 2. Walk three real landmarks, lock the screen, Find in AR, resume the unchanged
    retrace cursor, and exercise one opted-in pickup notification. Measure camera
    heading, startup, battery/thermal and model/GPS concurrency; record failures.
-3. Give teammate 1 TENSOR-G6-HANDOFF.txt and obtain the matching dispatch runtime
-   from the hardware desk. Keep the baseline usable until NPU execution is proven.
+3. Integrate the teammate's explicit model/backend selection and safe lifecycle,
+   then run the same real-photo and retrieval checks through the normal app UI.
+   No hardware-desk runtime request is needed for the verified Maven 2.3.0 AAR.
 Teammate 2 can continue UI/product edits against unchanged contracts.
 
 SHORT DEMO

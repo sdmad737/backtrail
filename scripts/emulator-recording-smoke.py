@@ -18,6 +18,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--serial", default="emulator-5554")
+parser.add_argument("--pickup", action="store_true", help="Also exercise an opted-in leave/return reminder through Android notifications")
 args = parser.parse_args()
 if not args.serial.startswith("emulator-"):
     parser.error("This script injects simulated GPS and must never target a physical phone.")
@@ -95,6 +96,24 @@ def move(lon):
              "Injected point did not reach persistent route")
 
 
+def pickup_notification(memory_id):
+    # Mirror Java String.hashCode only to locate this app's chosen OS notification id.
+    unsigned = 0
+    for char in memory_id:
+        unsigned = (31 * unsigned + ord(char)) & 0xffffffff
+    notification_id = unsigned if unsigned < 0x80000000 else unsigned - 0x100000000
+    dump = adb("shell", "dumpsys", "notification", "--noredact")
+    for block in dump.split("NotificationRecord(")[1:]:
+        header = block.splitlines()[0]
+        if "pkg=com.backtrail.app " not in header or f" id={notification_id} " not in header:
+            continue
+        updated = re.search(r"mUpdateTimeMs=(\d+)", block)
+        title = re.search(r"android.title=String \(([^\n]*)\)", block)
+        if updated and title:
+            return {"id": notification_id, "updated_at_ms": int(updated.group(1)), "title": title.group(1)}
+    return None
+
+
 try:
     adb("shell", "am", "force-stop", "com.backtrail.app")
     adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
@@ -146,12 +165,35 @@ try:
     adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
     adb("shell", "wm", "dismiss-keyguard")
     tap("Save a place")
+    if args.pickup:
+        tap("Remind me on the way back")
     # Virtual camera capture is a real CameraX path but is not a physical photograph.
     tap("Save photo & place")
     wait_for(lambda: len(active()["memories"]) == 1, "CameraX photo metadata was not persisted", seconds=25)
     memory = active()["memories"][0]
     photo = adb("exec-out", "run-as", "com.backtrail.app", "cat", memory["photoPath"], binary=True)
     check("Original virtual-camera JPEG and location persist", photo[:2] == b"\xff\xd8" and memory["point"] is not None)
+
+    if args.pickup:
+        memory_id = memory["id"]
+        def pickup_phase():
+            return next(m["pickup"] for m in active()["memories"] if m["id"] == memory_id)
+        time.sleep(4)
+        check("Pickup does not fire at capture location", pickup_phase() == "WAITING_TO_LEAVE" and pickup_notification(memory_id) is None)
+        move(-122.3558)
+        wait_for(lambda: pickup_phase() == "ARMED", "Leaving did not arm the requested pickup", seconds=20)
+        check("Leaving arms the requested pickup without notifying", pickup_notification(memory_id) is None)
+        adb("shell", "input", "keyevent", "KEYCODE_SLEEP")
+        move(-122.3573)
+        wait_for(lambda: pickup_phase() == "NOTIFIED", "Return did not persist the notification state", seconds=20)
+        wait_for(lambda: pickup_notification(memory_id) is not None, "Android did not receive the pickup notification")
+        posted = pickup_notification(memory_id)
+        check("Android receives pickup notification with screen asleep", posted["title"].startswith("Pickup nearby"))
+        report["pickup_notification"] = posted
+        time.sleep(6)
+        check("More arrival fixes do not repeat the pickup notification", pickup_notification(memory_id) == posted)
+        adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
+        adb("shell", "wm", "dismiss-keyguard")
 
     tap("Head back")
     wait_for(lambda: active()["retraceIndex"] is not None, "Retrace cursor was not persisted")
