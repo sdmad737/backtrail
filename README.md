@@ -10,6 +10,8 @@ Camera capture, saved trips, GNSS recording, two-image comparison, destination r
 
 For the event, start with the [tomorrow preparation checklist](docs/PREP-TOMORROW.md).
 
+For the proposed pocket-use experience, read the [sensor, reminder and Gemma feasibility notes](docs/SENSOR-RESEARCH.md). These distinguish supported platform behavior from unimplemented product ideas and unmeasured device performance.
+
 Follow [SETUP](docs/SETUP.md) for JDK/SDK setup, the exact model artifact, and the first offline phone test. From the repository root with JDK 17 and Android SDK configured:
 
 ```sh
