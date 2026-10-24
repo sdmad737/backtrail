@@ -59,12 +59,15 @@ gemma-4-E2B-it.litertlm. Local JSON + JPEGs is sufficient. Choose one working
 starter configuration and freeze it. Do not maintain iOS concurrently. If only
 iPhones are available, decide on Swift + a Mac before platform work starts.
 
-EVENT FACTS FROM ORGANIZER EMAIL
+EVENT FACTS FROM ORGANIZER EMAIL AND PUBLISHED EVENT PAGE
 October 24, 2026; doors10 a.m., keynotes11 a.m.–noon Pacific; teams3–4; one main
 track; Gemma-based runtime100%on-device; special awards can stack; prototyping
 before arrival is explicitly encouraged; hardware loaners first come first
-served. Enter Mobile AI for the phone build. Confirm submission cutoff, required
-materials and demo length at check-in. Do not invent a judging rubric.
+served. Enter Mobile AI for the phone build. The published event page says to
+save a project draft by 7 p.m.; finalist selection begins from saved drafts.
+Demos/judging start at 8 p.m. Confirm any later final cutoff, required materials
+and demo length at check-in. Do not invent a judging rubric. Sources and the
+complete preparation checklist are in PREP-TOMORROW.md.
 
 EXCLUDED FROM THE BUILD
 Food/poison/water-safety verdicts, universal survival chatbot, long-distance

@@ -31,7 +31,9 @@ Bytes:      2588147712
 SHA-256:    181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c
 ```
 
-These are publisher metadata, not a claim that the weights have been downloaded or executed here. `ModelStore` checks both size and SHA-256 when importing. Obtain the file before arriving, transfer it separately to the Pixel, and leave enough free space for the source plus the app-private copy and runtime cache. Model import never happens over the app's network.
+On the bootstrap Mac, the full file was downloaded to ignored `models/gemma-4-E2B-it.litertlm` and independently checked against both values above on October 23, 2026 at 10:39 p.m. Pacific. The local receipt is `models/download-receipt.json`. No phone import or execution has occurred. A new clone does not include the weights.
+
+`ModelStore` also checks both size and SHA-256 when importing. Transfer the file separately to the Pixel, and leave enough free space for the source plus the app-private copy and runtime cache. Model import never happens over the app's network. The [event preparation checklist](PREP-TOMORROW.md) includes exact transfer commands and the prepared APK path.
 
 ## Run on the phone
 
