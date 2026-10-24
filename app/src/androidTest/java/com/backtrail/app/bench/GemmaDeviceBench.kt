@@ -108,6 +108,75 @@ class GemmaDeviceBench {
         Log.i(TAG, "describe tag=$tag done rssMbPeak=$peakRss")
     }
 
+    /**
+     * Every photo pair. Names `<place>-<shot>.jpg` share a place when the part before the last
+     * dash matches, which gives the expected answer. Reports accuracy and false "same spot".
+     */
+    @Test
+    fun compare(): Unit = runBlocking {
+        val model = File(modelsDir, arg("model", "gemma-4-E2B-it.litertlm"))
+        val backend = InferenceBackend.valueOf(arg("backend", "GPU"))
+        val vision = InferenceBackend.valueOf(arg("vision", backend.name))
+        val tag = arg("tag", "compare-${backend.name.lowercase()}")
+        val limit = arg("pairs", "40").toInt()
+        var lastRaw: String? = null
+        var lastTrace: InferenceTrace? = null
+        val service = LocalVisionService(
+            model, context.cacheDir, backend, vision, nativeLibraryDir,
+            rawOutputSink = { lastRaw = it },
+            traceSink = { lastTrace = it },
+        )
+        val all = photos()
+        val pairs = all.indices.flatMap { i -> (i + 1 until all.size).map { j -> all[i] to all[j] } }.take(limit)
+        val results = JSONArray()
+        var correct = 0
+        var falseMatch = 0
+        var unsure = 0
+        try {
+            for ((a, b) in pairs) {
+                lastRaw = null
+                lastTrace = null
+                val same = place(a) == place(b)
+                val request = RequestContext("bench", UUID.randomUUID().toString(), "bench", 0, a.name)
+                val final = service.compare(
+                    request,
+                    ImageRef(UUID.randomUUID().toString(), a.absolutePath, null),
+                    ImageRef(UUID.randomUUID().toString(), b.absolutePath, null),
+                ).toList().last()
+                val verdict = (final as? InferenceState.Success)?.value?.verdict?.name
+                when {
+                    verdict == "INSUFFICIENT_EVIDENCE" -> unsure++
+                    verdict == "SUPPORTS_MATCH" && same -> correct++
+                    verdict == "DIFFERENT_PLACE" && !same -> correct++
+                    verdict == "SUPPORTS_MATCH" && !same -> falseMatch++
+                }
+                val t = lastTrace
+                results.put(JSONObject().apply {
+                    put("a", a.name)
+                    put("b", b.name)
+                    put("samePlace", same)
+                    put("verdict", verdict ?: JSONObject.NULL)
+                    put("engine", t?.engine)
+                    put("initMs", t?.initMs)
+                    put("generateMs", t?.generateMs)
+                    put("outcome", t?.outcome)
+                    put("raw", lastRaw ?: JSONObject.NULL)
+                })
+                Log.i(TAG, "compare tag=$tag ${a.name} vs ${b.name} same=$same verdict=$verdict ${t?.line()}")
+            }
+        } finally {
+            service.close()
+        }
+        val report = JSONObject().put("op", "compare").put("tag", tag).put("model", model.name)
+            .put("backend", backend.name).put("visionBackend", vision.name)
+            .put("pairs", pairs.size).put("correct", correct).put("falseMatch", falseMatch).put("unsure", unsure)
+            .put("results", results)
+        File(outDir, "compare-$tag.json").writeText(report.toString(2))
+        Log.i(TAG, "compare tag=$tag done pairs=${pairs.size} correct=$correct falseMatch=$falseMatch unsure=$unsure")
+    }
+
+    private fun place(photo: File) = photo.nameWithoutExtension.substringBeforeLast('-')
+
     @Test
     fun embed(): Unit = runBlocking {
         val model = File(modelsDir, arg("model", "embeddinggemma-2-740m_Google_Tensor_G6.litertlm"))
