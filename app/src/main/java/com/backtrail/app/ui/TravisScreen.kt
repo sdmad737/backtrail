@@ -62,13 +62,13 @@ fun TravisScreen(
         background = Color(0xFF14231E), surface = Color(0xFF1C3028),
         surfaceContainer = Color(0xFF263B32), onSurface = TravisIvory,
         onSurfaceVariant = Color(0xFFB9C8BE), outlineVariant = Color(0xFF45584C),
-        secondary = TravisOrange,
+        secondary = TravisOrange, secondaryContainer = Color(0xFF304E3F), onSecondaryContainer = TravisIvory,
     ) else lightColorScheme(
         primary = TravisGreen, onPrimary = Color.White,
         background = TravisIvory, surface = TravisIvory,
         surfaceContainer = Color(0xFFE9EADF), onSurface = Color(0xFF19382E),
         onSurfaceVariant = Color(0xFF5C6C61), outlineVariant = Color(0xFFCFD7C9),
-        secondary = Color(0xFFAD4D20),
+        secondary = Color(0xFFAD4D20), secondaryContainer = Color(0xFFDFE8D9), onSecondaryContainer = TravisGreen,
     )
     MaterialTheme(colorScheme = palette) {
         var sheet by rememberSaveable { mutableStateOf<TravisSheet?>(null) }
@@ -562,8 +562,8 @@ private fun statePendingReminder(memory:Memory,suggestion:ReminderSuggestion?,ac
 @Composable
 private fun PrepareSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: () -> Unit) {
     Eyebrow("PACK THE ESSENTIALS")
-    Text("Ready for off-grid.", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-    ReadinessRow("Location", if (state.locationAllowed) "Permission allowed · ${state.fixQuality.name.lowercase()} fix" else "Allow location to record an outing", state.locationAllowed)
+    Text("Before you head out.", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+    ReadinessRow("Location", if (state.locationAllowed) "${state.fixQuality.name.lowercase().replaceFirstChar { it.uppercase() }} measured fix" else "Allow location to record an outing", state.fixQuality == FixQuality.USABLE)
     ReadinessRow("Offline map", if (state.mapAvailable) "Prepared local region available" else "No coverage here · recorded trace still works", state.mapAvailable)
     ReadinessRow("Gemma 4", if (state.modelReady) "Local model imported" else "Import verified model from phone storage", state.modelReady)
     ReadinessRow("Camera guidance", if (state.cameraAllowed) "Camera allowed · approximate sensor direction" else "Camera permission needed", state.cameraAllowed)
