@@ -236,6 +236,19 @@ descriptions are Gemma's own), two notes added for the test. Airplane mode. Warm
 Process memory: 190 MB idle → 1,044 MB after describe → 1,644 MB with both models loaded.
 Audio runs with `audioBackend = CPU` (added in `ad484e0`).
 
+### 2026-10-24 ~14:58 · assistant re-run after fixes · NPU · `6fe7067`
+Original trip prompt restored (a reworded prompt tried in between made answers worse:
+it offered a "water feature" for the pool and named a wrong spot for the lantern).
+
+| Question | Answer | ms |
+|---|---|---|
+| Where did I leave my water bottle? | "You left your water bottle on the fire bowl at the wooden pergola structure." (pergola-a) | 8,737 |
+| Which spot had the stone lantern? | "…had a dark metal lamp post, but none of the saved spots explicitly mention a stone lantern." (not grounded) | 9,280 |
+| Pond, last 30 minutes | "You saw a wooden pergola structure over water and a stone retaining wall." (pergola-b) | 9,380 |
+| Where is the swimming pool? | "I don't see that in their saved places." (not grounded; "their"→"your" now fixed in code) | 7,885 |
+| voice: water bottle | same correct answer as typed | – |
+| voice: "Remind me to close the gate on the way back" (as a trip question) | "You can remind yourself to close the gate using …" (route this kind of utterance to parseReminder in the UI) | – |
+
 ## Open questions
 
 - EmbeddingGemma latency on device, and whether photo embeddings separate same-place from

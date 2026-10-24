@@ -32,6 +32,7 @@ object AssistantValidator {
         .replace(LEAKED_FIELDS, "")
         .replace(ID_PARENS, "")
         .replace(SHORT_ID) { m -> names["s${m.groupValues[1]}"]?.let { "\"$it\"" } ?: "a saved spot" }
+        .replace(Regex("\\btheir saved places\\b", RegexOption.IGNORE_CASE), "your saved places")
         .replace(Regex("\\s+([.,;!?])"), "$1")
         .replace(Regex("\\s{2,}"), " ")
         .trim()
