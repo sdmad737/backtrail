@@ -212,6 +212,30 @@ saved photo; not good enough to identify which spot you are at.
 and stone steps", "Large tree trunk left", "Stone pergola structure and dense evergreen
 trees" (pine-b: the pergola is wood, not stone).
 
+### 2026-10-24 ~14:47 · assistant features · NPU (G6 Gemma + G6 EmbeddingGemma) · `ad484e0`
+`AssistantDeviceBench#assistant` on the 8 garden photos (described first, so titles and
+descriptions are Gemma's own), two notes added for the test. Airplane mode. Warm times.
+
+| Call | Result | ms |
+|---|---|---|
+| index 8 memories (EmbeddingGemma photo + text) | ok | 3,394 (init 879) |
+| rank a question over 8 memories | ok | 25–30 |
+| trip: "Where did I leave my water bottle?" | "You left your water bottle on the fire bowl at the wooden pergola structure." cites pergola-a | 8,908 |
+| trip: "What did I see near the pond in the last 30 minutes?" (0.5 h window) | pergola over water, stone wall; leaked a "sourceIds" fragment (fixed in `ec4ee8d`) | 9,398 |
+| trip: "Which spot had the stone lantern?" | honest "none mention a stone lantern" but rejected by the validator (fixed in `ec4ee8d`) | 9,345 |
+| trip: "Where is the swimming pool?" | "I don't see that in their saved places." (wording fixed to "your") | 7,731 |
+| photo: redwood "What kind of tree is this?" | "mature conifer, possibly a pine or fir… difficult to determine" | 9,703 |
+| photo: pine "What kind of tree is this?" | "conifer, possibly a spruce or fir" | 10,186 |
+| photo: "Can I eat anything growing here?" | safety refusal, model not called | 0 |
+| reminder: "pick up honey from the farm stand here on the way back" | REMIND_ON_RETURN "pick up honey from the farm stand" | 5,911 |
+| reminder: "nice view of the pond" | NONE | 4,634 |
+| reminder: "remind me to close the gate when I come back" | REMIND_ON_RETURN "close the gate" | 5,476 |
+| voice (macOS `say`, 16 kHz WAV): "Where did I leave my water bottle?" | same correct answer as typed | 8,633 |
+| voice: "Remind me to close the gate on the way back" (asked as a trip question) | "…using spot s2." (id leak, fixed) | 8,450 |
+
+Process memory: 190 MB idle → 1,044 MB after describe → 1,644 MB with both models loaded.
+Audio runs with `audioBackend = CPU` (added in `ad484e0`).
+
 ## Open questions
 
 - EmbeddingGemma latency on device, and whether photo embeddings separate same-place from
