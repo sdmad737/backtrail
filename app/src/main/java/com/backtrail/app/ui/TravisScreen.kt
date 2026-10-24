@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -72,8 +73,13 @@ fun TravisScreen(
     MaterialTheme(colorScheme = palette) {
         var sheet by rememberSaveable { mutableStateOf<TravisSheet?>(null) }
         val haptic = LocalHapticFeedback.current
+        var lastMemoryCount by remember(state.outing.id) { mutableIntStateOf(state.outing.memories.size) }
+        LaunchedEffect(state.outing.memories.size) {
+            if (state.outing.memories.size > lastMemoryCount) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            lastMemoryCount = state.outing.memories.size
+        }
         val act: (TravisAction) -> Unit = { action ->
-            if (action is TravisAction.Confirm || action is TravisAction.SavePhoto || action is TravisAction.Start) {
+            if (action is TravisAction.Confirm || action is TravisAction.Collect || action is TravisAction.Start) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             }
             onAction(action)
@@ -102,7 +108,7 @@ fun TravisScreen(
                     }
                 }
                 BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
-                    val dockMaxHeight = maxHeight * .53f
+                    val dockMaxHeight = maxHeight * if (state.surface == TravisSurface.AR) .46f else .53f
                     if (state.surface == TravisSurface.MAP) map(Modifier.fillMaxSize())
                     else if (!state.captureMode) TravisCameraGuidance(state, camera, Modifier.fillMaxSize())
                     else Box(Modifier.fillMaxSize().background(TravisGreen))
@@ -140,7 +146,7 @@ fun TravisScreen(
                                     Text("  Sample movement · controls", fontSize = 11.sp, color = Color(0xFF673D0C))
                                 }
                             }
-                        } else if (state.fixQuality != FixQuality.USABLE || state.sensorStatus.isNotBlank()) {
+                        } else {
                             QualityLabel(state)
                         }
                     }
@@ -192,17 +198,20 @@ fun TravisScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk: () -> Unit, onMemories: () -> Unit, onPrepare: () -> Unit) {
     val outing = state.outing
     val palette = MaterialTheme.colorScheme
+    var guidanceTools by rememberSaveable(state.mode, state.target?.id) { mutableStateOf(false) }
     when {
         state.mode != GuidanceMode.NONE -> {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (state.targetPhoto.isNotBlank()) TravisPhoto(state.targetPhoto, "Original saved landmark", Modifier.size(62.dp).clip(RoundedCornerShape(13.dp)))
+                val referencePhoto = state.destinationPhoto.ifBlank { state.targetPhoto }
+                if (referencePhoto.isNotBlank()) TravisPhoto(referencePhoto, "Original photo of your destination", Modifier.size(62.dp).clip(RoundedCornerShape(13.dp)))
                 Column(Modifier.weight(1f)) {
                     Eyebrow(if (state.mode == GuidanceMode.RETRACE) "RETRACING YOUR STEPS" else "FINDING A SAVED PLACE")
-                    Text(state.targetTitle, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(if (state.mode == GuidanceMode.RETRACE) state.destinationTitle else state.targetTitle, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(
                         if (state.mode == GuidanceMode.RETRACE) (if(state.remainingMeters==null) "Route distance unavailable" else "~${distanceLabel(state.remainingMeters)} remaining via recorded route")
                         else if(state.distanceMeters==null) "Distance unavailable" else "${distanceLabel(state.distanceMeters)} straight-line distance",
@@ -210,6 +219,10 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                     )
                 }
             }
+            if (state.mode == GuidanceMode.RETRACE) {
+                Text("Next · ${state.targetTitle} · ${distanceLabel(state.distanceMeters)} direct to route point", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
+            }
+            if (state.guidanceStatus.isNotBlank()) Text(state.guidanceStatus, style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
             if (state.mode == GuidanceMode.FIND_LANDMARK && outing.retraceIndex != null) {
                 Text("Your retrace progress is saved.", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
             }
@@ -220,8 +233,11 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 PrimaryAction(if (state.mode == GuidanceMode.RETRACE) (if(state.targetPhoto.isBlank()) "Confirm waypoint" else "I recognize this") else "Found this place", "check", Modifier.weight(1f), state.canConfirm) { act(TravisAction.Confirm) }
                 QuietAction("Undo", "undo", Modifier.widthIn(min = 72.dp)) { act(TravisAction.Undo) }
             }
-            val memory = outing.retraceIndex?.let { expectedIndex -> outing.memories.firstOrNull { it.routeIndex==expectedIndex } }
-            if(memory!=null && state.mode==GuidanceMode.RETRACE) {
+            val memory = when (state.mode) {
+                GuidanceMode.FIND_LANDMARK -> outing.memories.firstOrNull { it.id == state.selectedMemoryId }
+                else -> state.routeTargetIndex?.let { expectedIndex -> outing.memories.firstOrNull { it.routeIndex == expectedIndex } }
+            }
+            if (guidanceTools && memory != null) {
                 OutlinedButton(onClick={act(TravisAction.CompareCurrentPhoto(memory.id))},enabled=!state.busy && (state.modelReady || state.replay) && (state.cameraAllowed || state.replay),modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
                     Text(if(state.comparisonVerdict==null)"Compare with a current photo" else "Take another comparison photo")
                 }
@@ -238,7 +254,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                     "ERROR" -> Text(state.inferenceMessage,style=MaterialTheme.typography.bodySmall,color=palette.onSurfaceVariant)
                 }
             }
-            if(state.mode==GuidanceMode.RETRACE) {
+            if(guidanceTools && state.mode==GuidanceMode.RETRACE) {
                 OutlinedButton(onClick={act(TravisAction.CheckDirection)},enabled=outing.retraceIndex!=null,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
                     Text("Am I going the right way?")
                 }
@@ -256,13 +272,16 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
             if (memory != null && memory.pickup !in listOf(PickupPhase.NONE, PickupPhase.COLLECTED)) {
                 OutlinedButton(onClick = { act(TravisAction.Collect(memory.id)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("I collected it") }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onAsk) { Text("Ask Travis") }
                 if (state.mode == GuidanceMode.FIND_LANDMARK && outing.retraceIndex != null) TextButton(onClick = { act(TravisAction.ResumeRetrace) }) { Text("Resume retrace") }
                 else TextButton(onClick = onMemories) { Text("Saved places") }
                 if (state.replay) TextButton(onClick = { act(TravisAction.ReplayNext) }) { Text("Next step") }
             }
-            TextButton(onClick = { act(TravisAction.StopGuidance) }) { Text("Close guidance") }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                TextButton(onClick = { guidanceTools = !guidanceTools }) { Text(if (guidanceTools) "Fewer tools" else "Guidance tools") }
+                TextButton(onClick = { act(TravisAction.StopGuidance) }) { Text("Close guidance") }
+            }
         }
         outing.phase == OutingPhase.READY && outing.points.isEmpty() -> {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -274,7 +293,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
             }
             Text("Keep your trail. Remember the places. Find your way back.", style = MaterialTheme.typography.bodyMedium, color = palette.onSurfaceVariant)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SmallStatus(if (state.fix==null) "Venue map prepared" else if (state.mapAvailable) "Map saved" else "Outside saved map", state.mapAvailable || state.fix==null)
+                SmallStatus(if (state.mapAvailable) "Map coverage ready" else "Check map coverage", state.mapAvailable)
                 SmallStatus(if (state.modelReady) "Gemma ready" else "Gemma needed", state.modelReady)
             }
             PrimaryAction("Start outing", "trail", Modifier.fillMaxWidth()) { act(TravisAction.Start) }
@@ -300,12 +319,12 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PrimaryAction(if (outing.phase == OutingPhase.PAUSED) "Resume outing" else "Save a place", if (outing.phase == OutingPhase.PAUSED) "play" else "camera", Modifier.weight(1f)) {
-                    act(if (outing.phase == OutingPhase.PAUSED) TravisAction.Start else TravisAction.Capture)
+                PrimaryAction(when (outing.phase) { OutingPhase.PAUSED -> "Resume outing"; OutingPhase.ENDED -> "Review saved places"; else -> "Save a place" }, if (outing.phase == OutingPhase.PAUSED) "play" else "camera", Modifier.weight(1f)) {
+                    if (outing.phase == OutingPhase.ENDED) onMemories() else act(if (outing.phase == OutingPhase.PAUSED) TravisAction.Start else TravisAction.Capture)
                 }
                 QuietAction("Ask", "spark", Modifier.widthIn(min = 86.dp), onClick = onAsk)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = { act(TravisAction.HeadBack) }, enabled = outing.points.size > 1) { TravisGlyph("back", Modifier.size(16.dp), palette.primary); Spacer(Modifier.width(6.dp)); Text("Head back") }
                 TextButton(onClick = onMemories) { Text("Places") }
                 if (state.replay) TextButton(onClick = { act(TravisAction.ReplayNext) }) { Text("Next step") }
@@ -331,6 +350,11 @@ private fun CaptureSheet(state: TravisUiState, act: (TravisAction) -> Unit, came
     var note by rememberSaveable { mutableStateOf("") }
     var pickup by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().imePadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        if (state.notice.isNotBlank()) {
+            Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(12.dp)) {
+                Text(state.notice, Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium)
+            }
+        }
         Eyebrow("SAVE SOMETHING WORTH RETURNING TO")
         Text("Remember this place.", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
         Box(Modifier.fillMaxWidth().height(205.dp).clip(RoundedCornerShape(20.dp)).background(TravisGreen)) {
@@ -368,6 +392,8 @@ private fun CaptureSheet(state: TravisUiState, act: (TravisAction) -> Unit, came
 @Composable
 private fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: () -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
+    val keyboard = LocalSoftwareKeyboardController.current
+    val ask: (TravisAction) -> Unit = { keyboard?.hide(); act(it) }
     var mode by rememberSaveable { mutableStateOf(state.assistantMode) }
     var selectedPhotoId by rememberSaveable { mutableStateOf(state.outing.memories.lastOrNull()?.id.orEmpty()) }
     Eyebrow(if (state.replay) "EXPLORE · SAMPLE ANSWERS" else "GEMMA · ON THIS PHONE")
@@ -377,7 +403,7 @@ private fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: (
             FilterChip(selected=mode==item,onClick={mode=item},label={Text(title)},enabled=!state.busy)
         }
     }
-    Text(when(mode){AssistantMode.FIND_PLACE->"Choose from the places and details you saved.";AssistantMode.TRIP_QUESTION->"Gemma answers from up to four recent saved places. The current app does not run semantic ranking.";AssistantMode.PHOTO_QUESTION->"Choose an original saved photo. Gemma's answer is a guess, not a location fact."}, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(when(mode){AssistantMode.FIND_PLACE->"Choose from the places and details you saved.";AssistantMode.TRIP_QUESTION->"Answers stay grounded in the recent places and notes from this outing.";AssistantMode.PHOTO_QUESTION->"Choose an original photo and ask about visible details. Your saved location stays unchanged."}, color = MaterialTheme.colorScheme.onSurfaceVariant)
     if (mode==AssistantMode.PHOTO_QUESTION && state.outing.memories.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         state.outing.memories.takeLast(8).forEach { memory ->
             val selected=selectedPhotoId==memory.id
@@ -394,7 +420,7 @@ private fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: (
         placeholder = { Text(when(mode){AssistantMode.FIND_PLACE->"Where did I leave my jacket?";AssistantMode.TRIP_QUESTION->"What did I mean to collect?";AssistantMode.PHOTO_QUESTION->"What is the sign beside this path?"}) }, label = { Text("Your question") },
         shape = RoundedCornerShape(16.dp), maxLines = 3, enabled=!state.busy,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { if (query.isNotBlank() && !state.busy) submitAssistant(mode,selectedPhotoId,query,act) }),
+        keyboardActions = KeyboardActions(onSearch = { if (query.isNotBlank() && !state.busy) submitAssistant(mode,selectedPhotoId,query,ask) }),
     )
     if (!state.modelReady && !state.replay) {
         Text("Gemma is not imported yet. Your route and saved photos remain available.", style = MaterialTheme.typography.bodySmall)
@@ -406,13 +432,13 @@ private fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: (
             Text(state.inferenceMessage.ifBlank { if (state.replay) "Sample loading state" else "Working with saved places on this phone…" }, Modifier.weight(1f))
             TextButton(onClick = { act(TravisAction.CancelInference) }) { Text("Cancel") }
         }
-    } else PrimaryAction(when(mode){AssistantMode.FIND_PLACE->"Find in my memories";AssistantMode.TRIP_QUESTION->"Ask about this outing";AssistantMode.PHOTO_QUESTION->"Ask about this photo"}, "spark", Modifier.fillMaxWidth(), query.isNotBlank() && (mode!=AssistantMode.PHOTO_QUESTION || selectedPhotoId.isNotBlank()) && (state.modelReady || state.replay)) { submitAssistant(mode,selectedPhotoId,query,act) }
+    } else PrimaryAction(when(mode){AssistantMode.FIND_PLACE->"Find in my memories";AssistantMode.TRIP_QUESTION->"Ask about this outing";AssistantMode.PHOTO_QUESTION->"Ask about this photo"}, "spark", Modifier.fillMaxWidth(), query.isNotBlank() && (mode!=AssistantMode.PHOTO_QUESTION || selectedPhotoId.isNotBlank()) && (state.modelReady || state.replay)) { submitAssistant(mode,selectedPhotoId,query,ask) }
     if (state.answer.isNotBlank() && state.assistantMode==mode) {
         Surface(color = if(state.answerGrounded==false)MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(17.dp),border=if(state.answerGrounded==false)BorderStroke(1.dp,MaterialTheme.colorScheme.outlineVariant)else null) {
             Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Eyebrow(when { state.answerStatus==AssistantAnswerStatus.SAMPLE -> "SAMPLE RESPONSE";state.safetyRefusal -> "PHOTO SAFETY LIMIT";state.answerStatus==AssistantAnswerStatus.UNAVAILABLE -> "MODEL UNAVAILABLE";state.answerStatus==AssistantAnswerStatus.FAILURE -> "COULD NOT ANSWER";state.answerGrounded==false -> "NOT FOUND IN SAVED PLACES";state.answerConfidence!=null -> "${state.answerConfidence} · PHOTO ANSWER";state.answerStatus==AssistantAnswerStatus.LIVE -> "GEMMA 4 · LOCAL RESULT";else -> "SAVED PLACE STATUS" })
+                Eyebrow(when { state.answerStatus==AssistantAnswerStatus.SAMPLE -> "SAMPLE RESPONSE";state.safetyRefusal -> "PHOTO SAFETY LIMIT";state.answerStatus==AssistantAnswerStatus.UNAVAILABLE -> "MODEL UNAVAILABLE";state.answerStatus==AssistantAnswerStatus.FAILURE -> "COULD NOT ANSWER";state.answerGrounded==false -> "NOT FOUND IN SAVED PLACES";state.answerConfidence!=null -> "PHOTO INTERPRETATION";state.answerStatus==AssistantAnswerStatus.LIVE -> "GEMMA 4 · LOCAL RESULT";else -> "SAVED PLACE STATUS" })
                 Text(state.answer, style = MaterialTheme.typography.bodyMedium)
-                if(state.answerConfidence!=null && !state.safetyRefusal) Text(if(state.answerConfidence=="LOW")"A guess" else "Travis thinks",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                if(state.answerConfidence!=null && !state.safetyRefusal) Text("Check the original photo before acting on this interpretation.",style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 if(state.inferenceMessage.isNotBlank()) Text(state.inferenceMessage,style=MaterialTheme.typography.labelSmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -420,7 +446,7 @@ private fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: (
     if(state.assistantMode==mode) state.resultIds.mapNotNull { id -> state.outing.memories.firstOrNull { it.id == id } }.forEach { memory ->
         if(mode==AssistantMode.PHOTO_QUESTION) {
             TravisPhoto(memory.photoPath,"Original saved photo of ${memory.title}",Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(16.dp)))
-        } else MemoryCard(memory, state, onClick = { act(TravisAction.SelectMemory(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); close() }, actionLabel = "Find in AR", act=act)
+        } else MemoryCard(memory, state, onClick = { act(TravisAction.SelectMemory(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); close() }, actionLabel = "Find in AR", act=act, onCloseMemoryCard=close)
     }
     if(mode==AssistantMode.FIND_PLACE && state.answerStatus==AssistantAnswerStatus.LIVE && state.resultIds.isNotEmpty()) {
         TextButton(onClick={act(TravisAction.DismissAssistantResult)}) { Text("Not it") }
@@ -447,27 +473,35 @@ private fun MemoriesSheet(state: TravisUiState, act: (TravisAction) -> Unit, clo
         PrimaryAction("Save your first place", "camera", Modifier.fillMaxWidth()) { close(); act(TravisAction.Capture) }
     }
     state.outing.memories.reversed().forEach { memory ->
-        MemoryCard(memory, state, onClick = { act(TravisAction.SelectMemory(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); close() }, actionLabel = "Find in AR",act=act)
+        MemoryCard(memory, state, onClick = { act(TravisAction.SelectMemory(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); close() }, actionLabel = "Find in AR",act=act, onCloseMemoryCard=close)
     }
 }
 
 @Composable
-private fun MemoryCard(memory: Memory, state:TravisUiState, onClick: () -> Unit, actionLabel: String, act:(TravisAction)->Unit) {
+private fun MemoryCard(memory: Memory, state:TravisUiState, onClick: () -> Unit, actionLabel: String, act:(TravisAction)->Unit, onCloseMemoryCard: () -> Unit) {
     val replay=state.replay
     var editing by rememberSaveable(memory.id) { mutableStateOf(false) }
     var titleDraft by rememberSaveable(memory.id) { mutableStateOf(memory.title) }
-    var descriptionDraft by rememberSaveable(memory.id) { mutableStateOf(memory.description) }
+    var noteDraft by rememberSaveable(memory.id) { mutableStateOf(memory.note) }
+    var confirmDelete by rememberSaveable(memory.id) { mutableStateOf(false) }
     var featuresExpanded by rememberSaveable(memory.id) { mutableStateOf(false) }
+    if (confirmDelete) AlertDialog(
+        onDismissRequest = { confirmDelete = false },
+        title = { Text("Remove this saved place?") },
+        text = { Text("Its photo, note and reminders will be removed. The recorded route stays intact.") },
+        confirmButton = { TextButton(onClick = { act(TravisAction.DeleteMemory(memory.id)); confirmDelete = false }) { Text("Remove place", color = MaterialTheme.colorScheme.error) } },
+        dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Keep place") } },
+    )
     Surface(shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), color = MaterialTheme.colorScheme.surface) {
         Column {
             TravisPhoto(memory.photoPath, "Original saved photo of ${memory.title}", Modifier.fillMaxWidth().height(150.dp))
             Column(Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 if(editing) {
                     OutlinedTextField(titleDraft,{titleDraft=it.take(80)},Modifier.fillMaxWidth(),label={Text("Place name")},singleLine=true)
-                    OutlinedTextField(descriptionDraft,{descriptionDraft=it.take(1000)},Modifier.fillMaxWidth(),label={Text("Gemma features · editable")},minLines=2,maxLines=4)
+                    OutlinedTextField(noteDraft,{noteDraft=it.take(2000)},Modifier.fillMaxWidth(),label={Text("Your original note")},minLines=2,maxLines=4)
                     Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick={editing=false}) { Text("Cancel") }
-                        Button(onClick={act(TravisAction.UpdateMemory(memory.id,titleDraft,descriptionDraft));editing=false}) { Text("Save edits") }
+                        Button(onClick={act(TravisAction.UpdateMemory(memory.id,titleDraft,memory.description));act(TravisAction.UpdateMemoryNote(memory.id,noteDraft));editing=false}) { Text("Save edits") }
                     }
                 } else Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(memory.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -479,7 +513,7 @@ private fun MemoryCard(memory: Memory, state:TravisUiState, onClick: () -> Unit,
                     if(featuresExpanded) memory.description.split(" · ").filter(String::isNotBlank).forEach { Text("• $it",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant) }
                 } else if(!editing) Text(if(state.describingMemoryId==memory.id)state.inferenceMessage else memory.indexing, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (memory.point == null) Text("Location not recorded", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                if (memory.pickup != PickupPhase.NONE) Text("Pickup · ${memory.pickup.name.lowercase().replace('_', ' ')}", style = MaterialTheme.typography.labelMedium)
+                if (memory.pickup != PickupPhase.NONE) Text("${memory.pickupTask.ifBlank { "Pickup" }} · ${memory.pickup.name.lowercase().replace('_', ' ')}", style = MaterialTheme.typography.labelMedium)
                 if(!replay && memory.indexing.startsWith("Gemma 4") && memory.description.isBlank()) Text("Unclear view · add your own note or edit this place.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 if(state.retryDescriptionId==memory.id) {
                     Text("Photo preserved. ${state.inferenceMessage}",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
@@ -488,8 +522,25 @@ private fun MemoryCard(memory: Memory, state:TravisUiState, onClick: () -> Unit,
                 if(!replay && memory.note.isNotBlank() && memory.pickup==PickupPhase.NONE) TextButton(onClick={act(TravisAction.SuggestReminder(memory.id))},enabled=!state.busy) { Text("Check note for a return reminder") }
                 if(!state.busy && state.reminderMessageMemoryId==memory.id && state.inferenceMessage.isNotBlank()) Text(state.inferenceMessage,style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
                 statePendingReminder(memory,state.pendingReminder,act)
-                if(!replay && !editing) TextButton(onClick={editing=true}) { Text("Edit place name and description") }
-                PrimaryAction(actionLabel, "ar", Modifier.fillMaxWidth(), memory.point != null, onClick)
+                if (!replay && !editing) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Alert when I arrive", style = MaterialTheme.typography.bodyMedium)
+                            Text(if (memory.arrival == ArrivalPhase.NOTIFIED) "Already delivered" else "At this saved location", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = memory.arrival != ArrivalPhase.NONE, onCheckedChange = { act(TravisAction.SetArrivalReminder(memory.id, it)) }, enabled = memory.point != null)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        TextButton(onClick = { titleDraft = memory.title; noteDraft = memory.note; editing = true }) { Text("Edit name & note") }
+                        TextButton(onClick = { confirmDelete = true }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+                    }
+                }
+                if (memory.point != null && memory.routeIndex != null) {
+                    PrimaryAction("Take me back", "back", Modifier.fillMaxWidth()) { act(TravisAction.TakeMeBack(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.MAP)); onCloseMemoryCard() }
+                    Text("Follow the recorded route to this place.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Find in AR · direct bearing") }
+                } else PrimaryAction(actionLabel, "ar", Modifier.fillMaxWidth(), memory.point != null, onClick)
+                if (memory.pickup !in listOf(PickupPhase.NONE, PickupPhase.COLLECTED)) OutlinedButton(onClick = { act(TravisAction.Collect(memory.id)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("I collected it") }
             }
         }
     }
@@ -535,6 +586,20 @@ private fun PrepareSheet(state: TravisUiState, act: (TravisAction) -> Unit, clos
             }
         }
     }
+    var showProof by rememberSaveable { mutableStateOf(false) }
+    TextButton(onClick = { showProof = !showProof }) { Text(if (showProof) "Hide device proof" else "Device & local model proof") }
+    if (showProof) Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(14.dp)) {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text("${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}", fontWeight = FontWeight.SemiBold)
+            Text(if (state.replay) "REPLAY · sample movement and answers" else "LIVE · measured device sensors", style = MaterialTheme.typography.bodySmall)
+            Text("Backend: ${state.modelBackend}", style = MaterialTheme.typography.bodySmall)
+            Text(state.modelFileName.ifBlank { "No local model selected" }, style = MaterialTheme.typography.bodySmall)
+            Text(state.modelOutcome, style = MaterialTheme.typography.bodySmall)
+            state.modelLoadMillis?.let { Text("Measured load: $it ms", style = MaterialTheme.typography.bodySmall) }
+            state.modelGenerateMillis?.let { Text("Measured generation: $it ms", style = MaterialTheme.typography.bodySmall) }
+            Text("Offline proof requires a cold launch with Wi-Fi and cellular data off.", style = MaterialTheme.typography.bodySmall)
+        }
+    }
     TextButton(onClick = { act(if (state.replay) TravisAction.ExitExplore else TravisAction.Explore); close() }, modifier = Modifier.fillMaxWidth()) { Text(if (state.replay) "Leave Explore demo" else "Explore the interactive demo") }
 }
 
@@ -568,7 +633,7 @@ private fun ReadinessRow(title: String, detail: String, ready: Boolean) {
 internal fun QualityLabel(state: TravisUiState) {
     Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surface) {
         Text(state.sensorStatus.ifBlank { when (state.fixQuality) {
-            FixQuality.USABLE -> "GPS ±${state.fix?.accuracy?.toInt() ?: 0} m"
+            FixQuality.USABLE -> "GPS ±${state.fix?.accuracy?.toInt() ?: 0} m · ${state.fix?.let { ((System.currentTimeMillis() - it.time).coerceAtLeast(0) / 1000) } ?: 0}s ago"
             FixQuality.APPROXIMATE -> "Weak GPS · position approximate"
             FixQuality.STALE -> "Location stale · guidance paused"
             FixQuality.UNAVAILABLE -> "Waiting for a measured location"

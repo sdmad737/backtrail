@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -42,7 +43,7 @@ internal fun TravisMap(state: TravisUiState, modifier: Modifier = Modifier) {
     var pan by remember(state.outing.id) { mutableStateOf(Offset.Zero) }
     val points = state.outing.points
     val all = points + state.outing.memories.mapNotNull { it.point } + listOfNotNull(state.fix, state.target)
-    Box(modifier.background(palette.surfaceContainer)) {
+    Box(modifier.background(palette.surfaceContainer).clipToBounds()) {
         Canvas(Modifier.fillMaxSize().pointerInput(state.outing.id) {
             detectTransformGestures { _, delta, scale, _ -> zoom = (zoom * scale).coerceIn(.6f, 6f); pan += delta }
         }) {
@@ -107,51 +108,69 @@ internal fun TravisMap(state: TravisUiState, modifier: Modifier = Modifier) {
 internal fun TravisCameraGuidance(state: TravisUiState, camera: @Composable (Modifier) -> Unit, modifier: Modifier = Modifier) {
     val relative = if (state.bearing != null && state.heading != null) ((state.bearing - state.heading + 540) % 360) - 180 else null
     val usable = state.fixQuality == FixQuality.USABLE && state.headingReliable && relative != null
-    Box(modifier.background(Color(0xFF1C3028))) {
+    val near = state.canConfirm && state.target != null
+    BoxWithConstraints(modifier.background(Color(0xFF1C3028))) {
+        val compact = maxHeight < 560.dp
         if (state.replay) {
             TravisPhoto(state.targetPhoto.ifBlank { state.outing.memories.lastOrNull()?.photoPath.orEmpty() }, "Replay camera preview, not a live camera", Modifier.fillMaxSize())
         } else if (state.cameraAllowed) camera(Modifier.fillMaxSize())
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = .25f), Color.Black.copy(alpha = .07f), Color.Black.copy(alpha = .75f)))))
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = .32f), Color.Black.copy(alpha = .06f), Color.Black.copy(alpha = .7f)))))
         Column(
-            Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal = 22.dp).padding(top = if (state.replay) 139.dp else 120.dp),
+            Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(horizontal = 22.dp).padding(top = if (state.replay) 123.dp else 110.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp),
         ) {
-            Surface(shape = RoundedCornerShape(8.dp), color = Color.Black.copy(alpha = .45f)) {
-                Text(if (state.replay) "CAMERA PREVIEW · REPLAY" else "APPROXIMATE DIRECTION", Modifier.padding(horizontal = 10.dp, vertical = 7.dp), fontSize = 9.sp, letterSpacing = 1.2.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Surface(shape = RoundedCornerShape(9.dp), color = Color.Black.copy(alpha = .62f)) {
+                Text(if (state.replay) "CAMERA PREVIEW · REPLAY" else "APPROXIMATE CAMERA GUIDANCE", Modifier.padding(horizontal = 10.dp, vertical = 7.dp), fontSize = 10.sp, letterSpacing = .8.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
             when {
                 !state.cameraAllowed && !state.replay -> {
-                    TravisGlyph("camera", Modifier.size(52.dp), Color.White)
-                    Text("Open the camera", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                    TravisGlyph("camera", Modifier.size(40.dp), Color.White)
+                    Text("Open the camera", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Text("Allow camera access in Prepare to see the live view.", color = Color.White, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
                 }
                 state.target == null -> {
-                    TravisGlyph("ar", Modifier.size(58.dp), Color.White)
-                    Text("A place to look toward.", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                    Text("Choose a saved place or start retracing to open camera guidance.", color = Color.White, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
+                    TravisGlyph("ar", Modifier.size(48.dp), Color.White)
+                    Text("A place to look toward.", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text("Choose a saved place or start retracing.", color = Color.White, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
                 }
-                !usable -> {
-                    TravisGlyph("info", Modifier.size(44.dp), Color.White)
-                    Text(if (state.fixQuality != FixQuality.USABLE) "Waiting for a reliable location" else "Direction unavailable", color = Color.White, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-                    Text(if (state.fixQuality == FixQuality.STALE) "The last fix is stale. Keep the original photo in view." else "Location and camera orientation need a reliable reading. Use the saved photo to compare.", color = Color.White.copy(alpha = .85f), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
-                }
-                else -> {
-                    Canvas(Modifier.size(76.dp)) {
-                        val angle = relative!!.coerceIn(-90.0, 90.0).toFloat()
-                        rotate(angle) {
-                            val arrow = Path().apply { moveTo(size.width * .5f, 4f); lineTo(size.width * .82f, size.height * .75f); lineTo(size.width * .5f, size.height * .59f); lineTo(size.width * .18f, size.height * .75f); close() }
-                            drawPath(arrow, Color.White)
+                near -> {
+                    Surface(shape = RoundedCornerShape(18.dp), color = TravisGreen.copy(alpha = .88f)) {
+                        Column(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            TravisGlyph("check", Modifier.size(if (compact) 30.dp else 40.dp), Color.White)
+                            Text(if (state.mode == GuidanceMode.RETRACE && state.targetPhoto.isBlank()) "Near the next route point" else "Near the recorded place", color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                            Text("${distanceLabel(state.distanceMeters)} · ${if (state.targetPhoto.isBlank()) "confirm to continue" else "compare the saved view"}", color = Color.White.copy(alpha = .9f), style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
                         }
                     }
-                    Text(when {
-                        abs(relative!!) < 15 -> "Ahead, approximately"
-                        abs(relative) > 140 -> "Look behind you"
-                        relative > 0 -> "Look to your right"
-                        else -> "Look to your left"
-                    }, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
-                    Text("${distanceLabel(state.distanceMeters)} · straight line to target", color = Color.White.copy(alpha = .9f), style = MaterialTheme.typography.bodySmall)
-                    Text("Compare the saved photo. Follow your recorded trail.", color = Color.White.copy(alpha = .8f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall)
+                }
+                !usable -> {
+                    TravisGlyph("info", Modifier.size(36.dp), Color.White)
+                    Text(if (state.fixQuality != FixQuality.USABLE) "Waiting for a reliable location" else "Direction unavailable", color = Color.White, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+                    Text(if (state.fixQuality == FixQuality.STALE) "Last location is stale. Use the original photo." else "Hold the phone upright and wait for a reliable reading.", color = Color.White.copy(alpha = .9f), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
+                }
+                else -> {
+                    Surface(shape = RoundedCornerShape(20.dp), color = Color.Black.copy(alpha = .5f)) {
+                        Row(Modifier.padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            Canvas(Modifier.size(if (compact) 40.dp else 50.dp)) {
+                                // The arrow is a directional cue, never a world-anchored object location.
+                                val angle = relative!!.toFloat()
+                                rotate(angle) {
+                                    val arrow = Path().apply { moveTo(size.width * .5f, 4f); lineTo(size.width * .82f, size.height * .8f); lineTo(size.width * .5f, size.height * .62f); lineTo(size.width * .18f, size.height * .8f); close() }
+                                    drawPath(arrow, Color.White)
+                                }
+                            }
+                            Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(when {
+                                    abs(relative!!) < 15 -> "Ahead, approximately"
+                                    abs(relative) > 140 -> "Look behind you"
+                                    relative > 0 -> "Look to your right"
+                                    else -> "Look to your left"
+                                }, color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                Text("${distanceLabel(state.distanceMeters)} to ${if (state.mode == GuidanceMode.RETRACE) "next route point" else "saved location"}", color = Color.White.copy(alpha = .9f), style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                    Text(if (state.mode == GuidanceMode.RETRACE) "Follow your recorded route, one point at a time." else "Direct bearing only · follow a known route.", color = Color.White, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
