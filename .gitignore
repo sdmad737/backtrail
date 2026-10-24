@@ -32,3 +32,4 @@ keystore.properties
 secrets.properties
 *.apk
 *.aab
+evals/results/raw/
