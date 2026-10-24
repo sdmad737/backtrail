@@ -92,14 +92,16 @@ with Wi-Fi/cellular off, real photo inference/query, short recorded route + Map/
 Find + unchanged retrace cursor + requested pickup + return + process relaunch.
 SETUP.md gives exact steps. PREPARATION-STATUS.md is the concise team handoff.
 
-TEAMMATE ONBOARDING HANDOFF
-Updated prompts/02-inference.txt and prompts/03-device-integration.txt supersede
-old bootstrap-only role tasks. When the humans start these sessions: the lead
-owns ui/ and explore/; teammate B owns ai/, inference tests/model measurements;
-teammate C owns device/, trip/, contracts, composition, shared build/docs and
-integration. These assignments continue the logical ownership in AGENTS.md.
-Each starts from a separate checkout containing a58a501 and the updated prompts.
-The prompts do not assert physical Pixel success and prioritize that proof.
-Only teammate C installs the shared integrated phone build; teammate B coordinates
-an inference-testing slot. No teammates were contacted or invited by this pass.
-No code implementation or dependency changes were made during prompt onboarding.
+TEAMMATE ONBOARDING HANDOFF — USER-CORRECTED ASSIGNMENT
+The project lead/user owns device, navigation and integration: device/, trip/,
+contracts, composition, shared build/docs, integrated phone installs and merges.
+Teammate 1 owns ai/, inference tests and model measurements.
+Teammate 2 owns ui/, explore/, product interaction design and demo presentation.
+Shared product/contracts changes are coordinated through the project lead.
+Current prompts: 01-ui.txt for teammate 2, 02-inference.txt for teammate 1 and
+03-device-integration.txt for the project lead, all under prompts/.
+Each uses a separate checkout containing a58a501 and the updated role prompts.
+The prompts prioritize physical Pixel proof and distinguish it from host/emulator
+results. Only the lead installs the integrated build; teammates coordinate phone
+testing slots. No teammates were contacted/invited or code implementation changed
+during this onboarding update. The user explicitly chose this role split.

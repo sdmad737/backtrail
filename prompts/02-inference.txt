@@ -1,6 +1,7 @@
-You are the inference owner for Travis, our Gemma hackathon Android app. Your
-teammates own UI/product and device/integration. Take ownership of proving and
-hardening the existing local model flow on the actual Pixel.
+You are teammate 1, the inference owner for Travis, our Gemma hackathon Android
+app. The project lead owns device/navigation/integration; teammate 2 owns
+UI/product. Take ownership of proving and hardening the existing local model
+flow on the actual Pixel.
 
 START HERE
 1. Inspect the repository, git status, branch, toolchains and attached devices.

@@ -5,9 +5,11 @@ prompts. The latest preparation/onboarding work is local on the lead's Mac until
 explicitly shared; do not assume GitHub main contains it. Each teammate needs a
 separate clone/worktree. Their local tools/model files are not supplied by Git.
 
-Current prompts: prompts/02-inference.txt and prompts/03-device-integration.txt.
-The lead owns UI/product. The device teammate becomes the integration owner when
-that role is started. Phone install slots are serialized by that owner. AR is
+Current roles and prompts:
+- Project lead/user: device, navigation and integration; prompts/03-device-integration.txt.
+- Teammate 1: Gemma inference; prompts/02-inference.txt.
+- Teammate 2: UI/product; prompts/01-ui.txt.
+Phone install slots and shared merges are coordinated by the project lead. AR is
 already core; the earlier bootstrap sequence and scope statements below are
 historical examples, not instructions to rebuild or defer the current AR flow.
 Use PRODUCT.txt, CONTRACTS.txt and PREPARATION-STATUS.md for current behavior.
