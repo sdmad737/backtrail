@@ -11,18 +11,32 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.io.File
 import java.util.concurrent.Executors
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 
 class CameraCaptureController {
-    internal var capture:ImageCapture?=null
+    private val ready=MutableStateFlow<ImageCapture?>(null)
+    internal var capture:ImageCapture?
+        get()=ready.value
+        set(value) { ready.value=value }
+    private val scope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
     private val executor=Executors.newSingleThreadExecutor()
-    fun takePhoto(file:File,done:(Boolean)->Unit) {
-        val useCase=capture ?: run { done(false);return }
-        useCase.takePicture(ImageCapture.OutputFileOptions.Builder(file).build(),executor,object:ImageCapture.OnImageSavedCallback {
-            override fun onImageSaved(result:ImageCapture.OutputFileResults) { done(true) }
-            override fun onError(error:ImageCaptureException) { done(false) }
-        })
+    fun takePhoto(file:File,onCapture:()->Unit={},done:(Boolean)->Unit) {
+        scope.launch {
+            // The sheet can accept Save before the asynchronous provider binds.
+            // Keep the existing saving indicator active, with a bounded wait.
+            val useCase=withTimeoutOrNull(10_000) { ready.filterNotNull().first() }
+            if(useCase==null) { done(false);return@launch }
+            onCapture()
+            useCase.takePicture(ImageCapture.OutputFileOptions.Builder(file).build(),executor,object:ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(result:ImageCapture.OutputFileResults) { done(true) }
+                override fun onError(error:ImageCaptureException) { done(false) }
+            })
+        }
     }
-    fun close() { executor.shutdown() }
+    fun close() { scope.cancel();executor.shutdown() }
 }
 
 @Composable fun NativeCamera(controller:CameraCaptureController,modifier:Modifier=Modifier,onFailure:(String)->Unit={}) {
@@ -44,7 +58,7 @@ class CameraCaptureController {
                 controller.capture=capture
             } catch(_:Exception) { onFailure("Live camera unavailable. Check permission and camera support.") }
         },context.mainExecutor)
-        onDispose { active=false;controller.capture=null;cameraPreview?.let { provider?.unbind(it) };capture?.let { provider?.unbind(it) } }
+        onDispose { active=false;if(controller.capture===capture)controller.capture=null;cameraPreview?.let { provider?.unbind(it) };capture?.let { provider?.unbind(it) } }
     }
     AndroidView(factory={preview},modifier=modifier)
 }

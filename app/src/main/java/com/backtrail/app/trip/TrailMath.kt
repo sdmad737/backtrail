@@ -16,8 +16,11 @@ object TrailMath {
         return (Math.toDegrees(atan2(sin(d)*cos(lb),cos(la)*sin(lb)-sin(la)*cos(lb)*cos(d)))+360)%360
     }
     fun delta(target: Double, heading: Double) = (target-heading+540)%360-180
+    fun validCoordinates(point: TrailPoint) = point.latitude.isFinite() && point.longitude.isFinite() &&
+        point.latitude in -90.0..90.0 && point.longitude in -180.0..180.0
     fun quality(point: TrailPoint?, now: Long): FixQuality = when {
         point == null -> FixQuality.UNAVAILABLE
+        !validCoordinates(point) || !point.accuracy.isFinite() -> FixQuality.UNAVAILABLE
         now-point.time > 15_000 || point.time-now > 5_000 -> FixQuality.STALE
         point.accuracy > 25 || point.accuracy <= 0 -> FixQuality.APPROXIMATE
         else -> FixQuality.USABLE
@@ -35,9 +38,10 @@ object TrailMath {
         return null
     }
     fun canConfirm(fix: TrailPoint?, target: TrailPoint?, now: Long): Boolean =
-        fix!=null && target!=null && quality(fix,now)==FixQuality.USABLE && distance(fix,target)<=max(15.0,fix.accuracy*1.5)
+        fix!=null && target!=null && validCoordinates(target) && target.accuracy.isFinite() && target.accuracy>0 &&
+            quality(fix,now)==FixQuality.USABLE && distance(fix,target)<=max(15.0,fix.accuracy*1.5)
     fun pickup(phase: PickupPhase, distance: Double, accuracy: Float, recent: Boolean): PickupPhase {
-        if(!recent || accuracy>25 || accuracy<=0) return phase
+        if(!recent || !distance.isFinite() || distance<0 || !accuracy.isFinite() || accuracy>25 || accuracy<=0) return phase
         return when(phase) {
             PickupPhase.WAITING_TO_LEAVE -> if(distance>max(60.0,accuracy*3.0)) PickupPhase.ARMED else phase
             PickupPhase.ARMED -> if(distance+accuracy<=30.0) PickupPhase.NOTIFIED else phase

@@ -1,0 +1,96 @@
+TRAVIS — DEVICE / NAVIGATION INTEGRATION, OCTOBER 24, 2026
+
+DELIVERED DURING THE EVENT
+This is the lead/user device workstream on codex/bootstrap, based on 7736052.
+No UI, ai/, public state/action types, dependencies or manifest were changed.
+The shared main branch was checked for teammate changes before publication.
+
+Recording callbacks now run through one sequential consumer and atomic storage.
+Android monotonic time controls admission/order and persistence intervals; wall
+clock changes cannot stop the route or invent long connecting segments. Invalid
+Earth coordinates, NaN/infinite accuracy, stale/future and reordered callbacks
+cannot authorize guidance. Provider interruption or >15 seconds without callbacks
+creates a disconnected route segment, never a straight shortcut across missing data.
+GPS callbacks continue when stationary so AR and saved photos can use fresh fixes;
+persisted route density is still at least 2m movement or 10 seconds.
+
+Generation checks prevent an old fix from reappearing if GPS turns off/on while a
+write is suspended. Already-committed pickup delivery occurs independently of fix
+publication. Find detours and changed retrace targets clear departure evidence;
+three new usable observations are required, and the cooldown survives the detour.
+Unchanged outings do not cause repeated disk rewrites. No model work blocks GPS. Photo location/time are sampled at camera dispatch,
+after initialization; expired fixes become unknown. Changing Find/retrace clears
+notices from the previous guidance mode.
+
+VERIFICATION
+./gradlew --offline :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
+BUILD SUCCESSFUL: 36 JVM tests, 0 failures/errors/skips; lint 0 errors, 22 warnings.
+Warnings are existing dependency/tool update and style/compatibility suggestions.
+Tests cover interrupted recording, invalid coordinates/accuracy, duplicate/stale
+callbacks, wall-clock jumps, pause/resume, stationary updates, process restart,
+mode/target-scoped departure evidence, interruption during a suspended write, and
+photo location freshness after delayed camera initialization.
+A read-only integration review found races; fixes were re-reviewed without further
+findings. UI ownership/contracts remain intact.
+
+python3 scripts/pixel-setup.py --verify-host-only
+Passed full baseline model bytes/SHA256 and current APK bytes/SHA256. No device
+commands ran in this host-only check. Exact current APK receipt: build-receipt.json.
+The APK is app/build/outputs/apk/debug/app-debug.apk, ignored by Git.
+
+Emulator acceptance: 15 checks passed on the final APK. See
+emulator-recording-receipt.json. Final Find screenshot:
+qa/device-integration-find-ar.png (synthetic emulator camera scene).
+Harness: python3 scripts/emulator-recording-smoke.py --serial emulator-5554
+It cold-launches the installed app, grants test permissions, preserves old records,
+ends a previous active outing, and creates a QA outing with injected GPS and a
+virtual-camera photo. It refuses physical serials. Raw local receipts/screenshots
+are under ignored local-data/gps-integration/. Simulated inputs exercise real
+Android APIs, not physical position/orientation accuracy or model inference.
+
+Early harness failures were retained locally: coordinate quantization, ls column
+formatting and Android's location-disabled modal. The first camera Save also
+exposed a real initialization gap: no capture handle existed yet. The device
+adapter now waits up to 10 seconds for CameraX, using the existing saving state,
+then reports failure through the existing notice if unavailable. It preserves the UI API and does not fake a
+photo. The final harness uses no special camera warmup sleep. Physical startup
+and camera errors still require device testing.
+The virtual preview was a synthetic emulator scene, not a physical photograph.
+UI follow-ups for teammate 2: show capture failure notices inside the modal (the
+existing notice sits beneath it), and prefer a nearby/compare-photo presentation
+over a directional arrow when distance is within GPS uncertainty.
+
+PHYSICAL PIXEL — EXACTLY WHAT IS KNOWN
+The Pixel is not currently available. The earlier setup receipt identifies a
+Pixel 11 Pro, Tensor G6, Android 17/API37, build CD1A.260618.001.C2.
+Baseline APK install succeeded; baseline Gemma 4 E2B reached
+/sdcard/Download/gemma-4-E2B-it.litertlm with its full matching digest.
+Evidence: pixel-transfer-receipt.json. The subsequent private-file check failed;
+that is not a successful app-private import. Current integration APK is not yet
+installed on the Pixel. Physical offline inference remains unproven.
+
+Model milestones:
+A. Baseline downloaded on Mac: complete, exact bytes/hash + real host text/image.
+B. Baseline installed in phone app-private storage: pending. Downloads is verified.
+C. Baseline proven offline on phone: pending.
+G6 NPU candidate: downloaded and hash verified on Mac only. Dispatch runtime,
+private install and any actual inference remain unverified. TENSOR-G6-HANDOFF.txt
+records the guide's useful path and the precise hardware-desk dependency request.
+
+NEXT THREE ACTIONS
+1. Get the Pixel back; install the current APK, complete baseline model import,
+   run pixel-setup.py --verify-private, then a fresh photo/text query offline.
+2. Walk three real landmarks, lock the screen, Find in AR, resume the unchanged
+   retrace cursor, and exercise one opted-in pickup notification. Measure camera
+   heading, startup, battery/thermal and model/GPS concurrency; record failures.
+3. Give teammate 1 TENSOR-G6-HANDOFF.txt and obtain the matching dispatch runtime
+   from the hardware desk. Keep the baseline usable until NPU execution is proven.
+Teammate 2 can continue UI/product edits against unchanged contracts.
+
+SHORT DEMO
+Map -> Start outing -> save a distinctive photo and pickup note -> ask Gemma a
+paraphrase -> review its original source photo -> Find in AR with approximate
+bearing/distance -> recognize explicitly -> resume the same recorded retrace
+cursor -> receive the requested return reminder -> mark collected explicitly.
+Use real-phone evidence for live claims. Explore remains labelled replay/sample
+answers; no image localization, ground-anchored AR or NPU speed claim is implied.

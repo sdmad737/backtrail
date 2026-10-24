@@ -45,7 +45,9 @@ Use **Prepare** to grant permissions and import the verified model. Use **Explor
 - Gemma 4 E2B is fully downloaded, size/SHA-256 verified, and loaded from a local Mac path. Actual text, image description and bounded-memory retrieval passed on the Mac GPU with network access denied.
 - The Android app builds offline. Unit tests and lint pass. It launches in an API 36 ARM64 emulator; simulated GPS goes through Android's location service and persists. CameraX produced a saved original JPEG. Process relaunch preserved the outing/photo and correctly paused recording.
 - Native Android and browser layouts were inspected, including keyboard and larger-text/error states. iPhone SE Simulator Safari was used to fix and retest a real software-keyboard issue.
-- **Physical-phone validation is pending.** A Pixel is now connected, but model installation, Pixel inference, sensor alignment, screen-locked GPS, battery cost and the full physical offline loop remain unverified. Emulator inputs are not field measurements.
+- **Physical offline validation is pending.** The baseline APK was installed on a Pixel 11 Pro and the baseline model reached its Downloads folder with a matching full checksum. Private model import and phone inference remain unverified; the phone is currently unavailable. Sensor alignment, screen-locked physical GPS, battery cost and the full physical offline loop still need testing. Emulator inputs are not field measurements.
+
+The event-time [device integration handoff](docs/DEVICE-INTEGRATION.txt) records the latest checks. The [Tensor G6 handoff](docs/TENSOR-G6-HANDOFF.txt) covers the newly downloaded NPU candidate and its unresolved runtime dependency.
 
 Read the [preparation handoff](docs/PREPARATION-STATUS.md) for actual results, limitations, next three actions and demo plan. [Model evidence](docs/MODEL-READINESS.md) and [organizer rules](docs/EVENT-RULES-CHECK.md) distinguish requirements from suggestions. No fine-tuning or extra embedding model is required by this implementation.
 

@@ -1,0 +1,30 @@
+{
+  "hardware": "Android emulator",
+  "serial": "emulator-5554",
+  "location_inputs": "Injected via adb emu geo fix",
+  "camera": "Emulator virtual scene",
+  "physical_phone_test": false,
+  "model_inference_test": false,
+  "checks": [
+    "UI-started recording persists measured provider callbacks",
+    "Disabled GPS is visible",
+    "Brief GPS outage starts a new segment",
+    "Pause leaves the recorded route unchanged",
+    "Resume preserves the recording gap",
+    "Foreground recording continues with emulator screen asleep",
+    "Original virtual-camera JPEG and location persist",
+    "Find preserves the retrace cursor",
+    "Find displays the original saved landmark",
+    "Find clears the previous retrace notice",
+    "Map switch preserves retrace cursor",
+    "Resume returns to retrace guidance",
+    "Resume restores the same target index",
+    "Closing ended-outing guidance stops recording service",
+    "Process relaunch preserves route and original photo metadata"
+  ],
+  "outing_id": "29fd305d-2ed4-49f5-b35f-2e532237fd8a",
+  "passed": true,
+  "finished_at_utc": "2026-10-24T21:22:52.609481+00:00",
+  "apk_sha256": "d4e43ecb1c23c988b99af953dcf84d339a8f59291799db71f603b4ce80bcdefe",
+  "apk_installed_immediately_before_run": true
+}

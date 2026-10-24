@@ -1,3 +1,24 @@
+HACKATHON DEVICE UPDATE — OCTOBER 24, 2026
+Lead/user owns this device/integration change. UI and inference ownership remains
+with the two teammates; their public state/action interfaces are unchanged.
+Recording is now serialized, uses monotonic sample age/order, rejects invalid
+coordinates/accuracy and preserves explicit gaps after provider interruptions.
+Stationary GPS remains fresh; only route persistence is distance/time throttled.
+Provider generations gate publication across disk suspension. Pickup delivery and
+GPS-display eligibility are separate. Departure evidence resets on Find and target
+changes while retaining cooldown. Regression tests include suspended disk writes.
+The emulator also exposed early Save before CameraX initialization; the adapter
+now waits up to 10 seconds for the real capture handle with existing saving UI.
+Photo location is measured at dispatch after that wait; stale location stays null.
+Switching Find/retrace clears notices left by the previous guidance mode.
+Current checks and evidence are in DEVICE-INTEGRATION.txt / build-receipt.json.
+The supplied Tensor guide was read fully; a G6 bundle is downloaded and verified,
+but matching NPU dispatch runtime and phone execution are not established.
+See TENSOR-G6-HANDOFF.txt. No silent fallback or runtime migration was introduced.
+The Pixel is currently unavailable. Earlier receipts prove baseline APK install
+and verified model transfer to Downloads, but not private import or inference.
+Earlier preparation/publication entries below retain their original evidence.
+
 TRAVIS — VERIFIED PREPARATION, OCTOBER 24, 2026
 TEAM HANDOFF UPDATE
 The user authorized publishing the prepared foundation for teammate UI work.

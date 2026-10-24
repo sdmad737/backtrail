@@ -1,13 +1,15 @@
 # Travis model readiness — October 24, 2026
 
-The selected Gemma 4 E2B bundle is fully downloaded and integrity-verified. Real text, photo, and memory requests ran from its local path on the M4 Mac. **No physical phone was connected; phone installation and offline phone execution remain pending.**
+The selected Gemma 4 E2B bundle is fully downloaded and integrity-verified. Real text, photo, and memory requests ran from its local path on the M4 Mac. **Update during the event:** the baseline APK was installed on a Pixel 11 Pro, and the complete model reached Downloads with a matching device checksum. Persistent app-private import and offline phone execution remain pending. The Pixel is currently unavailable.
+
+The Tensor SDK guide also led to a separately verified G6 model download. It is a candidate only: matching NPU dispatch runtime and actual inference are unverified. See [Tensor handoff](TENSOR-G6-HANDOFF.txt) and [candidate receipt](tensor-g6-candidate.json).
 
 ## Three separate milestones
 
 | Milestone | Result |
 |---|---|
 | A. Downloaded and verified on Mac | Complete; full bytes and SHA-256 match publisher metadata |
-| B. Installed in persistent phone app storage | Pending; no physical phone available |
+| B. Installed in persistent phone app storage | Pending; Downloads copy verified, app-private import not verified |
 | C. Loaded and exercised offline on phone | Pending; Mac evidence does not establish phone readiness |
 
 The model file is `/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it.litertlm`.

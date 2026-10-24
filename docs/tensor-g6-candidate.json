@@ -1,0 +1,58 @@
+{
+  "model_id": "litert-community/gemma-4-E2B-it-litert-lm",
+  "revision": "b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1",
+  "filename": "gemma-4-E2B-it_Google_Tensor_G6.litertlm",
+  "bytes": 3313938293,
+  "sha256": "f86c7c19c736e9307267946edef58b0a45494a9127036d54d90dd6b7617c95b7",
+  "source": "https://huggingface.co/api/models/litert-community/gemma-4-E2B-it-litert-lm/revision/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1?blobs=true",
+  "download_source": "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1/gemma-4-E2B-it_Google_Tensor_G6.litertlm",
+  "host_path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it_Google_Tensor_G6.litertlm",
+  "verified_at_utc": "2026-10-24T21:03:26.043255+00:00",
+  "status": "candidate_downloaded_integrity_verified",
+  "integrated_in_app": false,
+  "phone_installed": false,
+  "phone_offline_tested": false,
+  "runtime_companions_verified": false,
+  "metadata_inspection": {
+    "file": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it_Google_Tensor_G6.litertlm",
+    "inspection_only": true,
+    "inference_executed": false,
+    "min_runtime_version": null,
+    "input_modalities": {
+      "text": true,
+      "vision": true,
+      "audio": true,
+      "video": false
+    },
+    "max_context_tokens": 4224,
+    "vision_token_budget": 280,
+    "modalities": {
+      "TEXT": {
+        "backends": [
+          "cpu",
+          "gpu",
+          "npu"
+        ],
+        "soc": null,
+        "npu_brand": "0"
+      },
+      "VISION": {
+        "backends": [
+          "cpu",
+          "gpu"
+        ],
+        "soc": null,
+        "npu_brand": "0"
+      },
+      "AUDIO": {
+        "backends": [
+          "cpu",
+          "gpu"
+        ],
+        "soc": null,
+        "npu_brand": "0"
+      }
+    }
+  },
+  "runtime_blocker": "LiteRT-LM 0.18.0 AAR does not package libLiteRtDispatch_GoogleTensor.so; obtain matching LiteRT 2.3.0 / Tensor SDK 2.1 companion and verify phone build compatibility before NPU integration."
+}

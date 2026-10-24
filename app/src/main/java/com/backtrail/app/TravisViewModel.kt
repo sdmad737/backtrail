@@ -120,7 +120,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 else { undo.add(index);change { it.copy(retraceIndex=previous) } }
             }
             TravisAction.Undo -> { invalidate();if(undo.isNotEmpty()) { val index=undo.removeAt(undo.lastIndex);change { it.copy(retraceIndex=index) } } }
-            TravisAction.ResumeRetrace -> { invalidate();mutable.update { it.copy(mode=if(it.outing.retraceIndex!=null) GuidanceMode.RETRACE else GuidanceMode.NONE,selectedMemoryId=null) };refresh() }
+            TravisAction.ResumeRetrace -> { invalidate();mutable.update { it.copy(mode=if(it.outing.retraceIndex!=null) GuidanceMode.RETRACE else GuidanceMode.NONE,selectedMemoryId=null,notice="") };refresh() }
             TravisAction.StopGuidance -> { invalidate();mutable.update { it.copy(mode=GuidanceMode.NONE,selectedMemoryId=null,surface=TravisSurface.MAP) };if(!mutable.value.replay && mutable.value.outing.phase==OutingPhase.ENDED)RecordingService.stop(getApplication());refresh() }
             TravisAction.Explore -> {
                 invalidate();issue="normal";replayOuting=ExploreFixture.outing();replayFix=ExploreFixture.points.last().copy(time=System.currentTimeMillis());replayHeading=20.0
@@ -144,7 +144,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             is TravisAction.SavePhoto -> savePhoto(action.note,action.pickup)
             is TravisAction.SwitchSurface -> mutable.update { it.copy(surface=action.surface,captureMode=false) }
             is TravisAction.SelectMemory -> { invalidate();if(mutable.value.outing.memories.none { it.id==action.id }) return
-                mutable.update { it.copy(selectedMemoryId=action.id,mode=GuidanceMode.FIND_LANDMARK,surface=TravisSurface.AR,captureMode=false) };refresh()
+                mutable.update { it.copy(selectedMemoryId=action.id,mode=GuidanceMode.FIND_LANDMARK,surface=TravisSurface.AR,captureMode=false,notice="") };refresh()
                 if(mutable.value.target==null) announce("This photo has no recorded location. You can recognize it visually; direction is unavailable.")
                 else if(!mutable.value.replay && mutable.value.locationAllowed) try { RecordingService.start(getApplication(),mutable.value.outing.id) } catch(_:Exception) { announce("Location could not start for Find. Check permission.") }
                 else if(!mutable.value.replay) announce("Allow precise location to update this Find direction.")
@@ -183,16 +183,21 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         val file=File(store.mediaDirectory,"$id.jpg");mutable.update { it.copy(captureBusy=true) }
         val outingId=state.outing.id
         val captureSession=session
-        camera.takePhoto(file) { success ->
+        var location=PhotoLocation(time,null,null)
+        camera.takePhoto(file,onCapture={
+            val live=mutable.value
+            val sameOuting=live.outing.id==outingId && !live.replay
+            location=PhotoLocation.atDispatch(if(sameOuting)live.outing else state.outing,
+                if(sameOuting)live.fix else null,System.currentTimeMillis())
+        }) { success ->
             viewModelScope.launch {
                 mutable.update { it.copy(captureBusy=false) }
                 if(!success) { announce("Photo could not be saved. Your outing is unchanged.");return@launch }
-                val routeIndex=state.outing.points.lastIndex.takeIf { index -> index>=0 && measured!=null && TrailMath.canConfirm(measured,state.outing.points[index],time) }
-                val memory=Memory(id,note.lineSequence().firstOrNull()?.take(40)?.ifBlank { "Saved place" }?:"Saved place",note,file.absolutePath,time,measured,routeIndex,pickup=if(pickup)PickupPhase.WAITING_TO_LEAVE else PickupPhase.NONE)
+                val memory=Memory(id,note.lineSequence().firstOrNull()?.take(40)?.ifBlank { "Saved place" }?:"Saved place",note,file.absolutePath,location.capturedAt,location.point,location.routeIndex,pickup=if(pickup)PickupPhase.WAITING_TO_LEAVE else PickupPhase.NONE)
                 try { store.mutate(outingId) { (it?:state.outing).let { old->old.copy(memories=old.memories+memory,revision=old.revision+1) } } }
                 catch(_:Exception) { announce("Photo exists locally, but its metadata could not be saved.");return@launch }
                 if(session==captureSession && currentId==outingId && !mutable.value.replay && mutable.value.captureMode) {
-                    mutable.update { it.copy(captureMode=false,notice=if(measured==null)"Photo saved · location unknown" else "Photo and measured location saved") }
+                    mutable.update { it.copy(captureMode=false,notice=if(location.point==null)"Photo saved · location unknown" else "Photo and measured location saved") }
                     describe(memory,outingId)
                 }
             }

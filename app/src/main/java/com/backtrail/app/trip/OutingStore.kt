@@ -40,7 +40,10 @@ class OutingStore private constructor(context: Context) {
         withContext(Dispatchers.IO) {
             lock.withLock {
                 check(loadError.value==null) { "Stored data could not be loaded; refusing to overwrite it." }
-                val next=change(mutable.value.find { it.id==id })
+                val previous=mutable.value.find { it.id==id }
+                val next=change(previous)
+                require(next.id==id) { "An outing mutation cannot change its owner." }
+                if(next==previous) return@withLock
                 val items=(mutable.value.filterNot { it.id==id }+next).sortedByDescending { it.startedAt }
                 val output=file.startWrite()
                 try { output.write(json.encodeToString(items).toByteArray()); file.finishWrite(output); mutable.value=items }

@@ -59,5 +59,6 @@ A physical Pixel trial is the next gate, not a property proven by compilation.
 EVIDENCE
 PREPARATION-STATUS.md records the completed preparation. MODEL-READINESS.md and
 model-assets.json record exact asset integrity and actual host inference. No
-physical phone execution is claimed. Organizer requirements and sources are in
+physical offline inference is claimed. Event-time install/transfer and integration
+results are in DEVICE-INTEGRATION.txt. Organizer requirements and sources are in
 EVENT-RULES-CHECK.md. Advance preparation is recorded before the event.

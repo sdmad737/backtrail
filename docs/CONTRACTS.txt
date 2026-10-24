@@ -13,7 +13,11 @@ ordered GPS points with segment IDs, memories and an independent retraceIndex.
 A process restart preserves data but pauses a previously recording outing.
 A failed/corrupt metadata load preserves its file and refuses silent overwrite.
 TrailPoint carries position, accuracy, wall time and segment; the location service
-also checks Android monotonic sample age before admission. A missing/poor fix
+also checks Android monotonic sample age/order before admission. Callbacks and
+atomic writes are serialized; invalid coordinates/accuracy are rejected. Provider
+interruptions and >15-second callback gaps start disconnected segments. Stationary
+GPS callbacks keep guidance fresh; recorded density remains 2m or 10 seconds.
+A provider-generation check prevents a pre-outage fix reappearing after recovery. A missing/poor fix
 saves a photo with unknown location; no cached or invented coordinate is attached.
 Memory stores original photo, exact note, optional saved fix/route index,
 Gemma description/provenance and opt-in pickup state. Files never go in UI bitmaps.
@@ -59,7 +63,9 @@ acceptable observations are needed at leave and return thresholds. Notification
 transition is persisted before delivery, preventing repeated alerts on restart.
 Find recognition does not imply collection. User explicitly marks collected.
 Departure alerts operate only in Retrace, with distance/accuracy gating, repeated
-observations, hysteresis and cooldown. Find temporarily suppresses them.
+observations, hysteresis and cooldown. Find resets departure evidence; resuming requires fresh evidence for the current
+target. The monotonic cooldown survives a Find detour. Committed pickup notices
+are delivered even if GPS is disabled during the storage write.
 Time reminder is user requested, inexact, replaces the previous time reminder and
 is not restored after reboot. Notification permission/channel state still governs
 delivery. No guarantee of real-world timing is established by this implementation.
@@ -67,4 +73,6 @@ delivery. No guarantee of real-world timing is established by this implementatio
 EVIDENCE
 JVM route-state, stale-result and proposal-validation tests; Explore pure-state
 checks; emulator camera/persistence/GPS; browser/iPhone Simulator render checks.
-No physical Pixel or native iOS evidence. See PREPARATION-STATUS.md for exact limits.
+Baseline APK install and model-to-Downloads integrity were verified on a Pixel.
+Private import, offline inference and physical navigation remain unverified. See
+DEVICE-INTEGRATION.txt for current checks and PREPARATION-STATUS.md for prior work.

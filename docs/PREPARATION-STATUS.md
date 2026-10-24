@@ -2,6 +2,8 @@
 
 Prepared on the Mac before the October 24, 2026 event. This is a substantial hackathon starting point, **not a finished or field-validated navigation product**. The complete latest brief was read and preserved in [TRAVIS-BUILD-BRIEF.txt](TRAVIS-BUILD-BRIEF.txt); AR is core. Existing Android work was preserved. This records the preparation-time evidence. For the subsequent team handoff, use `origin/main` and [UI quick start](UI-START.md). No event submission has been made.
 
+For work completed during the event, see [device integration](DEVICE-INTEGRATION.txt) and [Tensor G6 candidate](TENSOR-G6-HANDOFF.txt). The preparation-time results below are historical. The baseline APK and Downloads model copy have since reached the Pixel; private import and offline inference remain unverified.
+
 ## Open and run
 
 - **Interactive Explore:** [running preview](http://127.0.0.1:4174). It is a local server on this Mac. To restart: `python3 -m http.server 4173 --directory explore --bind 127.0.0.1` from the repository root, then open port 4173. [Walkthrough](../explore/README.md).

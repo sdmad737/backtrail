@@ -50,8 +50,8 @@ python3 scripts/pixel-setup.py
 
 After the in-app import described below, verify the persistent copy with
 `python3 scripts/pixel-setup.py --verify-private`. Neither command claims offline
-inference. `--verify-host-only` performs no device operations. The helper's host
-verification has been run; its physical-device path awaits a successful ADB slot.
+inference. `--verify-host-only` performs no device operations. The helper's host verification and physical install/Downloads transfer path have
+passed. The later private-copy check failed; complete the in-app import and retry it.
 
 Only the integration owner installs the shared demo app. No physical phone was connected during preparation. Obtain a Pixel, USB data cable and power bank; enable USB debugging and authorize this Mac. Record model, OS, RAM and storage. Leave at least8GB free for the transfer copy, verified app-private copy and runtime cache. The host smoke test does not predict Pixel timing or thermal behavior.
 
@@ -100,6 +100,8 @@ ANDROID_AVD_HOME="$PWD/.tooling/avd" "$ANDROID_HOME/emulator/emulator" -avd trav
 adb -s emulator-5554 install -r app/build/outputs/apk/debug/app-debug.apk
 adb -s emulator-5554 shell am start -n com.backtrail.app/.MainActivity
 ```
+
+Run `python3 scripts/emulator-recording-smoke.py --serial emulator-5554` after installing the APK. This grants test permissions and creates a QA outing using injected coordinates and a virtual-camera photo; it ends a previously active outing but preserves existing records. It refuses physical device serials and saves its receipt under ignored `local-data/gps-integration/`.
 
 Model inference was not tested in the emulator. GPS injections and its virtual camera are simulated hardware inputs, not physical sensor measurements.
 

@@ -22,6 +22,16 @@ class TrailMathTest {
         assertFalse(TrailMath.canConfirm(point.copy(accuracy=80f),point,10_000))
         assertTrue(TrailMath.canConfirm(point,point,10_000))
     }
+    @Test fun nonFiniteAccuracyCannotAuthorizeGuidance() {
+        val point=p(0,accuracy=Float.NaN)
+        assertNotEquals(FixQuality.USABLE,TrailMath.quality(point,10_000))
+        assertFalse(TrailMath.canConfirm(point,p(0),10_000))
+    }
+    @Test fun coordinatesOutsideTheEarthCannotAuthorizeGuidance() {
+        val point=p(0,lat=91.0)
+        assertNotEquals(FixQuality.USABLE,TrailMath.quality(point,10_000))
+        assertFalse(TrailMath.canConfirm(point,point,10_000))
+    }
     @Test fun compassWraparoundUsesShortRotation() {
         assertEquals(2.0,TrailMath.delta(1.0,359.0),.001)
         assertEquals(-2.0,TrailMath.delta(359.0,1.0),.001)
