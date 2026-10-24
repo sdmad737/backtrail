@@ -153,6 +153,35 @@ Same verdicts as GPU at roughly a third of the time. The mismatched pairs again 
 invented "matching" features ("buildings", "road"), and the matched pair lists a bus as a
 conflict, so the reasons still need the UI rule above. Real photo pairs are still needed.
 
+### 2026-10-24 ~14:20 · first real photos · NPU (G6 build)
+Four photos taken on the Pixel's camera at 14:14 along one garden route (private property:
+kept on the device and the Mac only, never committed): `pergola-a`, `pine-a` (pine tree,
+pergola beam overhead), `gatepath-a` (tiled path toward an iron gate), `gateback-a` (through
+the gate, looking back up the same path). Four different spots, so every pair is
+"different place". Resized to 1536 px like the app's importer.
+
+**describe** (one run each, 6.6–8.7 s warm): "Wooden pergola structure over patio" (pergola,
+patio paving, water feature, tree trunk, planter); "Dense evergreen tree in centre";
+"Stone walkway and lamp post"; "Stone archway and walkway". Some features are malformed
+location fragments ("Foreground, extending into the middle ground").
+
+**compare**, 6 different-place pairs:
+
+| Prompt | Correct | False "same spot" | Unsure | Generate ms (warm) |
+|---|---|---|---|---|
+| v1 | 0 | **2** (gateback/gatepath, pergola/pine) | 4 | 4,498–10,820 |
+| v2 (shared materials are not evidence) | **6** | 0 | 0 | 7,931–10,822 |
+
+Both v1 false matches were adjacent spots sharing paving, pergola and trees.
+v2 on the synthetic set: the true pair (junction-a vs its crop) dropped from SUPPORTS_MATCH
+to INSUFFICIENT_EVIDENCE; the porch pairs stayed INSUFFICIENT_EVIDENCE. **v2 trades missed
+matches for no false matches; kept as default** because a wrong "same spot" misleads a walker
+and "not sure" costs one more look. Real same-spot pairs are needed to measure the miss rate.
+
+**Photo embeddings** (NPU, 227–309 ms each): different-spot cosines 0.836–0.903, highest for
+gateback/gatepath (same path, opposite directions). Same-spot pairs needed before any
+threshold can be set.
+
 ## Open questions
 
 - EmbeddingGemma latency on device, and whether photo embeddings separate same-place from

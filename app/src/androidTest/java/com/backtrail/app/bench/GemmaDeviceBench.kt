@@ -119,10 +119,12 @@ class GemmaDeviceBench {
         val vision = InferenceBackend.valueOf(arg("vision", backend.name))
         val tag = arg("tag", "compare-${backend.name.lowercase()}")
         val limit = arg("pairs", "40").toInt()
+        val comparePrompt = if (arg("prompt", "v2") == "v1") LocalVisionService.COMPARE_PROMPT_V1 else LocalVisionService.COMPARE_PROMPT
         var lastRaw: String? = null
         var lastTrace: InferenceTrace? = null
         val service = LocalVisionService(
             model, context.cacheDir, backend, vision, nativeLibraryDir,
+            comparePrompt = comparePrompt,
             rawOutputSink = { lastRaw = it },
             traceSink = { lastTrace = it },
         )
