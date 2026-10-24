@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.*
 class TravisViewModel(app:Application):AndroidViewModel(app) {
     private val store=OutingStore.get(app)
     private val models=ModelStore(app)
-    private val inference=LocalVisionService(models.file,app.cacheDir)
+    private val inference by lazy { val (file,backend)=models.preferred?:(models.file to InferenceBackend.GPU);LocalVisionService(file,app.cacheDir,backend,nativeLibraryDir=app.applicationInfo.nativeLibraryDir) }
     private val mutable=MutableStateFlow(TravisUiState())
     val state=mutable.asStateFlow()
     val camera=CameraCaptureController()
@@ -221,7 +221,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             }
         }
     }
-    override fun onCleared() { camera.close();super.onCleared() }
+    override fun onCleared() { camera.close();inference.close();super.onCleared() }
     private fun ask(query:String) {
         if(query.isBlank()) return
         invalidate();val snapshot=mutable.value
