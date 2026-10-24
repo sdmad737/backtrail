@@ -94,7 +94,7 @@ LiteRT-LM 0.18.0 here (0.18.1 was published 2026-10-20; untested).
   gap between first and second is the usable signal. Current `SpotRetriever` floor (0.30) is
   therefore meaningless, and "no match" must not be claimed from embeddings alone.
 
-### 2026-10-24 14:05 · bench · compare · GPU · `052f14b`
+### 2026-10-24 ~14:03 · bench · compare · GPU · `052f14b`
 Synthetic smoke set, not accuracy evidence: `junction-a` (sample photo), `junction-b`
 (a crop of the same photo), `porch-a` (unrelated sample photo of a cat on a porch).
 
@@ -110,7 +110,7 @@ conflicts. **The feature lists are not reliable evidence on non-matches**: the U
 reasons only with SUPPORTS_MATCH, and a match should also require photo-embedding agreement
 once that is calibrated on real pairs.
 
-### 2026-10-24 14:15 · Tensor G6 accelerator enabled · NPU backend
+### 2026-10-24 ~14:07 · Tensor G6 accelerator enabled · NPU backend
 
 Root causes, in order: (1) no `libLiteRtDispatch_GoogleTensor.so` in the APK; (2) the copy
 from litert-samples `sample_app_tpu` was built for an older runtime ("Unsupported dispatch
@@ -141,7 +141,7 @@ too small to act on without Gemma). Unanswerable queries still score 0.69–0.71
 
 **Decision: NPU for both models**, GPU as fallback.
 
-### 2026-10-24 14:20 · compare · NPU (G6 build) · same synthetic smoke set
+### 2026-10-24 ~14:08 · compare · NPU (G6 build) · same synthetic smoke set
 
 | Pair | Expected | Verdict | Generate ms |
 |---|---|---|---|
