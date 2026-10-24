@@ -1,9 +1,9 @@
 CURRENT TRAVIS HANDOFF — OCTOBER 24, 2026
 The app is already implemented through preparation commit a58a501. Start all
 workstreams from a shared checkout containing that commit and the updated role
-prompts. The latest preparation/onboarding work is local on the lead's Mac until
-explicitly shared; do not assume GitHub main contains it. Each teammate needs a
-separate clone/worktree. Their local tools/model files are not supplied by Git.
+prompts. Use origin/main as the shared baseline. Each teammate needs a separate
+clone/worktree. Their local tools/model files are not supplied by Git. UI teammates
+start with UI-START.md and can run Explore immediately without model weights.
 
 Current roles and prompts:
 - Project lead/user: device, navigation and integration; prompts/03-device-integration.txt.

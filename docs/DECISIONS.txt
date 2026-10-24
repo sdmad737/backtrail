@@ -1,4 +1,17 @@
 TRAVIS — VERIFIED PREPARATION, OCTOBER 24, 2026
+TEAM HANDOFF UPDATE
+The user authorized publishing the prepared foundation for teammate UI work.
+Shared baseline: origin/main; ongoing lead checkout: codex/bootstrap; teammate 2
+branches to codex/ui in a separate clone and follows UI-START.md / prompts/01-ui.txt.
+Keep the original working Android app and history. Weights, tools and APKs stay
+outside Git. A physical Pixel is now USB-connected; installation and offline
+inference have not been verified. Earlier preparation evidence below is historical.
+Before publication, a fresh export of tracked source built successfully using the
+Mac's cached JDK/SDK/Gradle dependencies: assembleDebug, 17 unit tests (0 failures),
+and lintDebug (0 errors, 22 warnings). Explore state/syntax checks also passed.
+This verifies the source without project-local .tooling or local.properties;
+first-time dependency download on a teammate's computer remains their setup step.
+
 Integration owner: this local preparation session. Previous bootstrap evidence is
 preserved verbatim in history/BOOTSTRAP-DECISIONS.txt, including its old limitations.
 

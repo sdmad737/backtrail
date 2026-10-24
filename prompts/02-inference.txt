@@ -7,9 +7,9 @@ START HERE
 1. Inspect the repository, git status, branch, toolchains and attached devices.
    Preserve existing work. Use your own clone/worktree on codex/inference; never
    switch another active session's checkout. Verify a58a501 is an ancestor of
-   your checkout (the prepared application baseline). It was local on the lead's
-   Mac at handoff; a GitHub clone may be older. If it is missing, report that
-   exact blocker and obtain the current branch before implementing against it.
+   your checkout (the prepared application baseline). Start from origin/main;
+   if the ancestor is missing, fetch the shared baseline before implementing
+   against an outdated handoff. Keep your existing uncommitted work intact.
 2. Read AGENTS.md, docs/TRAVIS-BUILD-BRIEF.txt completely, docs/PRODUCT.txt,
    docs/CONTRACTS.txt, docs/PREPARATION-STATUS.md and docs/DECISIONS.txt. For model
    transfer/runtime details read docs/SETUP.md, docs/MODEL-READINESS.md and

@@ -1,18 +1,20 @@
-TRAVIS — PRE-EVENT HANDOFF
+TRAVIS — TEAM STARTER
 
-Start with README.md and docs/PREPARATION-STATUS.md.
+Start with README.md and docs/PREPARATION-STATUS.md. UI teammates on another
+laptop: follow docs/UI-START.md, then give prompts/01-ui.txt to your Codex.
 
 1. Experience the polished local Explore demo:
    python3 -m http.server 4173 --directory explore --bind 127.0.0.1
    Open http://127.0.0.1:4173
-2. Build the existing native Android app:
+2. On the prepared Mac, build the existing native Android app:
    source .tooling/env.sh
    ./gradlew --offline :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
-3. Obtain the Pixel and follow docs/SETUP.md for model transfer, full checksum
+   A fresh clone needs its own JDK/Android SDK; see docs/UI-START.md.
+3. Follow docs/SETUP.md on the Pixel for model transfer, full checksum
    verification, import and the physical offline acceptance flow.
 
 Gemma4 E2B is downloaded and fully verified on this Mac. Real text/image/retrieval
-inference ran locally with network denied. No physical phone was connected; phone
+inference ran locally with network denied. The Pixel is now connected; phone
 installation and phone-offline proof are pending. Do not conflate these milestones.
 
 The app has GPS recording, saved original photos, local memory inference, offline
@@ -24,6 +26,6 @@ Product: docs/PRODUCT.txt. Contracts: docs/CONTRACTS.txt. Exact evidence/ownersh
 docs/DECISIONS.txt. Older bootstrap documents: docs/history/.
 
 Private GitHub repository remains https://github.com/sdmad737/backtrail.
-Prepared changes are local; this pass has not published or submitted anything.
+Use origin/main as the shared baseline; no event submission is made by this handoff.
 Use separate branches/worktrees; integration owner alone installs the shared demo.
 Weights, tools, credentials and generated outputs remain excluded from commits.

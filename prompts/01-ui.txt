@@ -4,10 +4,10 @@ of making the existing native app clear, polished and convincing on the Pixel.
 
 START HERE
 1. Inspect the repository, branch, git status and available toolchains. Preserve
-   existing work. Use a separate clone/worktree on codex/ui. Verify your checkout
-   contains preparation commit a58a501 and the current role prompts; the latest
-   work was local on the lead's Mac at handoff and GitHub may be older. Obtain the
-   current branch if needed before editing against an outdated baseline.
+   existing work. Read docs/UI-START.md and use a separate clone/worktree on
+   codex/ui, starting from origin/main. Verify your checkout contains preparation
+   commit a58a501 and the current role prompts. If that ancestor is missing,
+   fetch the shared baseline before editing against an outdated handoff.
 2. Read AGENTS.md, docs/TRAVIS-BUILD-BRIEF.txt completely, docs/PRODUCT.txt,
    docs/CONTRACTS.txt, docs/PREPARATION-STATUS.md and docs/DECISIONS.txt. Read
    docs/SETUP.md before building or requesting a physical-device test.

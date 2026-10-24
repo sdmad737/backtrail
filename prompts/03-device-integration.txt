@@ -7,10 +7,9 @@ START HERE
 1. Inspect the repository, git status, branches/worktrees, toolchains and attached
    devices. Preserve existing work. Use your own clone/worktree on codex/device;
    never switch another active session's checkout. Verify a58a501 is an ancestor
-   of your checkout (the prepared application baseline). It was local on the
-   lead's Mac at handoff; GitHub may still have the older bootstrap. Obtain the
-   current branch before integration if it is missing. Do not assume main is
-   current or reset it to match your checkout.
+   of your checkout (the prepared application baseline). Start from origin/main;
+   if the ancestor is missing, fetch the shared baseline before integration.
+   Preserve ongoing work on the lead's existing codex/bootstrap checkout.
 2. Read AGENTS.md, docs/TRAVIS-BUILD-BRIEF.txt completely, docs/PRODUCT.txt,
    docs/CONTRACTS.txt, docs/PREPARATION-STATUS.md, docs/DECISIONS.txt and docs/SETUP.md.
    For model integrity use docs/model-assets.json and docs/MODEL-READINESS.md.

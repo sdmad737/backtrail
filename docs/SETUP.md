@@ -38,6 +38,21 @@ The APK bundles 121 USGS raster tiles for the venue area, zoom12–16, 2,785,869
 
 ## First physical phone slot
 
+From this checkout, the helper below verifies the host APK/model, selects one
+authorized physical Pixel, checks storage, installs without clearing app data,
+transfers the model and checks its full device SHA-256. It never targets an
+emulator. Receipts go to ignored `local-data/pixel/`. Run it in your Mac Terminal
+if the agent's permission runner cannot start ADB:
+
+```sh
+python3 scripts/pixel-setup.py
+```
+
+After the in-app import described below, verify the persistent copy with
+`python3 scripts/pixel-setup.py --verify-private`. Neither command claims offline
+inference. `--verify-host-only` performs no device operations. The helper's host
+verification has been run; its physical-device path awaits a successful ADB slot.
+
 Only the integration owner installs the shared demo app. No physical phone was connected during preparation. Obtain a Pixel, USB data cable and power bank; enable USB debugging and authorize this Mac. Record model, OS, RAM and storage. Leave at least8GB free for the transfer copy, verified app-private copy and runtime cache. The host smoke test does not predict Pixel timing or thermal behavior.
 
 ```sh

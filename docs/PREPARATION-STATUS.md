@@ -1,6 +1,6 @@
 # Travis — preparation handoff
 
-Prepared on the Mac before the October 24, 2026 event. This is a substantial hackathon starting point, **not a finished or field-validated navigation product**. The complete latest brief was read and preserved in [TRAVIS-BUILD-BRIEF.txt](TRAVIS-BUILD-BRIEF.txt); AR is core. Existing Android work was preserved. Changes are local, with no new publication or event submission.
+Prepared on the Mac before the October 24, 2026 event. This is a substantial hackathon starting point, **not a finished or field-validated navigation product**. The complete latest brief was read and preserved in [TRAVIS-BUILD-BRIEF.txt](TRAVIS-BUILD-BRIEF.txt); AR is core. Existing Android work was preserved. This records the preparation-time evidence. For the subsequent team handoff, use `origin/main` and [UI quick start](UI-START.md). No event submission has been made.
 
 ## Open and run
 
