@@ -45,9 +45,18 @@ class AssistantTest {
         rejects { AssistantValidator.tripAnswer(raw, idMap) }
     }
 
-    @Test fun `grounded flag must agree with citations`() {
-        rejects { AssistantValidator.tripAnswer("""{"answer":"x","sourceIds":[],"grounded":true}""", idMap) }
-        rejects { AssistantValidator.tripAnswer("""{"answer":"x","sourceIds":["s1"],"grounded":false}""", idMap) }
+    @Test fun `grounding needs a citation, and an ungrounded answer may cite what it checked`() {
+        assertFalse(AssistantValidator.tripAnswer("""{"answer":"x","sourceIds":[],"grounded":true}""", idMap).grounded)
+        val checked = AssistantValidator.tripAnswer("""{"answer":"x","sourceIds":["s1"],"grounded":false}""", idMap)
+        assertFalse(checked.grounded)
+        assertEquals(1, checked.sourceIds.size)
+    }
+
+    @Test fun `leaked short ids and schema fields are scrubbed from the answer`() {
+        val raw = """{"answer":"Spot s1 had a lamp post. sourceIds: [\"s1\"]","sourceIds":["s1"],"grounded":false}"""
+        val names = mapOf("s1" to "Stone walkway and lamp post")
+        assertEquals("\"Stone walkway and lamp post\" had a lamp post.", AssistantValidator.tripAnswer(raw, idMap, names).answer)
+        assertEquals("You can close it at a saved spot.", AssistantValidator.cleanAnswer("You can close it at s9.", names))
     }
 
     @Test fun `trip answer rejects blank overlong fenced unknown-key and malformed output`() {

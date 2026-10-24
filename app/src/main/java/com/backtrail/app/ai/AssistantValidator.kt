@@ -6,14 +6,28 @@ import kotlinx.serialization.json.Json
 object AssistantValidator {
     private val json = Json { ignoreUnknownKeys = false; isLenient = false; coerceInputValues = false }
 
-    /** [idMap] maps the short ids the model saw (s1..sN) to real memory ids. */
-    fun tripAnswer(raw: String, idMap: Map<String, String>): TripAnswer {
+    /**
+     * [idMap] maps the short ids the model saw (s1..sN) to real memory ids; [names] maps them
+     * to the titles shown to the walker, so a leaked "spot s1" reads as the place's name.
+     *
+     * Grounded means "answered from a cited spot": an answer claiming grounding with no
+     * citation is downgraded. An ungrounded answer may still cite the spots it looked at
+     * (Pixel run: "s1 had a lamp post, but none mention a stone lantern").
+     */
+    fun tripAnswer(raw: String, idMap: Map<String, String>, names: Map<String, String> = emptyMap()): TripAnswer {
         val parsed = decode<TripAnswerJson>(raw)
         answerText(parsed.answer, max = 600)
         require(parsed.sourceIds.size <= idMap.size && parsed.sourceIds.all { it in idMap })
-        // An answer that claims grounding must cite something; an ungrounded one must not.
-        require(parsed.grounded == parsed.sourceIds.isNotEmpty())
-        return TripAnswer(parsed.answer.trim(), parsed.sourceIds.distinct().map { idMap.getValue(it) }, parsed.grounded)
+        val cited = parsed.sourceIds.distinct()
+        return TripAnswer(cleanAnswer(parsed.answer, names), cited.map { idMap.getValue(it) }, parsed.grounded && cited.isNotEmpty())
+    }
+
+    private val LEAKED_FIELDS = Regex("\\s*(sourceIds|grounded)\\s*:.*$", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+    private val SHORT_ID = Regex("\\b(?:[Ss]pot\\s+)?s(\\d+)\\b")
+
+    internal fun cleanAnswer(answer: String, names: Map<String, String>): String {
+        val withoutFields = answer.replace(LEAKED_FIELDS, "").trim()
+        return withoutFields.replace(SHORT_ID) { m -> names["s${m.groupValues[1]}"]?.let { "\"$it\"" } ?: "a saved spot" }.trim()
     }
 
     fun photoAnswer(raw: String): PhotoAnswer {
