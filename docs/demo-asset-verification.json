@@ -1,0 +1,134 @@
+{
+  "verified_at_utc": "2026-10-24T23:03:02.037192+00:00",
+  "scope": "Full Mac asset byte and SHA-256 verification against freshly fetched pinned publisher metadata; no new phone or runtime execution.",
+  "assets": [
+    {
+      "name": "gemma-4-E2B-it.litertlm",
+      "path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it.litertlm",
+      "bytes": 2588147712,
+      "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+      "header_hex": "4c49544552544c4d0100000005000000",
+      "source": "https://huggingface.co/api/models/litert-community/gemma-4-E2B-it-litert-lm/revision/6e5c4f1e395deb959c494953478fa5cec4b8008f?blobs=true",
+      "revision": "6e5c4f1e395deb959c494953478fa5cec4b8008f",
+      "publisher_bytes": 2588147712,
+      "publisher_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+      "license": "apache-2.0",
+      "model_card_source": "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/blob/6e5c4f1e395deb959c494953478fa5cec4b8008f/README.md",
+      "verified": true,
+      "publisher_model_card_download": "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/6e5c4f1e395deb959c494953478fa5cec4b8008f/README.md",
+      "components_inspection": {
+        "file": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it.litertlm",
+        "input_modalities": {
+          "text": true,
+          "vision": true,
+          "audio": true,
+          "video": false
+        },
+        "max_vision_tokens": 280,
+        "inspection_only": true
+      },
+      "bundle_components": [
+        "tokenizer/metadata",
+        "text model",
+        "vision encoder/adapter",
+        "audio components (unused by live product)"
+      ],
+      "component_evidence": "LiteRT-LM ModelInfo reports text, image and audio; unified bundle structure was inspected during preparation. The generic bundle now also executed text and image with network denied using only this model path.",
+      "external_model_companions_required": []
+    },
+    {
+      "name": "gemma-4-E2B-it_Google_Tensor_G6.litertlm",
+      "path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it_Google_Tensor_G6.litertlm",
+      "bytes": 3313938293,
+      "sha256": "f86c7c19c736e9307267946edef58b0a45494a9127036d54d90dd6b7617c95b7",
+      "header_hex": "4c49544552544c4d0100000006000000",
+      "source": "https://huggingface.co/api/models/litert-community/gemma-4-E2B-it-litert-lm/revision/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1?blobs=true",
+      "revision": "b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1",
+      "publisher_bytes": 3313938293,
+      "publisher_sha256": "f86c7c19c736e9307267946edef58b0a45494a9127036d54d90dd6b7617c95b7",
+      "license": "apache-2.0",
+      "model_card_source": "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/blob/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1/README.md",
+      "verified": true,
+      "publisher_model_card_download": "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1/README.md",
+      "components_inspection": {
+        "file": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it_Google_Tensor_G6.litertlm",
+        "input_modalities": {
+          "text": true,
+          "vision": true,
+          "audio": true,
+          "video": false
+        },
+        "max_vision_tokens": 280,
+        "inspection_only": true
+      },
+      "bundle_components": [
+        "tokenizer/metadata",
+        "text model",
+        "vision encoder/adapter",
+        "audio components (unused by live product)"
+      ],
+      "component_evidence": "LiteRT-LM ModelInfo reports text, image and audio; unified bundle structure was inspected during preparation. The generic bundle now also executed text and image with network denied using only this model path.",
+      "external_model_companions_required": []
+    },
+    {
+      "name": "litertlm-android-0.18.0.aar",
+      "path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/.tooling/gradle-home/caches/modules-2/files-2.1/com.google.ai.edge.litertlm/litertlm-android/0.18.0/e5f46fb1d0aafce5d2f27e8b3c7b9dea45de6f77/litertlm-android-0.18.0.aar",
+      "bytes": 20905807,
+      "sha256": "706cbb8a87739b2818111bf3a19a78b8f7781586d10f80adf3415581fab7595f",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litertlm/litertlm-android/0.18.0/litertlm-android-0.18.0.aar",
+      "publisher_bytes": 20905807,
+      "publisher_sha256": "706cbb8a87739b2818111bf3a19a78b8f7781586d10f80adf3415581fab7595f",
+      "verified": true,
+      "native_libraries": [
+        "jni/arm64-v8a/liblitertlm_jni.so",
+        "jni/x86_64/liblitertlm_jni.so"
+      ],
+      "license_metadata_source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litertlm/litertlm-android/0.18.0/litertlm-android-0.18.0.pom",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ]
+    },
+    {
+      "name": "litert-npu-runtime-google-tensor-2.3.0.aar",
+      "path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/.tooling/gradle-home/caches/modules-2/files-2.1/com.google.ai.edge.litert/litert-npu-runtime-google-tensor/2.3.0/5269c92025c41d31fcaf6aa66f2ffac43b275f45/litert-npu-runtime-google-tensor-2.3.0.aar",
+      "bytes": 672727,
+      "sha256": "5f38ab3de4b99ef75edf13c595cf0c090b10a82d9697f5b55703409757e786f7",
+      "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert-npu-runtime-google-tensor/2.3.0/litert-npu-runtime-google-tensor-2.3.0.aar",
+      "publisher_bytes": 672727,
+      "publisher_sha256": "5f38ab3de4b99ef75edf13c595cf0c090b10a82d9697f5b55703409757e786f7",
+      "verified": true,
+      "native_libraries": [
+        "jni/arm64-v8a/libLiteRtCompilerPlugin_google_tensor.so",
+        "jni/arm64-v8a/libLiteRtDispatch_GoogleTensor.so"
+      ],
+      "license_metadata_source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert-npu-runtime-google-tensor/2.3.0/litert-npu-runtime-google-tensor-2.3.0.pom",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt",
+          "distribution": "repo"
+        }
+      ]
+    }
+  ],
+  "all_verified": true,
+  "phone_install_verified_this_pass": false,
+  "phone_offline_execution_verified_this_pass": false,
+  "embedding_model_required": false,
+  "runtime_pair": {
+    "text_vision_runtime": "LiteRT-LM 0.18.0",
+    "tensor_dispatch_runtime": "2.3.0",
+    "generic_backend": "GPU",
+    "g6_text_backend": "NPU",
+    "g6_vision_backend": "NPU (configured, existing teammate measurement)",
+    "compatibility_evidence": "Generic Mac text/image tested; G6 Pixel evidence is the existing teammate INFERENCE-LOG.md, not independently executed in this lane."
+  },
+  "proof_receipts": {
+    "host_first_attempt": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/local-data/demo-runtime/host-chronology-smoke-first.json",
+    "host_final_attempt": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/local-data/demo-runtime/host-chronology-smoke.json"
+  }
+}

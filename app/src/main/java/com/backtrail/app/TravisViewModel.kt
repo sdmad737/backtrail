@@ -53,9 +53,16 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
     private val recentFixes=mutableListOf<TrailPoint>()
     init {
         viewModelScope.launch { store.outings.collect { items -> liveOuting=items.find { it.id==currentId } ?: Outing();refresh() } }
-        viewModelScope.launch { combine(LiveSensors.fix,LiveSensors.heading,LiveSensors.headingReliable,LiveSensors.failure) { _,_,_,_->Unit }.collect { refresh() } }
+        viewModelScope.launch { combine(LiveSensors.fix,LiveSensors.failure) { _,_->Unit }.collect { refresh() } }
+        viewModelScope.launch { combine(LiveSensors.heading,LiveSensors.headingReliable) { heading,reliable->heading to reliable }.collect { (heading,reliable)->
+            if(!mutable.value.replay)mutable.update { it.copy(heading=heading,headingReliable=reliable) }
+        } }
         viewModelScope.launch { store.loadError.filterNotNull().collect { announce(it) } }
-        viewModelScope.launch { while(isActive) { delay(1000);refresh() } }
+        viewModelScope.launch { while(isActive) {
+            delay(1000)
+            val state=mutable.value
+            if(mutable.subscriptionCount.value>0 && !state.replay && TrailMath.quality(state.fix,System.currentTimeMillis())!=state.fixQuality)refresh()
+        } }
         refreshPermissions()
     }
     fun refreshPermissions() {

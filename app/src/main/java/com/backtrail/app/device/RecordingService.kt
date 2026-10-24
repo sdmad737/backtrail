@@ -98,8 +98,9 @@ class RecordingService:Service(),LocationListener {
             val changed=observation.outing
             if(fix==null) return@mutate changed
             // State is persisted before posting; reopening cannot repeat the same alert.
+            val notificationsAllowed=TravisNotifications.allowed(this@RecordingService)
             val memories=changed.memories.map { memory ->
-                val updated=reminders.observe(memory,fix,now,TravisNotifications.allowed(this@RecordingService))
+                val updated=reminders.observe(memory,fix,now,notificationsAllowed)
                 if(memory.pickup!=PickupPhase.NOTIFIED && updated.pickup==PickupPhase.NOTIFIED) newlyNotified.add(updated)
                 if(memory.arrival!=ArrivalPhase.NOTIFIED && updated.arrival==ArrivalPhase.NOTIFIED) newlyArrived.add(updated)
                 updated

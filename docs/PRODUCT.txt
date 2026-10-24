@@ -65,7 +65,8 @@ EVIDENCE
 PREPARATION-STATUS.md records the completed preparation. MODEL-READINESS.md and
 model-assets.json record exact asset integrity and actual host inference.
 INFERENCE-LOG.md records the inference teammate's Pixel/NPU benchmark results;
-these are separate from integrated live-app physical acceptance, still pending.
+these are separate from the integrated offline NPU text retrieval now verified.
+DEMO.txt records the latest build, Pixel evidence and remaining physical checks.
 Event-time install/transfer and integration results are in DEVICE-INTEGRATION.txt.
 Organizer requirements and sources are in
 EVENT-RULES-CHECK.md. Advance preparation is recorded before the event.

@@ -116,6 +116,7 @@ def pickup_notification(memory_id):
 
 try:
     adb("shell", "am", "force-stop", "com.backtrail.app")
+    adb("shell", "cmd", "statusbar", "collapse")
     adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
     adb("shell", "wm", "dismiss-keyguard")
     adb("shell", "cmd", "location", "set-location-enabled", "true")
@@ -125,6 +126,9 @@ try:
     before = outings()
     (OUTPUT / "before.json").write_text(json.dumps(before, indent=2))
     tree = ui()
+    if node("Close guidance", tree) is not None:
+        tap("Close guidance")
+        tree = ui()
     if node("End", tree) is not None:
         tap("End")
     tree = ui()
@@ -199,10 +203,10 @@ try:
     wait_for(lambda: active()["retraceIndex"] is not None, "Retrace cursor was not persisted")
     cursor = active()["retraceIndex"]
     tap("Saved places")
-    tap("Find in AR")
+    tap("Find in AR · direct bearing")
     check("Find preserves the retrace cursor", active()["retraceIndex"] == cursor)
     tree = ui()
-    check("Find displays the original saved landmark", node("Original saved landmark", tree) is not None)
+    check("Find displays the original saved landmark", node("Original photo of the next saved checkpoint", tree) is not None)
     check("Find clears the previous retrace notice", node("Following the recorded route in reverse order.", tree) is None)
     (OUTPUT / "find-ar.png").write_bytes(adb("exec-out", "screencap", "-p", binary=True))
     tap("Map")
@@ -213,6 +217,20 @@ try:
     tap("Close guidance")
     services = adb("shell", "dumpsys", "activity", "services", "com.backtrail.app")
     check("Closing ended-outing guidance stops recording service", "ServiceRecord" not in services)
+    if args.pickup:
+        # Android clears package notifications on force-stop, so exercise the real
+        # PendingIntent before the intentional process-relaunch test below.
+        adb("shell", "cmd", "statusbar", "expand-notifications")
+        time.sleep(.5)
+        tap(report["pickup_notification"]["title"])
+        wait_for(lambda: active().get("guidance", {}).get("memoryId") == memory_id,
+                 "Notification tap did not select its saved memory")
+        check("Actual Android notification tap opens its persisted outing and memory",
+              active()["guidance"]["mode"] == "FIND_LANDMARK" and
+              node("Original photo of the next saved checkpoint", ui()) is not None)
+        check("Notification tap preserves independent retrace progress", active()["retraceIndex"] == cursor)
+        (OUTPUT / "notification-destination.png").write_bytes(adb("exec-out", "screencap", "-p", binary=True))
+        tap("Close guidance")
     saved = active()
     adb("shell", "am", "force-stop", "com.backtrail.app")
     adb("shell", "am", "start", "-n", "com.backtrail.app/.MainActivity")

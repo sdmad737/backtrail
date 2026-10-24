@@ -1,97 +1,292 @@
 package com.backtrail.app.ui
 
 import android.graphics.BitmapFactory
+import android.util.LruCache
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.*
 import com.backtrail.app.contracts.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlin.math.*
 
-private fun world(lat:Double,lon:Double,z:Int):Pair<Double,Double> {
-    val n=256.0*2.0.pow(z)
-    val y=(1.0-asinh(tan(Math.toRadians(lat.coerceIn(-85.0,85.0))))/PI)/2*n
-    return (lon+180)/360*n to y
-}
-/** Raster tiles, labels and attribution are packaged. No SDK or network fallback. */
-@Composable fun OfflineTrailMap(state:TravisUiState,modifier:Modifier=Modifier) {
-    val assets=LocalContext.current.assets
-    var zoom by remember(state.outing.id) { mutableIntStateOf(if (state.outing.points.isEmpty()) 15 else 17) }
-    var pan by remember(state.outing.id) { mutableStateOf(Offset.Zero) }
-    val tileZoom = zoom.coerceAtMost(16)
-    val tiles by produceState<Map<Pair<Int,Int>,ImageBitmap>>(emptyMap(),tileZoom) {
-        value=withContext(Dispatchers.IO) {
-            buildMap {
-                try { assets.list("maps/$tileZoom")?.forEach { x-> assets.list("maps/$tileZoom/$x")?.filter { it.endsWith(".png") }?.forEach { y->
-                    assets.open("maps/$tileZoom/$x/$y").use { stream-> BitmapFactory.decodeStream(stream)?.let { put(x.toInt() to y.removeSuffix(".png").toInt(),it.asImageBitmap()) } }
-                } } } catch(_:Exception) { /* Missing coverage remains explicit in UI. */ }
-            }
-        }
-    }
-    val points=state.outing.points
-    LaunchedEffect(state.outing.id, points.isEmpty()) {
-        if (points.isNotEmpty() && zoom == 15) zoom = 17
-    }
-    val focus = if (state.mode == GuidanceMode.FIND_LANDMARK) state.target else state.fix
-    val lat = focus?.latitude ?: if (points.isNotEmpty()) (points.minOf { it.latitude } + points.maxOf { it.latitude }) / 2 else 37.566
-    val lon = focus?.longitude ?: if (points.isNotEmpty()) (points.minOf { it.longitude } + points.maxOf { it.longitude }) / 2 else -122.369
-    LaunchedEffect(state.selectedMemoryId, state.mode) { pan = Offset.Zero }
-    val center=world(lat,lon,zoom)
-    val background=MaterialTheme.colorScheme.surfaceContainer
-    Box(modifier.background(background).clipToBounds()) {
-        Canvas(Modifier.fillMaxSize().pointerInput(zoom) { detectTransformGestures { _,delta,scale,_->
-            pan+=delta
-            if(scale>1.08f && zoom<18) { zoom++;pan=Offset.Zero }
-            if(scale<0.92f && zoom>12) { zoom--;pan=Offset.Zero }
-        } }) {
-            val left=center.first-size.width/2-pan.x
-            val top=center.second-size.height*0.34-pan.y
-            fun offset(point:TrailPoint):Offset { val p=world(point.latitude,point.longitude,zoom);return Offset((p.first-left).toFloat(),(p.second-top).toFloat()) }
-            val tileSize = (256 * 2.0.pow(zoom - tileZoom)).roundToInt()
-            if(state.mapAvailable || state.fix==null) tiles.forEach { (coord,bitmap)->
-                val x=(coord.first*tileSize-left).roundToInt();val y=(coord.second*tileSize-top).roundToInt()
-                if(x in -tileSize..size.width.toInt() && y in -tileSize..size.height.toInt()) drawImage(bitmap,dstOffset=IntOffset(x,y),dstSize=IntSize(tileSize,tileSize),alpha=.83f)
-            }
-            points.zipWithNext().forEachIndexed { index, (a,b) -> if(a.segment==b.segment) {
-                val returnSegment = state.mode == GuidanceMode.RETRACE && state.returnRouteStartIndex != null && state.returnRouteEndIndex != null && index >= state.returnRouteStartIndex && index < state.returnRouteEndIndex
-                val color = if (state.mode != GuidanceMode.RETRACE || returnSegment) TravisOrange else TravisOrange.copy(alpha = .28f)
-                drawLine(Color.White.copy(alpha=.9f),offset(a),offset(b),6.dp.toPx(),StrokeCap.Round)
-                drawLine(color,offset(a),offset(b),(if(returnSegment) 4.dp else 3.dp).toPx(),StrokeCap.Round)
-            } }
-            points.firstOrNull()?.let { drawCircle(TravisGreen,9f,offset(it));drawCircle(Color.White,4f,offset(it)) }
-            state.outing.memories.forEach { m->m.point?.let { p->
-                val selected=m.id==state.selectedMemoryId
-                drawCircle(Color.White,if(selected)15f else 12f,offset(p));drawCircle(if(selected)TravisOrange else TravisGreen,if(selected)11f else 8f,offset(p))
-            } }
-            state.target?.let { p->drawCircle(TravisOrange,23f,offset(p),style=Stroke(3f)) }
-            state.fix?.let { p->
-                val at=offset(p);val metersPerPixel=156543.03392*cos(Math.toRadians(p.latitude))/2.0.pow(zoom)
-                drawCircle(TravisBlue.copy(alpha=.14f),(p.accuracy/metersPerPixel).toFloat().coerceIn(8f,250f),at)
-                drawCircle(Color.White,12f,at);drawCircle(if(state.fixQuality==FixQuality.USABLE)TravisBlue else Color.Gray,8f,at)
-            }
-        }
-        Column(Modifier.align(Alignment.CenterEnd).offset(y = (-48).dp).padding(14.dp)) {
-            FilledTonalIconButton(onClick={zoom=(zoom+1).coerceAtMost(18);pan=Offset.Zero}, modifier=Modifier.semantics { contentDescription="Zoom in" }) { Text("+",style=MaterialTheme.typography.titleLarge) }
-            FilledTonalIconButton(onClick={zoom=(zoom-1).coerceAtLeast(12);pan=Offset.Zero}, modifier=Modifier.semantics { contentDescription="Zoom out" }) { Text("−",style=MaterialTheme.typography.titleLarge) }
-            FilledTonalIconButton(onClick={pan=Offset.Zero}, modifier=Modifier.semantics { contentDescription="Recenter map" }) { TravisGlyph("ar", Modifier.size(20.dp), MaterialTheme.colorScheme.primary) }
-        }
-        Surface(Modifier.align(Alignment.TopCenter).padding(top=130.dp),color=MaterialTheme.colorScheme.surface.copy(alpha=.94f),shape=MaterialTheme.shapes.small) {
-            Text(if(!state.mapAvailable && state.fix!=null)"Map coverage unavailable · recorded trace only" else "USGS · The National Map · saved offline",Modifier.padding(horizontal=9.dp,vertical=4.dp),style=MaterialTheme.typography.labelSmall)
-        }
+private const val MAP_ANCHOR_Y = .34
+private const val MIN_ZOOM = 12.0
+private const val MAX_ZOOM = 20.0
 
+/** Normalized Mercator camera. No Android types: gesture geometry is independently testable. */
+internal data class MapViewport(val zoom: Double, val centerX: Double, val centerY: Double) {
+    val worldSize: Double get() = 256.0 * 2.0.pow(zoom)
+    fun worldAt(x: Double, y: Double, width: Double, height: Double): Pair<Double, Double> =
+        centerX + (x - width / 2) / worldSize to centerY + (y - height * MAP_ANCHOR_Y) / worldSize
+
+    fun transform(x: Double, y: Double, panX: Double, panY: Double, scale: Double, width: Double, height: Double): MapViewport {
+        if (listOf(x, y, panX, panY, scale, width, height).any { !it.isFinite() } || scale <= 0 || width <= 0 || height <= 0) return this
+        val nextZoom = (zoom + log2(scale)).coerceIn(MIN_ZOOM, MAX_ZOOM)
+        val nextWorldSize = 256.0 * 2.0.pow(nextZoom)
+        val anchor = worldAt(x, y, width, height)
+        // The world point under the pinch centroid follows the centroid's translation.
+        return MapViewport(nextZoom,
+            anchor.first - (x + panX - width / 2) / nextWorldSize,
+            (anchor.second - (y + panY - height * MAP_ANCHOR_Y) / nextWorldSize).coerceIn(0.0, 1.0))
     }
 }
+
+private fun world(latitude: Double, longitude: Double): Pair<Double, Double> =
+    (longitude + 180) / 360 to (1 - asinh(tan(Math.toRadians(latitude.coerceIn(-85.0, 85.0)))) / PI) / 2
+private data class TileAddress(val x: Int, val y: Int, val path: String)
+private data class RasterLevel(val layer: String, val zoom: Int, val tiles: Map<Pair<Int, Int>, ImageBitmap>)
+
+/** Local rasters only. Gestures never request assets or alter guidance/recording state. */
+@Composable
+fun OfflineTrailMap(state: TravisUiState, modifier: Modifier = Modifier, onMemorySelected: ((String) -> Unit)? = null) {
+    val assets = LocalContext.current.assets
+    val density = LocalDensity.current
+    val palette = MaterialTheme.colorScheme
+    val points = state.outing.points
+    val focus = if (state.mode == GuidanceMode.FIND_LANDMARK) state.target else state.fix
+    val fallback = remember(points) {
+        if (points.isEmpty()) 37.566 to -122.369 else
+            (points.minOf { it.latitude } + points.maxOf { it.latitude }) / 2 to
+                (points.minOf { it.longitude } + points.maxOf { it.longitude }) / 2
+    }
+    val focusWorld = world(focus?.latitude ?: fallback.first, focus?.longitude ?: fallback.second)
+    var viewport by remember(state.outing.id) { mutableStateOf(MapViewport(if (points.isEmpty()) 15.0 else 17.0, focusWorld.first, focusWorld.second)) }
+    var following by remember(state.outing.id) { mutableStateOf(true) }
+    var mapSize by remember { mutableStateOf(IntSize.Zero) }
+    var previewId by remember(state.outing.id) { mutableStateOf<String?>(null) }
+    val projectedPoints = remember(points) { points.map { world(it.latitude, it.longitude) } }
+    var selectedLayer by rememberSaveable { mutableStateOf("maps") }
+    val mapIndex by produceState<Map<String, Map<Int, List<TileAddress>>>>(emptyMap(), assets) {
+        value = withContext(Dispatchers.IO) {
+            listOf("maps", "maps-aerial").mapNotNull { layer ->
+                val levels = assets.list(layer).orEmpty().mapNotNull { z ->
+                    val zoom = z.toIntOrNull() ?: return@mapNotNull null
+                    val addresses = assets.list("$layer/$z").orEmpty().flatMap { x ->
+                        val tileX = x.toIntOrNull() ?: return@flatMap emptyList()
+                        assets.list("$layer/$z/$x").orEmpty().mapNotNull { filename ->
+                            val tileY = filename.substringBeforeLast('.').toIntOrNull()
+                            if (tileY == null || filename.substringAfterLast('.') !in listOf("png", "jpg", "jpeg")) null
+                            else TileAddress(tileX, tileY, "$layer/$z/$x/$filename")
+                        }
+                    }
+                    if (addresses.isEmpty()) null else zoom to addresses
+                }.toMap()
+                if (levels.isEmpty()) null else layer to levels
+            }.toMap()
+        }
+    }
+    val layer = if (selectedLayer in mapIndex) selectedLayer else "maps"
+    val levels = mapIndex[layer].orEmpty()
+    val tileZoom = levels.keys.filter { it <= floor(viewport.zoom).toInt() }.maxOrNull() ?: levels.keys.minOrNull() ?: 16
+    val visibleTiles by remember(mapIndex, layer, tileZoom, mapSize) {
+        derivedStateOf {
+            val count = 2.0.pow(tileZoom)
+            val left = (viewport.centerX - mapSize.width / 2.0 / viewport.worldSize) * count
+            val right = (viewport.centerX + mapSize.width / 2.0 / viewport.worldSize) * count
+            val top = (viewport.centerY - mapSize.height * MAP_ANCHOR_Y / viewport.worldSize) * count
+            val bottom = (viewport.centerY + mapSize.height * (1 - MAP_ANCHOR_Y) / viewport.worldSize) * count
+            val candidates = levels[tileZoom].orEmpty().filter { it.x + 1 >= left && it.x <= right && it.y + 1 >= top && it.y <= bottom }
+            // Stable ordering avoids restarting the tile producer for every subpixel pan.
+            if (candidates.size <= 64) candidates else candidates
+                .sortedBy { abs(it.x - viewport.centerX * count) + abs(it.y - viewport.centerY * count) }.take(64)
+        }
+    }
+    val tileCache = remember { LruCache<String, ImageBitmap>(64) }
+    val raster by produceState(RasterLevel(layer, tileZoom, emptyMap()), layer, tileZoom, visibleTiles) {
+        val loaded = withContext(Dispatchers.IO) {
+            buildMap {
+                visibleTiles.forEach { tile ->
+                    ensureActive()
+                    val bitmap = tileCache.get(tile.path) ?: runCatching {
+                        assets.open(tile.path).use { BitmapFactory.decodeStream(it) }?.asImageBitmap()
+                    }.getOrNull()?.also { tileCache.put(tile.path, it) }
+                    if (bitmap != null) put(tile.x to tile.y, bitmap)
+                }
+            }
+        }
+        value = RasterLevel(layer, tileZoom, loaded)
+    }
+    LaunchedEffect(focusWorld, following) {
+        if (following) viewport = viewport.copy(centerX = focusWorld.first, centerY = focusWorld.second)
+    }
+    LaunchedEffect(state.selectedMemoryId, state.mode) { following = true; previewId = null }
+    LaunchedEffect(points.isEmpty()) { if (points.isNotEmpty() && viewport.zoom == 15.0 && following) viewport = viewport.copy(zoom = 17.0) }
+    val latestState by rememberUpdatedState(state)
+    val latestMemories by rememberUpdatedState(state.outing.memories)
+    val hitRadius = with(density) { 30.dp.toPx() }
+    fun screenPoint(point: Pair<Double, Double>): Offset = Offset(
+        ((point.first - viewport.centerX) * viewport.worldSize + mapSize.width / 2.0).toFloat(),
+        ((point.second - viewport.centerY) * viewport.worldSize + mapSize.height * MAP_ANCHOR_Y).toFloat())
+    fun zoomAt(point: Offset, factor: Double) {
+        viewport = viewport.transform(point.x.toDouble(), point.y.toDouble(), 0.0, 0.0, factor, mapSize.width.toDouble(), mapSize.height.toDouble())
+        following = false
+    }
+    fun inspectMemory(memory: Memory) {
+        memory.point?.let { point ->
+            val center = world(point.latitude, point.longitude)
+            viewport = viewport.copy(centerX = center.first, centerY = center.second)
+            following = false
+            previewId = memory.id
+        }
+    }
+    val preview = state.outing.memories.firstOrNull { it.id == previewId }
+    val showTiles = !(state.replay && !state.mapAvailable)
+    val covered = showTiles && visibleTiles.isNotEmpty()
+    val aerialAvailable = "maps-aerial" in mapIndex
+    val controlsTop = if (aerialAvailable) 188.dp else 158.dp
+    val latitudeAtCenter = Math.toDegrees(atan(sinh(PI * (1 - 2 * viewport.centerY))))
+    val metersPerPixel = 156543.03392 * cos(Math.toRadians(latitudeAtCenter)) / 2.0.pow(viewport.zoom)
+    val scaleWidth = with(density) { 72.dp.toPx() }
+    val approximateScale = (scaleWidth * metersPerPixel).coerceAtLeast(.1)
+    val order = 10.0.pow(floor(log10(approximateScale)))
+    val scaleMeters = listOf(1.0, 2.0, 5.0, 10.0).last { it * order <= approximateScale } * order
+    val gestures = Modifier
+            .semantics {
+                contentDescription = "Offline map. Pinch to zoom, drag to explore, or double tap to zoom. Tap a numbered saved place to inspect it."
+                stateDescription = "Zoom %.1f. %s".format(java.util.Locale.US, viewport.zoom,
+                    if (!following) "Exploring map" else if (state.mode == GuidanceMode.FIND_LANDMARK) "Centered on saved place" else "Following location")
+            }
+            .pointerInput(state.outing.id) {
+                detectTransformGestures { centroid, pan, scale, _ ->
+                    if (pan != Offset.Zero || scale != 1f) {
+                        viewport = viewport.transform(centroid.x.toDouble(), centroid.y.toDouble(), pan.x.toDouble(), pan.y.toDouble(), scale.toDouble(), size.width.toDouble(), size.height.toDouble())
+                        following = false
+                        previewId = null
+                    }
+                }
+            }
+            .pointerInput(state.outing.id) {
+                detectTapGestures(
+                    onDoubleTap = { zoomAt(it, 2.0) },
+                    onTap = { tap ->
+                        val tapped = latestMemories.filter { it.point != null }.minByOrNull { memory ->
+                            val at = screenPoint(world(memory.point!!.latitude, memory.point.longitude))
+                            (at - tap).getDistance()
+                        }?.takeIf { memory ->
+                            (screenPoint(world(memory.point!!.latitude, memory.point.longitude)) - tap).getDistance() <= hitRadius
+                        }
+                        if (tapped == null) previewId = null else inspectMemory(tapped)
+                    },
+                )
+            }
+    Box(modifier.background(palette.surfaceContainer).clipToBounds().onSizeChanged { mapSize = it }.then(gestures)) {
+        Canvas(Modifier.fillMaxSize()) {
+            fun at(point: Pair<Double, Double>) = Offset(
+                ((point.first - viewport.centerX) * viewport.worldSize + size.width / 2).toFloat(),
+                ((point.second - viewport.centerY) * viewport.worldSize + size.height * MAP_ANCHOR_Y).toFloat())
+            fun at(point: TrailPoint) = at(world(point.latitude, point.longitude))
+            val tileSize = 256.0 * 2.0.pow(viewport.zoom - raster.zoom)
+            val left = viewport.centerX * viewport.worldSize - size.width / 2
+            val top = viewport.centerY * viewport.worldSize - size.height * MAP_ANCHOR_Y
+            if (showTiles && raster.layer == layer) raster.tiles.forEach { (coordinate, bitmap) ->
+                val x = coordinate.first * tileSize - left; val y = coordinate.second * tileSize - top
+                if (x + tileSize >= 0 && y + tileSize >= 0 && x <= size.width && y <= size.height) {
+                    drawImage(bitmap, dstOffset = IntOffset(x.floorToInt(), y.floorToInt()), dstSize = IntSize(ceil(tileSize + 1).toInt(), ceil(tileSize + 1).toInt()), alpha = if (layer == "maps-aerial") 1f else .88f, filterQuality = FilterQuality.Low)
+                }
+            }
+            points.zipWithNext().forEachIndexed { index, (a, b) -> if (a.segment == b.segment) {
+                val inReturn = state.mode == GuidanceMode.RETRACE && state.returnRouteStartIndex != null && state.returnRouteEndIndex != null && index >= state.returnRouteStartIndex && index < state.returnRouteEndIndex
+                val color = if (state.mode != GuidanceMode.RETRACE || inReturn) TravisOrange else TravisOrange.copy(alpha = .28f)
+                drawLine(Color.White.copy(alpha = .95f), at(projectedPoints[index]), at(projectedPoints[index + 1]), 7.dp.toPx(), StrokeCap.Round)
+                drawLine(color, at(projectedPoints[index]), at(projectedPoints[index + 1]), (if (inReturn) 4.5.dp else 3.5.dp).toPx(), StrokeCap.Round)
+            } }
+            points.firstOrNull()?.let { drawCircle(TravisGreen, 7.dp.toPx(), at(it)); drawCircle(Color.White, 3.dp.toPx(), at(it)) }
+            state.target?.let { drawCircle(TravisOrange, 18.dp.toPx(), at(it), style = Stroke(2.dp.toPx())) }
+            state.fix?.let { point ->
+                val metersPerPixel = 156543.03392 * cos(Math.toRadians(point.latitude)) / 2.0.pow(viewport.zoom)
+                val center = at(point)
+                val fresh = state.fixQuality == FixQuality.USABLE
+                drawCircle(TravisBlue.copy(alpha = if (fresh) .16f else .08f), (point.accuracy / metersPerPixel).toFloat().coerceIn(9.dp.toPx(), 160.dp.toPx()), center)
+                drawCircle(Color.White, 9.dp.toPx(), center)
+                drawCircle(if (fresh) TravisBlue else Color.Gray, 6.dp.toPx(), center)
+            }
+        }
+        state.outing.memories.forEachIndexed { index, memory -> memory.point?.let { point ->
+            val screen = screenPoint(world(point.latitude, point.longitude))
+            if (screen.x in -40f..mapSize.width + 40f && screen.y in -40f..mapSize.height + 40f) {
+                val selected = memory.id == state.selectedMemoryId || memory.id == previewId || memory.id == state.destinationMemoryId
+                Surface(onClick = { inspectMemory(memory) }, modifier = Modifier.semantics { contentDescription = "Saved place ${index + 1}: ${memory.title}" }.offset { IntOffset(screen.x.roundToInt() - hitRadius.roundToInt(), screen.y.roundToInt() - hitRadius.roundToInt()) }.size(60.dp), shape = CircleShape, color = Color.Transparent) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Surface(Modifier.size(if (selected) 34.dp else 29.dp), shape = CircleShape, color = if (selected) TravisOrange else TravisGreen, border = androidx.compose.foundation.BorderStroke(2.dp, Color.White), shadowElevation = 3.dp) {
+                            Box(contentAlignment = Alignment.Center) { Text("${index + 1}", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium) }
+                        }
+                    }
+                }
+            }
+        } }
+        Column(Modifier.align(Alignment.TopEnd).padding(top = controlsTop, end = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            FilledTonalIconButton(onClick = { zoomAt(Offset(mapSize.width / 2f, mapSize.height * MAP_ANCHOR_Y.toFloat()), 2.0) }, modifier = Modifier.semantics { contentDescription = "Zoom in" }, enabled = viewport.zoom < MAX_ZOOM) { Text("+", style = MaterialTheme.typography.titleLarge) }
+            FilledTonalIconButton(onClick = { zoomAt(Offset(mapSize.width / 2f, mapSize.height * MAP_ANCHOR_Y.toFloat()), .5) }, modifier = Modifier.semantics { contentDescription = "Zoom out" }, enabled = viewport.zoom > MIN_ZOOM) { Text("−", style = MaterialTheme.typography.titleLarge) }
+            FilledTonalIconButton(onClick = { following = true; viewport = viewport.copy(centerX = focusWorld.first, centerY = focusWorld.second); previewId = null }, modifier = Modifier.semantics { contentDescription = if (!following) "Recenter map" else if (state.mode == GuidanceMode.FIND_LANDMARK) "Map centered on saved place" else "Map following location" }) { TravisGlyph("ar", Modifier.size(20.dp), palette.primary) }
+        }
+        Column(Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 125.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (aerialAvailable) Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("maps" to "Terrain", "maps-aerial" to "Aerial").forEach { (path, title) ->
+                    FilterChip(selected = layer == path, onClick = { selectedLayer = path }, label = { Text(title) }, colors = FilterChipDefaults.filterChipColors(containerColor = palette.surface, labelColor = palette.onSurface))
+                }
+            }
+            Surface(color = palette.surface.copy(alpha = .95f), shape = RoundedCornerShape(8.dp)) {
+                Text(when {
+                    mapIndex.isEmpty() -> "Loading saved map…"
+                    !covered -> "Outside saved map · trace retained"
+                    layer == "maps-aerial" -> "USGS aerial imagery · saved offline"
+                    else -> "USGS terrain · saved offline"
+                }, Modifier.padding(horizontal = 9.dp, vertical = 5.dp), style = MaterialTheme.typography.labelSmall)
+            }
+            Surface(color = palette.surface.copy(alpha = .93f), shape = RoundedCornerShape(7.dp)) {
+                Column(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(distanceLabel(scaleMeters), style = MaterialTheme.typography.labelSmall)
+                    Canvas(Modifier.width(with(density) { (scaleMeters / metersPerPixel).toFloat().toDp() }).height(6.dp)) {
+                        val color = palette.onSurface
+                        drawLine(color, Offset(0f, 0f), Offset(0f, size.height), 2.dp.toPx())
+                        drawLine(color, Offset(0f, size.height / 2), Offset(size.width, size.height / 2), 2.dp.toPx())
+                        drawLine(color, Offset(size.width, 0f), Offset(size.width, size.height), 2.dp.toPx())
+                    }
+                }
+            }
+        }
+        preview?.let { memory ->
+            Surface(Modifier.align(Alignment.TopCenter).padding(top = if (aerialAvailable) 260.dp else 222.dp, start = 16.dp, end = 76.dp), color = palette.surface, shape = RoundedCornerShape(18.dp), shadowElevation = 6.dp) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        TravisPhoto(memory.photoPath, "Original saved photo of ${memory.title}", Modifier.size(60.dp).clip(RoundedCornerShape(12.dp)))
+                        Column(Modifier.weight(1f)) {
+                            Text(memory.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            Text(if (latestState.replay) "SAMPLE SAVED PLACE" else "YOUR SAVED PLACE", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (onMemorySelected != null) TextButton(onClick = { onMemorySelected(memory.id); previewId = null }) { Text("Open place") }
+                        TextButton(onClick = { previewId = null }) { Text("Close") }
+                    }
+                }
+            }
+        }
+    }
+}
+private fun Double.floorToInt(): Int = floor(this).toInt()

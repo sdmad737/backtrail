@@ -1,3 +1,15 @@
+CURRENT INTEGRATION UPDATE — OCTOBER 24, 2026
+DEMO.txt and demo-build-receipt.json supersede historical pending-device statements
+below. The final interaction build is installed as Travis Integration beside the
+teammate-signed app. Verified G6 private model import and normal-UI offline NPU
+retrieval have passed on Pixel. Physical walk, fresh image and battery checks remain.
+The user explicitly authorized pushing the integrated source to main when ready.
+The final polish was delegated in separate worktrees: demo-ui owns map gestures,
+rendering and pointer test; demo-device owns the camera instrument/manual overlay
+and emulator acceptance; demo-runtime owns approach feedback, sensor efficiency
+and the transparent logo. Root owns shared wiring, docs, builds and phone installs.
+Both terrain and aerial region packs are bundled. No extra runtime/network service.
+
 HACKATHON DEVICE UPDATE — OCTOBER 24, 2026
 Lead/user owns this device/integration change. UI and inference ownership remains
 with the two teammates; their public state/action interfaces are unchanged.

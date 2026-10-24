@@ -1,0 +1,119 @@
+TRAVIS — INTEGRATED DEMO, OCTOBER 24, 2026
+
+READY TO TRY
+Open Travis Integration on the connected Pixel 11 Pro. This is the same native
+Android project installed beside the teammate-signed Travis app; the original
+app, models and records were preserved. Installation pauses recording; explicitly
+Resume outing before walking. No development server or network permission exists.
+
+WHAT CHANGED
+Persisted route returns retain bends, gaps and independent Find/retrace progress.
+Search, original photos, map, AR and notifications refer to the same saved IDs.
+Cancelled/replaced model requests cannot overwrite newer records or create
+competing engines. The first integration follows all teammate commits on main.
+The latest interaction pass adds continuous anchored pinch/pan, double-tap zoom,
+offline Terrain/Aerial, numbered place previews, a scale bar and recenter.
+Maximum zoom20 allows4x closer viewing than the earlier zoom18 limit.
+AR has a dimensional direction instrument and adjustable original-photo overlay.
+It is approximate sensor guidance, not a world anchor or automatic recognition.
+The logo's exterior is transparent and wordmark spacing is corrected.
+
+BATTERY AND FEEDBACK
+Camera and heading run only in the visible live AR view; capture uses CameraX
+while its sheet is visible. Map rendering caches at most64 decoded tiles.
+Gemma runs on request, never every frame. GPS recording is independent.
+Optional approach haptics require fresh fixes with <=15m reported accuracy,
+three observations, meaningful closing beyond uncertainty, and a10-second
+cooldown. They cue100/50/25m bands once per target; no stationary buzz.
+Prepare contains the haptics switch. No phone battery-endurance claim is proven.
+
+BUILD / INSTALL ON THIS PREPARED MAC
+From the repository root:
+  source .tooling/env.sh
+  ./gradlew --offline -PtravisSideBySide=true :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+  adb -s 65280DLKX006C8 install -r app/build/outputs/apk/debug/app-debug.apk
+  adb -s 65280DLKX006C8 shell am start -n com.backtrail.app.integration/com.backtrail.app.MainActivity
+Omit -PtravisSideBySide=true for the normal com.backtrail.app ID. Do not uninstall
+an existing app to resolve a signing mismatch. Fresh laptop setup: SETUP.md.
+APK bytes/checksum, checks and packaged-map verification: demo-build-receipt.json.
+
+MODEL MILESTONES
+A. Downloaded on Mac: COMPLETE. Both unified bundles and native runtimes were
+   fully checked against pinned publisher metadata. No extra embedding, speech,
+   tokenizer or vision download is required for this photo/text implementation.
+   Generic GPU: models/gemma-4-E2B-it.litertlm
+   Bytes2588147712; SHA256
+   181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c
+   Pixel Tensor G6: models/gemma-4-E2B-it_Google_Tensor_G6.litertlm
+   Bytes3313938293; SHA256
+   f86c7c19c736e9307267946edef58b0a45494a9127036d54d90dd6b7617c95b7
+   Full paths/revisions/metadata/native AAR checksums: demo-asset-verification.json.
+B. Installed on Pixel: COMPLETE. G6 bundle verified again at
+   /data/user/0/com.backtrail.app.integration/no_backup/models/gemma-4-E2B-it_Google_Tensor_G6.litertlm
+   Exact byte count and full SHA256 match above. Weights remain outside Git.
+   The current integration evidence is recorded in demo-phone-receipt.json.
+C. Offline inside Travis: TEXT RETRIEVAL VERIFIED. Airplane mode on, Wi-Fi off,
+   normal live UI retrieved an existing laptop/backpack record from a paraphrase
+   ("bag and computer"). LiteRT-LM0.18.0, Tensor dispatch runtime2.3.0, NPU.
+   One cold request:1227ms engine initialization,2968ms generation,3ms validation.
+   This is one measured request, not a speed/accuracy guarantee.
+   Fresh image inference in this final integrated app still needs a phone test.
+   Prior teammate Pixel image measurements are in INFERENCE-LOG.md; they are
+   separate evidence. Actual generic-bundle text/image tests passed on this Mac
+   with networking denied, including chronology, ambiguity and no-match cases.
+
+VERIFICATION
+- Final offline assembleDebug,138 JVM tests and lint: passed, zero test failures
+  and lint errors. Warnings and exact APK hash are recorded in the build receipt.
+- Android emulator:21 integration checks passed. These cover GPS/pause gaps,
+  screen-locked simulated fixes, actual CameraX virtual-camera JPEG, persistence,
+  pickup departure/return notification without duplicates, notification tap to
+  the correct record, and Find/Map/AR preserving retrace progress.
+- Android multi-pointer input test passes with70 small moves in each direction:
+  map zoom17.0 ->18.0 ->16.7. The user also confirmed smooth pinch on the physical Pixel.
+- AR emulator rendering:10 checks passed, including manual overlay, heading
+  changes, weak/near suppression, next-route-point distance and150%text.
+- Current Pixel build installed and launched; real map/header rendered and
+  inspected. Previous integrated offline NPU retrieval used the same runtime.
+- Native keyboard/larger-text/error layouts and iPhone Simulator browser Explore
+  were inspected in this pass/preparation. There is no native iOS application.
+- Physical outdoor path with a bend, locked-screen movement, camera bearing,
+  haptic feel and reminder thresholds remain unverified. A human walk is needed.
+
+LIVE VERSUS REPLAY
+Normal startup is live: measured sensors, original photos, local stored outings,
+real model calls and deterministic reminders. Weak/unknown measurements remain
+visible. No model result invents a coordinate or advances route progress.
+Prepare -> Explore demo is isolated: replay movement/heading, still-camera scene,
+sample photos and sample answers are labelled. Manual photo blending never claims
+automatic matching. The same distinction applies to the browser showcase:
+  python3 -m http.server 4173 --directory explore --bind 127.0.0.1
+
+OFFLINE MAPS
+Bundled USGS terrain121 tiles/2785869bytes and aerial115 tiles/3685572bytes.
+Bounds: west-122.390, south37.549, east-122.345, north37.585 (venue surroundings).
+Both packs' full bytes/hashes and APK copies were checked. The provider serves
+cached detail through zoom16 here; closer zoom magnifies it. Outside coverage,
+the recorded trace remains visible. No live download, glyph or sprite dependency.
+Provider metadata/attribution and local digests are in each map manifest; USGS
+does not publish independent per-tile checksums. Build-time preparation only:
+  python3 scripts/prepare_maps.py --layer aerial
+
+TWO-MINUTE DEMO AFTER THE WALK
+0:00 Show disconnected phone and live readiness. Open the real recorded outing.
+0:15 Map: pinch, show a bend and two original saved landmarks.
+0:30 Save: capture a fresh landmark with a short note; let local Gemma describe it.
+0:50 Ask: a fresh paraphrase of one recorded place; show its source photo/context.
+1:10 Take me back: highlight the recorded return, then switch to AR and rotate
+     the phone. The cue targets the next route point, not a shortcut through a bend.
+1:35 Compare original; confirm a nearby checkpoint or explicitly collect a pickup.
+1:50 Resume retrace. Briefly show an honest no-match if time permits.
+Use Prepare -> Explore demo as an explicitly labelled rehearsal backup.
+
+NEXT THREE ACTIONS
+1. On Pixel, capture one fresh photo with a note and verify its
+   generated observation while airplane mode remains on. Preserve failures too.
+2. Record a short outdoor route with one bend and two distinct landmarks, lock
+   the screen for part of it, then test return -> Map/AR -> recognition -> pickup.
+3. Reopen the outing, rehearse the two-minute sequence and record a backup using
+   actual evidence. Record orientation, reminder/haptic and battery observations.

@@ -2,8 +2,8 @@ TRAVIS — FIRST DEMO INTEGRATION PASS, OCTOBER 24, 2026
 
 Authority: complete integration brief supplied in this conversation. Native
 Kotlin/Compose app, com.backtrail.app; main entry is MainActivity/TravisViewModel.
-Merged teammate baseline b0688f5. Preserve source and all real records. No push,
-publication, external messages or destructive resets during this pass.
+Merged teammate baseline b0688f5. Preserve source and all real records. The user later explicitly authorized a push to main when complete. No external
+messages, destructive resets or forced history changes.
 
 Ownership for this pass (isolated worktrees; integrator owns shared contracts):
 - Integration/root: contracts/, TravisViewModel, MainActivity, trip/ navigation
@@ -17,18 +17,26 @@ Ownership for this pass (isolated worktrees; integrator owns shared contracts):
   corresponding tests. No MainActivity/contracts/manifest edits; report additions.
 
 Checklist:
-[ ] Baseline launch and source reconciliation.
-[ ] Required local model/runtime integrity and readiness; phone status separate.
+[x] Baseline launch and source reconciliation.
+[x] Required local model/runtime integrity and readiness; phone status separate.
 [ ] Persisted capture -> Gemma -> evidence -> recorded route to selected memory.
-[ ] Separate final destination, next route point and preserved retrace cursor.
-[ ] Camera HUD, accurate distance semantics, map/AR synchronization.
-[ ] Memory correction/removal; source note vs generated observation preserved.
-[ ] Pickup, arrival/time/deviation events and correct notification destination.
-[ ] Model lifecycle/import, stale response gates, permissions/error states.
-[ ] Native render checks: small screen, keyboard, large text, loading/weak sensors.
-[ ] Focused tests/build, emulator acceptance, physical offline test if available.
-[ ] README, DEMO.txt, exact asset/build receipts and truthful remaining checks.
+[x] Separate final destination, next route point and preserved retrace cursor.
+[x] Camera HUD and map/AR state integrated; physical bearing checks pending.
+[x] Memory correction/removal; source note vs generated observation preserved.
+[x] Pickup/arrival/time/deviation implemented; emulator pickup delivery/tap passed.
+[x] Model lifecycle/import, stale response gates, permissions/error states.
+[x] Native render checks: small screen, keyboard, large text, loading/weak sensors.
+[x] Build,138 tests, lint,21 emulator checks and offline Pixel text retrieval passed.
+[x] README, DEMO.txt, exact asset/build receipts and remaining physical checks.
 
 Starting evidence: no Android devices connected at 16:00 PDT; existing emulator
 is starting. 95 GiB disk free. No native iOS project; portable Explore can be
 checked on iPhone Simulator without claiming native iOS capabilities.
+
+Interaction follow-up: continuous centroid-anchored map gestures; real offline
+aerial pack; named photo markers; compact dimensional camera instrument; manual
+original-photo overlay; conservative approach haptics; visible-only camera/heading;
+transparent logo and corrected wordmark spacing. See DEMO.txt for final evidence.
+
+Physical user feedback: two-finger map pinch feels smooth on the Pixel.
+Fresh image-inference and outdoor acceptance remain open in DEMO.txt.

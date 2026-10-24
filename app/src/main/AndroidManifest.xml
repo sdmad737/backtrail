@@ -16,7 +16,7 @@
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"
-        android:icon="@drawable/travis_logo"
+        android:icon="@drawable/travis_logo_transparent"
         android:label="@string/launcher_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Backtrail">

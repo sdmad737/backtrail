@@ -1,0 +1,27 @@
+{
+  "package": "com.backtrail.app.integration",
+  "model": "gemma-4-E2B-it_Google_Tensor_G6.litertlm",
+  "bytes": 3313938293,
+  "sha256": "f86c7c19c736e9307267946edef58b0a45494a9127036d54d90dd6b7617c95b7",
+  "transfer_and_verify_seconds": 82.7,
+  "phone_path": "/data/user/0/com.backtrail.app.integration/no_backup/models/gemma-4-E2B-it_Google_Tensor_G6.litertlm",
+  "scope": "Integration owner verification; Android real Pixel11Pro. Physical outdoor walk remains pending.",
+  "offline_network": {
+    "airplane_mode": true,
+    "wifi_enabled": false
+  },
+  "runtime": "LiteRT-LM0.18.0 + Tensor runtime2.3.0",
+  "text_retrieval": {
+    "normal_ui": true,
+    "backend": "NPU",
+    "engine": "cold",
+    "init_ms": 1227,
+    "generate_ms": 2968,
+    "validate_ms": 3,
+    "outcome": "success",
+    "scope": "One paraphrase selected an existing saved record; not a general accuracy estimate"
+  },
+  "fresh_image_inference": "Not yet verified in final integrated app",
+  "physical_map_feedback": "User confirmed two-finger pinch feels smooth",
+  "private_data_note": "No original photos or location history included in this receipt"
+}

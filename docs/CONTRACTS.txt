@@ -34,9 +34,9 @@ and portrait/landscape behavior require Pixel measurements.
 OfflineTrailMap: bundled XYZ rasters, geographic trace, pan/zoom, no network path.
 LocalVisionService: one serialized local request with strict result validation,
 using a cached engine. The live app selects G6/NPU when that pinned model is
-present, otherwise generic/GPU. Relaunch after changing the imported model:
-the current lazy service keeps its first model/backend selection. Native close
-may block its caller; see INTEGRATION-READY.txt for remaining lifecycle work.
+present, otherwise generic/GPU. Model replacement serializes with service ownership; cancelled teardown completes off
+the UI thread before a new engine can be created. New requests wait for replacement.
+Description persistence checks revision and original image identity inside the store lock.
 ExploreFixture and the separate browser ReplayAdapter are explicitly opt-in samples.
 
 ASYNC INVARIANTS
@@ -52,7 +52,11 @@ Generation cancellation does not imply forcibly interruptible native engine init
 NAVIGATION
 GuidanceMode NONE / RETRACE / FIND_LANDMARK and Map/AR surface are orthogonal.
 Find selects only an existing saved ID and optional real saved point. It preserves
-retraceIndex. ResumeRetrace restores the recorded cursor. Bearing and straight-line
+the home retraceIndex and suspends any active memory return separately. Memory
+returns keep their own next/goal/start indices. Reaching a memory retains its
+confirmed progress; explicit continuation starts from there toward home. Undo is
+bound to outing/destination/goal/start and cannot mutate a cursor while finding.
+Deleting a memory clears both active and suspended references to that destination. Bearing and straight-line
 distance require a recent fix with <=25m reported accuracy. Heading also needs
 reliable orientation. A direction to a place is not a traversable route instruction.
 Retrace follows previous indices, about25m per target; crossings cannot jump to
@@ -79,6 +83,7 @@ JVM route-state, stale-result and proposal-validation tests; Explore pure-state
 checks; emulator camera/persistence/GPS; browser/iPhone Simulator render checks.
 Baseline APK install and model-to-Downloads integrity were verified on a Pixel.
 The inference owner's INFERENCE-LOG.md reports private Pixel/NPU benchmarks.
-Integrated live-app offline inference and physical navigation acceptance remain
-unverified. See DEVICE-INTEGRATION.txt for current checks and
+Integrated live-app offline NPU text retrieval is verified on Pixel; fresh image
+inference and physical navigation acceptance remain pending. See DEMO.txt and
+demo-build-receipt.json for current checks, DEVICE-INTEGRATION.txt and
 PREPARATION-STATUS.md for prior work.

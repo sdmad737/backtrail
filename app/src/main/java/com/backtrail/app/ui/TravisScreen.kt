@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
@@ -37,6 +38,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.backtrail.app.contracts.*
 import com.backtrail.app.R
+import com.backtrail.app.trip.ApproachFeedback
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -55,6 +60,7 @@ fun TravisScreen(
     onAction: (TravisAction) -> Unit,
     camera: @Composable (Modifier) -> Unit,
     map: @Composable (Modifier) -> Unit = { TravisMap(state, it) },
+    onCameraActiveChanged: (Boolean) -> Unit = {},
 ) {
     val dark = isSystemInDarkTheme()
     val palette = if (dark) darkColorScheme(
@@ -73,9 +79,25 @@ fun TravisScreen(
     MaterialTheme(colorScheme = palette) {
         var sheet by rememberSaveable { mutableStateOf<TravisSheet?>(null) }
         val haptic = LocalHapticFeedback.current
+        val context=LocalContext.current
+        val preferences=remember(context) { context.getSharedPreferences("travis-ui",0) }
+        var approachHaptics by remember { mutableStateOf(preferences.getBoolean("approachHaptics",true)) }
+        val lifecycle=LocalLifecycleOwner.current.lifecycle
+        var visible by remember(lifecycle) { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
+        LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { visible=true }
+        LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { visible=false }
+        val liveCameraVisible=visible && !state.replay && state.cameraAllowed && state.surface==TravisSurface.AR && !state.captureMode && sheet==null
+        LaunchedEffect(liveCameraVisible) { onCameraActiveChanged(liveCameraVisible) }
+        DisposableEffect(Unit) { onDispose { onCameraActiveChanged(false) } }
+        val approach=remember { ApproachFeedback() }
+        LaunchedEffect(state.outing.id,state.fix?.time,state.fixQuality,state.target?.id,state.mode,approachHaptics,visible,sheet,state.captureMode,state.replay) {
+            val enabled=approachHaptics && visible && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && sheet==null && !state.captureMode && !state.replay && state.mode!=GuidanceMode.NONE && state.fixQuality==FixQuality.USABLE
+            if(approach.observe(state.target?.let { "${state.outing.id}:${it.id}" },state.distanceMeters,state.fix?.accuracy,state.fix?.time,System.currentTimeMillis(),enabled))
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
         var lastMemoryCount by remember(state.outing.id) { mutableIntStateOf(state.outing.memories.size) }
         LaunchedEffect(state.outing.memories.size) {
-            if (state.outing.memories.size > lastMemoryCount) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            if (visible && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && state.outing.memories.size > lastMemoryCount) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             lastMemoryCount = state.outing.memories.size
         }
         val act: (TravisAction) -> Unit = { action ->
@@ -97,11 +119,11 @@ fun TravisScreen(
                     Modifier.fillMaxWidth().padding(start = 20.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TravisLogo(Modifier.width(38.dp).height(34.dp))
-                    Spacer(Modifier.width(9.dp))
+                    TravisLogo(Modifier.size(42.dp))
+                    Spacer(Modifier.width(11.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("travis", fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.5).sp)
-                        Text("A LITTLE FURTHER. A WAY BACK.", fontSize = 8.sp, letterSpacing = 1.35.sp, color = palette.onSurfaceVariant)
+                        Text("travis", fontSize = 28.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
+                        Text("REMEMBER THE WAY BACK", fontSize = 9.sp, letterSpacing = .55.sp, color = palette.onSurfaceVariant)
                     }
                     IconButton(onClick = { sheet = TravisSheet.PREPARE }, modifier = Modifier.size(48.dp).semantics { contentDescription = "Prepare and settings" }) {
                         TravisGlyph("settings", Modifier.size(23.dp), palette.onSurface)
@@ -110,7 +132,9 @@ fun TravisScreen(
                 BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
                     val dockMaxHeight = maxHeight * if (state.surface == TravisSurface.AR) .46f else .53f
                     if (state.surface == TravisSurface.MAP) map(Modifier.fillMaxSize())
-                    else if (!state.captureMode) TravisCameraGuidance(state, camera, Modifier.fillMaxSize())
+                    else if (!state.captureMode) TravisCameraGuidance(state, { cameraModifier ->
+                        if(liveCameraVisible)camera(cameraModifier)else Box(cameraModifier.background(TravisGreen))
+                    }, Modifier.fillMaxSize())
                     else Box(Modifier.fillMaxSize().background(TravisGreen))
 
                     Column(Modifier.align(Alignment.TopCenter).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -132,10 +156,12 @@ fun TravisScreen(
                                     }
                                 }
                             }
-                            Surface(shape = CircleShape, color = palette.surface, shadowElevation = 2.dp) {
-                                Column(Modifier.size(48.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                                    Text("N", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                    TravisGlyph("north", Modifier.size(18.dp), TravisOrange)
+                            if (state.surface == TravisSurface.MAP) {
+                                Surface(shape = CircleShape, color = palette.surface, shadowElevation = 2.dp, modifier = Modifier.semantics { contentDescription = "Map is north up" }) {
+                                    Column(Modifier.size(48.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                                        Text("N", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        TravisGlyph("north", Modifier.size(18.dp), TravisOrange)
+                                    }
                                 }
                             }
                         }
@@ -208,7 +234,9 @@ fun TravisScreen(
                     when (active) {
                         TravisSheet.ASK -> AskSheet(state, act) { sheet = null }
                         TravisSheet.MEMORIES -> MemoriesSheet(state, act) { sheet = null }
-                        TravisSheet.PREPARE -> PrepareSheet(state, act) { sheet = null }
+                        TravisSheet.PREPARE -> PrepareSheet(state,act,approachHaptics,{ enabled ->
+                            approachHaptics=enabled;preferences.edit().putBoolean("approachHaptics",enabled).apply()
+                        }) { sheet = null }
                         TravisSheet.REPLAY -> ReplaySheet(state, act) { sheet = null }
                     }
                 }
@@ -363,7 +391,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
 @Composable
 internal fun TravisLogo(modifier: Modifier = Modifier) {
     Image(
-        painter = painterResource(R.drawable.travis_logo),
+        painter = painterResource(R.drawable.travis_logo_transparent),
         contentDescription = "Travis trail logo",
         modifier = modifier,
         contentScale = ContentScale.Fit,
@@ -585,7 +613,7 @@ private fun statePendingReminder(memory:Memory,suggestion:ReminderSuggestion?,ac
 }
 
 @Composable
-private fun PrepareSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: () -> Unit) {
+private fun PrepareSheet(state: TravisUiState, act: (TravisAction) -> Unit, approachHaptics:Boolean, onApproachHaptics:(Boolean)->Unit, close: () -> Unit) {
     Eyebrow("PACK THE ESSENTIALS")
     Text("Before you head out.", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
     ReadinessRow("Location", if (state.locationAllowed) "${state.fixQuality.name.lowercase().replaceFirstChar { it.uppercase() }} measured fix" else "Allow location to record an outing", state.fixQuality == FixQuality.USABLE)
@@ -593,6 +621,14 @@ private fun PrepareSheet(state: TravisUiState, act: (TravisAction) -> Unit, clos
     ReadinessRow("Gemma 4", if (state.modelReady) "Local model imported" else "Import verified model from phone storage", state.modelReady)
     ReadinessRow("Camera guidance", if (state.cameraAllowed) "Camera allowed · approximate sensor direction" else "Camera permission needed", state.cameraAllowed)
     ReadinessRow("Local reminders", if (state.notificationsAllowed) "Notifications allowed" else "Notification permission needed", state.notificationsAllowed)
+    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f)) {
+            Text("Approach haptics",fontWeight=FontWeight.Medium)
+            Text("A brief cue as good GPS fixes show you getting closer. No continuous buzzing.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked=approachHaptics,onCheckedChange=onApproachHaptics,modifier=Modifier.semantics { contentDescription="Approach haptics" })
+    }
+    Text("Camera and direction sensors pause outside the live view. Gemma runs only when requested; route recording continues with the screen locked.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
     PrimaryAction("Allow device permissions", "settings", Modifier.fillMaxWidth()) { act(TravisAction.RequestPermissions) }
     OutlinedButton(onClick = { act(TravisAction.ImportModel) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(if (state.modelReady) "Replace local Gemma model" else "Import local Gemma model") }
     Text("Approximate camera guidance uses your location and camera orientation. It does not place a surveyed route on the ground.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
