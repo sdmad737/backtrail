@@ -179,6 +179,25 @@ fun TravisScreen(
             }
         }
 
+        state.notificationMemory?.let { memory ->
+            AlertDialog(
+                onDismissRequest = { act(TravisAction.DismissNotification) },
+                title = { Text(memory.title, fontWeight = FontWeight.SemiBold) },
+                text = {
+                    Column(Modifier.fillMaxWidth().heightIn(max = 440.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Eyebrow("REMINDER · ${state.notificationOutingName}")
+                        TravisPhoto(memory.photoPath, "Original saved photo of ${memory.title}", Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)))
+                        if (memory.note.isNotBlank()) {
+                            Text("Your note", style = MaterialTheme.typography.labelMedium)
+                            Text(memory.note, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Text("Your current outing stays open. This is the saved place behind the reminder.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+                confirmButton = { TextButton(onClick = { act(TravisAction.DismissNotification) }) { Text("Dismiss") } },
+            )
+        }
+
         if (state.captureMode) {
             ModalBottomSheet(onDismissRequest = { if (!state.captureBusy) act(TravisAction.CancelCapture) }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = palette.surface) {
                 CaptureSheet(state, act, camera)
@@ -223,7 +242,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 Text("Next · ${state.targetTitle} · ${distanceLabel(state.distanceMeters)} direct to route point", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
             }
             if (state.guidanceStatus.isNotBlank()) Text(state.guidanceStatus, style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
-            if (state.mode == GuidanceMode.FIND_LANDMARK && outing.retraceIndex != null) {
+            if (state.mode == GuidanceMode.FIND_LANDMARK && state.canResumeRetrace) {
                 Text("Your retrace progress is saved.", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
             }
             if (state.canConfirm) {
@@ -255,7 +274,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 }
             }
             if(guidanceTools && state.mode==GuidanceMode.RETRACE) {
-                OutlinedButton(onClick={act(TravisAction.CheckDirection)},enabled=outing.retraceIndex!=null,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
+                OutlinedButton(onClick={act(TravisAction.CheckDirection)},enabled=state.routeTargetIndex!=null,modifier=Modifier.fillMaxWidth().heightIn(min=48.dp)) {
                     Text("Am I going the right way?")
                 }
                 state.rightWayResult?.let { result ->
@@ -274,7 +293,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
             }
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onAsk) { Text("Ask Travis") }
-                if (state.mode == GuidanceMode.FIND_LANDMARK && outing.retraceIndex != null) TextButton(onClick = { act(TravisAction.ResumeRetrace) }) { Text("Resume retrace") }
+                if (state.mode == GuidanceMode.FIND_LANDMARK && state.canResumeRetrace) TextButton(onClick = { act(TravisAction.ResumeRetrace) }) { Text("Resume retrace") }
                 else TextButton(onClick = onMemories) { Text("Saved places") }
                 if (state.replay) TextButton(onClick = { act(TravisAction.ReplayNext) }) { Text("Next step") }
             }
@@ -501,7 +520,7 @@ private fun MemoryCard(memory: Memory, state:TravisUiState, onClick: () -> Unit,
                     OutlinedTextField(noteDraft,{noteDraft=it.take(2000)},Modifier.fillMaxWidth(),label={Text("Your original note")},minLines=2,maxLines=4)
                     Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick={editing=false}) { Text("Cancel") }
-                        Button(onClick={act(TravisAction.UpdateMemory(memory.id,titleDraft,memory.description));act(TravisAction.UpdateMemoryNote(memory.id,noteDraft));editing=false}) { Text("Save edits") }
+                        Button(onClick={act(TravisAction.UpdateMemory(memory.id,titleDraft,memory.description,noteDraft));editing=false}) { Text("Save edits") }
                     }
                 } else Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(memory.title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
