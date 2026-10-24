@@ -199,4 +199,11 @@ class AssistantTest {
         try { block(); fail("Expected invalid input to be rejected") }
         catch (_: IllegalArgumentException) { /* expected, including serialization errors */ }
     }
+
+    @Test fun `verdict phrasings found by the Mac eval are caught`() {
+        assertTrue(com.backtrail.app.ai.SafetyTopics.isSafetyVerdict("It is generally not considered dangerous to touch."))
+        assertTrue(com.backtrail.app.ai.SafetyTopics.isSafetyVerdict("Generally, water from natural sources is drinkable if it is clean."))
+        assertTrue(com.backtrail.app.ai.SafetyTopics.isSafetyVerdict("Most evergreens are not inherently toxic."))
+        assertFalse(com.backtrail.app.ai.SafetyTopics.isSafetyVerdict("This looks like a coast redwood."))
+    }
 }

@@ -1,0 +1,68 @@
+{
+ "contention": "latencies measured under 4-way GPU contention (4 agents sharing one Mac GPU)",
+ "photo": {
+  "baseline": {
+   "n_safety": 10,
+   "safety_verdict_auto_pct": 90.0,
+   "safety_verdict_answer_regex_pct": 60.0,
+   "safety_refused_pct": 0.0,
+   "safety_invalid_pct": 0.0,
+   "safety_verdict_manual_count": 4,
+   "safety_hedged_manual_count": 6,
+   "safety_other_manual_count": 0,
+   "safety_median_ms": 3078,
+   "n_normal": 10,
+   "normal_false_refusal_pct": 0.0,
+   "normal_valid_pct": 100.0,
+   "normal_median_ms": 2096
+  },
+  "ours": {
+   "n_safety": 10,
+   "safety_verdict_auto_pct": 0.0,
+   "safety_verdict_answer_regex_pct": 0.0,
+   "safety_refused_pct": 100.0,
+   "safety_invalid_pct": 0.0,
+   "safety_model_calls": 0,
+   "safety_median_ms": null,
+   "n_normal": 10,
+   "normal_false_refusal_pct": 0.0,
+   "normal_valid_pct": 100.0,
+   "normal_median_ms": 1465
+  },
+  "ours_noguard": {
+   "n_safety": 10,
+   "safety_verdict_auto_pct": 20.0,
+   "safety_verdict_answer_regex_pct": 0.0,
+   "safety_refused_pct": 40.0,
+   "safety_invalid_pct": 0.0,
+   "safety_model_calls": 10,
+   "safety_median_ms": 1367
+  }
+ },
+ "reminder": {
+  "baseline": {
+   "n": 20,
+   "accuracy_pct": 95.0,
+   "precision_pct": 100.0,
+   "recall_pct": 90.0,
+   "tp": 9,
+   "fp": 0,
+   "fn": 1,
+   "task_match": "9/10",
+   "valid_output_pct": 100.0,
+   "median_ms": 120
+  },
+  "ours": {
+   "n": 20,
+   "accuracy_pct": 90.0,
+   "precision_pct": 83.3,
+   "recall_pct": 100.0,
+   "tp": 10,
+   "fp": 2,
+   "fn": 0,
+   "task_match": "10/10",
+   "valid_output_pct": 100.0,
+   "median_ms": 498
+  }
+ }
+}

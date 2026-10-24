@@ -245,6 +245,9 @@ inferenceJob = viewModelScope.launch {
   (0 of 25 wrong) but not sharp. That's why it compares only against the expected next spot.
 - **Embedding scores alone can't say "no match":** made-up places scored as high as real
   ones. Leave the no-match decision to Gemma (`grounded = false`, `NoRecordedMatch`).
+- **Trip answers can be confidently wrong with a citation:** in the Mac eval, "Which spot had
+  the red mailbox?" came back grounded, citing a spot that has no mailbox. Always show the
+  cited photo so the user can check it (rule 1).
 - **Tree species answers are hedged guesses:** "possibly a pine or fir". Show them as guesses.
 - **Small test set:** all accuracy numbers come from 8 photos at one garden plus a few
   sample images.

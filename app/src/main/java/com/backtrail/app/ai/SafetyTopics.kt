@@ -21,8 +21,10 @@ object SafetyTopics {
 
     /** An answer that drifted into a safety verdict anyway. */
     private val ANSWER = Regex(
-        "\\b(edible|safe to (eat|drink|touch|handle)|(is|are) (not )?(poisonous|toxic|venomous|dangerous|harmless)|" +
-            "you can (eat|drink)|fine to (eat|drink|touch))\\b",
+        "\\b(edible|drinkable|potable|safe (to|for \\w+ to) (eat|drink|touch|handle|climb|swim|pet)|" +
+            "(is|are) (not |generally |usually )?(poisonous|toxic|venomous|dangerous|harmless|safe)|" +
+            "not (considered |inherently |usually |generally )?(dangerous|toxic|poisonous|harmful)|" +
+            "you can (eat|drink|touch)|fine to (eat|drink|touch))\\b",
         RegexOption.IGNORE_CASE,
     )
 

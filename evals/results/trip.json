@@ -1,0 +1,40 @@
+{
+ "model": "gemma-4-E2B-it.litertlm",
+ "embedder": "embeddinggemma-2-740m.litertlm",
+ "embedding_mode": "image+text",
+ "index_ms_8_spots": 2474,
+ "baseline": {
+  "answerable_correct": 9,
+  "answerable_n": 10,
+  "unanswerable_abstained": 3,
+  "unanswerable_made_up": 3,
+  "unanswerable_n": 6,
+  "median_ms": 432,
+  "max_ms": 1432
+ },
+ "ours": {
+  "answerable_correct": 10,
+  "answerable_n": 10,
+  "unanswerable_abstained": 4,
+  "unanswerable_made_up": 2,
+  "unanswerable_n": 6,
+  "median_ms": 2310,
+  "max_ms": 2883
+ },
+ "ours_valid_json": 16,
+ "n": 16,
+ "retrieval_recall_at_4": 10,
+ "latency_note": "Mac GPU, under 4-way contention (3 other evals on the same GPU)",
+ "manual_review": {
+  "baseline_unanswerable_abstained_manual": 5,
+  "baseline_unanswerable_made_up_manual": 1,
+  "baseline_answerable_correct_manual": 8,
+  "notes": [
+   "Baseline 'swimming pool' and 'phone charger' answers say 'no mention' - real abstentions the specified regex misses; manual count 5/6 abstained.",
+   "Baseline 'redwood trees' passes the string rule only because it lists Memories 1,4,5,6,7,8 (6 of 8 spots) and says redwoods are not mentioned; manually not counted, so 8/10.",
+   "'Waterfall': both sides point to the pergola water feature (described by Gemma as 'Water feature'); scored made-up on both sides, arguably borderline.",
+   "Ours 'red mailbox': clear hallucination - cited redwood-b with grounded=true. The validator cannot catch a cited-but-false claim.",
+   "'Where was the pergola': ours cited pine-a/pine-b too; the pergola is visible overhead in those photos (checked pine-a), so not wrong."
+  ]
+ }
+}

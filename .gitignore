@@ -33,3 +33,4 @@ secrets.properties
 *.apk
 *.aab
 evals/results/raw/
+evals/__pycache__/
