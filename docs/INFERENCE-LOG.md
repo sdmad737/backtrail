@@ -141,9 +141,20 @@ too small to act on without Gemma). Unanswerable queries still score 0.69–0.71
 
 **Decision: NPU for both models**, GPU as fallback.
 
+### 2026-10-24 14:20 · compare · NPU (G6 build) · same synthetic smoke set
+
+| Pair | Expected | Verdict | Generate ms |
+|---|---|---|---|
+| junction-a vs junction-b | same | SUPPORTS_MATCH | 6,938 (load 1,132) |
+| junction-a vs porch-a | different | INSUFFICIENT_EVIDENCE | 3,481 |
+| junction-b vs porch-a | different | INSUFFICIENT_EVIDENCE | 3,148 |
+
+Same verdicts as GPU at roughly a third of the time. The mismatched pairs again list
+invented "matching" features ("buildings", "road"), and the matched pair lists a bus as a
+conflict, so the reasons still need the UI rule above. Real photo pairs are still needed.
+
 ## Open questions
 
-- Compare (two photos) on NPU.
 - EmbeddingGemma latency on device, and whether photo embeddings separate same-place from
   different-place pairs — needs photo pairs taken at the demo route.
 - `SpotRetriever` and `AlignmentMeter` thresholds are placeholders until calibrated here.
