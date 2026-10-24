@@ -1,6 +1,8 @@
 package com.backtrail.app.ui
 
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -163,9 +165,28 @@ internal fun TravisPhoto(path: String, description: String, modifier: Modifier =
         value = null
         value = withContext(Dispatchers.IO) {
             if (path.isBlank()) null else runCatching {
-                val options = BitmapFactory.Options().apply { inSampleSize = 2 }
-                if (path.startsWith("asset:")) context.assets.open(path.removePrefix("asset:")).use { BitmapFactory.decodeStream(it, null, options)?.asImageBitmap() }
-                else BitmapFactory.decodeFile(path, options)?.asImageBitmap()
+                fun stream() = if (path.startsWith("asset:")) context.assets.open(path.removePrefix("asset:")) else java.io.File(path).inputStream()
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                stream().use { BitmapFactory.decodeStream(it, null, bounds) }
+                var sample = 1
+                while (max(bounds.outWidth, bounds.outHeight) / sample > 1024) sample *= 2
+                val options = BitmapFactory.Options().apply { inSampleSize = sample }
+                val decoded = stream().use { BitmapFactory.decodeStream(it, null, options) }
+                val orientation = runCatching { stream().use { ExifInterface(it).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) } }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
+                val matrix = Matrix().apply {
+                    when (orientation) {
+                        ExifInterface.ORIENTATION_ROTATE_90 -> postRotate(90f)
+                        ExifInterface.ORIENTATION_ROTATE_180 -> postRotate(180f)
+                        ExifInterface.ORIENTATION_ROTATE_270 -> postRotate(270f)
+                        ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> postScale(-1f, 1f)
+                        ExifInterface.ORIENTATION_FLIP_VERTICAL -> postScale(1f, -1f)
+                        ExifInterface.ORIENTATION_TRANSPOSE -> { postRotate(90f); postScale(-1f, 1f) }
+                        ExifInterface.ORIENTATION_TRANSVERSE -> { postRotate(270f); postScale(-1f, 1f) }
+                    }
+                }
+                if (decoded == null) null
+                else if (matrix.isIdentity) decoded.asImageBitmap()
+                else android.graphics.Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true).asImageBitmap()
             }.getOrNull()
         }
     }
