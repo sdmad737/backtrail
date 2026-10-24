@@ -1,0 +1,1 @@
+{"private":true,"type":"module","name":"travis-explore","version":"0.1.0","scripts":{"test":"node model.test.mjs"}}
