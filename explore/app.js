@@ -40,5 +40,22 @@ window.addEventListener('popstate',()=>app.dispatch({type:'overlay',value:null})
 window.travisExplore={getState:()=>structuredClone(app.state),dispatch:a=>app.dispatch(a)};
 const params=new URLSearchParams(location.search);if(params.has('dark'))app.state.dark=true;if(params.has('large'))app.state.large=true;if(params.get('scene')==='recording')app.state={...app.state,...{status:'recording',position:8,recordedThrough:8,landmarks:structuredClone(fixtureLandmarks.slice(0,2))}};if(params.get('scene')==='ar'){app.state={...app.state,status:'recording',position:15,recordedThrough:15,landmarks:structuredClone(fixtureLandmarks),guidanceMode:'find_landmark',selectedId:'stone-bridge',view:'ar'};}render(app.state);
 
-function fitVisualViewport(){if(matchMedia('(max-width:760px)').matches&&window.visualViewport){document.documentElement.style.setProperty('--visible-height',`${visualViewport.height}px`);}}
-window.visualViewport?.addEventListener('resize',fitVisualViewport);window.addEventListener('resize',fitVisualViewport);fitVisualViewport();
+// iOS can pan the visual viewport while the software keyboard is open. Size AND
+// offset the fixed mobile frame to that viewport; height alone clips the header
+// and leaves a blank strip above Safari's keyboard accessory bar.
+let viewportFrame;
+function fitVisualViewport(){
+  cancelAnimationFrame(viewportFrame);
+  viewportFrame=requestAnimationFrame(()=>{
+    const root=document.documentElement, vv=window.visualViewport;
+    if(matchMedia('(max-width:760px)').matches&&vv){
+      root.style.setProperty('--visible-height',`${vv.height}px`);
+      root.style.setProperty('--visible-top',`${vv.offsetTop}px`);
+    }else{root.style.removeProperty('--visible-height');root.style.removeProperty('--visible-top');}
+  });
+}
+window.visualViewport?.addEventListener('resize',fitVisualViewport);
+window.visualViewport?.addEventListener('scroll',fitVisualViewport);
+window.addEventListener('resize',fitVisualViewport);
+window.addEventListener('orientationchange',fitVisualViewport);
+fitVisualViewport();

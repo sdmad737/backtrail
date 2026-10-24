@@ -17,7 +17,7 @@ Fixes from inspection: full-width primary actions, explicit dark-mode button tex
 
 `qa/` contains screenshots of the desktop presentation, iPhone-sized recording/AR, small-screen AR, and Android-sized no-match state. These images are viewport checks, not screenshots from physical devices.
 
-A long exact note was entered and saved using the capture form. Real software-keyboard inspection must be recorded separately by the integration owner on iPhone Simulator/Android Emulator or hardware. The preview listens to `visualViewport` resize and scrolls long forms; that implementation is not a claim that a real mobile keyboard was tested here. Landscape and reduced-motion CSS are present but have not been visually validated in this workstream.
+A long exact note was entered and saved using the capture form. The integration owner subsequently opened the actual software keyboard in iPhone SE Simulator Safari and found the Ask heading clipping under the status bar and an unused bottom strip. See the keyboard follow-up below. Landscape and reduced-motion CSS are present but have not been visually validated in this workstream.
 
 ## State checks that passed
 
@@ -41,3 +41,9 @@ The integration owner also opened this same server in iPhone SE Simulator Safari
 ## Device work still required
 
 Native camera capture and orientation, portrait/landscape north reference, real movement, original-image local Gemma interpretation, real offline retrieval, screen-locked location, OS notifications, persistent app relaunch and a server-free cold phone launch belong to the native integration checklist. This browser intentionally requests none of those permissions.
+
+## iPhone software-keyboard follow-up
+
+The first actual iPhone SE Simulator keyboard check found that updating only the frame height was insufficient: Safari also pans its visual viewport while the input is focused. `qa/iphone-se-keyboard-before.png` records the clipped Ask heading and blank strip above the keyboard.
+
+The fix pins the mobile frame to both `visualViewport.height` and `visualViewport.offsetTop`, updates on viewport resize and scroll, removes duplicate document scrolling, and lets the modal own vertical scrolling within the visible area. JavaScript syntax and diff checks passed. Actual simulator re-inspection status is recorded after the integration owner repeats the keyboard interaction.
