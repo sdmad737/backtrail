@@ -1,0 +1,34 @@
+TRAVIS — FIRST DEMO INTEGRATION PASS, OCTOBER 24, 2026
+
+Authority: complete integration brief supplied in this conversation. Native
+Kotlin/Compose app, com.backtrail.app; main entry is MainActivity/TravisViewModel.
+Merged teammate baseline b0688f5. Preserve source and all real records. No push,
+publication, external messages or destructive resets during this pass.
+
+Ownership for this pass (isolated worktrees; integrator owns shared contracts):
+- Integration/root: contracts/, TravisViewModel, MainActivity, trip/ navigation
+  and persistence, manifest/build, shared docs, final build and device installs.
+- Runtime agent: ai/ and AI tests, model verification receipts under local-data;
+  report required composition changes. No physical device or shared-file edits.
+- UI agent: ui/ and related UI-only resources, optional explore/ compatibility;
+  preserve real adapters. Report shared state/actions needed. Emulator UI slot
+  begins after baseline install; root performs final emulator acceptance afterward.
+- Device agent: device/ notifications/sensors and trip/RecordingPolicy plus
+  corresponding tests. No MainActivity/contracts/manifest edits; report additions.
+
+Checklist:
+[ ] Baseline launch and source reconciliation.
+[ ] Required local model/runtime integrity and readiness; phone status separate.
+[ ] Persisted capture -> Gemma -> evidence -> recorded route to selected memory.
+[ ] Separate final destination, next route point and preserved retrace cursor.
+[ ] Camera HUD, accurate distance semantics, map/AR synchronization.
+[ ] Memory correction/removal; source note vs generated observation preserved.
+[ ] Pickup, arrival/time/deviation events and correct notification destination.
+[ ] Model lifecycle/import, stale response gates, permissions/error states.
+[ ] Native render checks: small screen, keyboard, large text, loading/weak sensors.
+[ ] Focused tests/build, emulator acceptance, physical offline test if available.
+[ ] README, DEMO.txt, exact asset/build receipts and truthful remaining checks.
+
+Starting evidence: no Android devices connected at 16:00 PDT; existing emulator
+is starting. 95 GiB disk free. No native iOS project; portable Explore can be
+checked on iPhone Simulator without claiming native iOS capabilities.

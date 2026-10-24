@@ -18,7 +18,15 @@ import kotlinx.coroutines.flow.*
 class TravisViewModel(app:Application):AndroidViewModel(app) {
     private val store=OutingStore.get(app)
     private val models=ModelStore(app)
-    private val inference by lazy { val (file,backend)=models.preferred?:(models.file to InferenceBackend.GPU);LocalVisionService(file,app.cacheDir,backend,nativeLibraryDir=app.applicationInfo.nativeLibraryDir) }
+    private var ownedInference: LocalVisionService? = null
+    private val inference: LocalVisionService get() = ownedInference ?: run {
+        val (file, backend) = models.preferred ?: (models.file to InferenceBackend.GPU)
+        LocalVisionService(file, getApplication<Application>().cacheDir, backend,
+            nativeLibraryDir=getApplication<Application>().applicationInfo.nativeLibraryDir,
+            traceSink={ trace -> mutable.update { it.copy(modelBackend=backend.name,modelFileName=file.name,
+                modelLoadMillis=trace.initMs,modelGenerateMillis=trace.generateMs,modelOutcome=trace.outcome) } }
+        ).also { ownedInference=it }
+    }
     private val mutable=MutableStateFlow(TravisUiState())
     val state=mutable.asStateFlow()
     val camera=CameraCaptureController()
@@ -49,30 +57,41 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
     }
     private fun refresh() {
         val old=mutable.value
-        if(!old.replay) LiveSensors.guidanceMode.value=old.mode
-        val storedOuting=replayOuting ?: liveOuting
-        val outing=if(!old.replay && storedOuting.phase==OutingPhase.RECORDING && !LiveSensors.trackingRunning.value) storedOuting.copy(phase=OutingPhase.PAUSED) else storedOuting
+        val stored=replayOuting ?: liveOuting
+        val outing=if(!old.replay && stored.phase==OutingPhase.RECORDING && !LiveSensors.trackingRunning.value) stored.copy(phase=OutingPhase.PAUSED) else stored
+        val guide=outing.guidance
+        val mode=guide.mode
+        if(!old.replay) LiveSensors.guidanceMode.value=mode
         val fix=if(old.replay) replayFix else LiveSensors.fix.value
         if(!old.replay && fix!=null && recentFixes.lastOrNull()?.time!=fix.time) recentFixes.add(fix)
         recentFixes.removeAll { it.time < System.currentTimeMillis()-30_000L }
         val quality=if(old.replay) when(issue) {"weak_gps"->FixQuality.APPROXIMATE;"stale_gps"->FixQuality.STALE;else->if(fix==null) FixQuality.UNAVAILABLE else FixQuality.USABLE} else TrailMath.quality(fix,System.currentTimeMillis())
-        val memory=outing.memories.find { it.id==old.selectedMemoryId }
-        val target=when(old.mode) {
-            GuidanceMode.FIND_LANDMARK -> memory?.point
-            GuidanceMode.RETRACE -> outing.retraceIndex?.let { outing.points.getOrNull(it) }
-            else -> null
-        }
-        val nearestMemory=if(old.mode==GuidanceMode.RETRACE) outing.memories.firstOrNull { it.routeIndex==outing.retraceIndex } else memory
+        val destination=outing.memories.find { it.id==guide.memoryId }
+        val index=if(mode==GuidanceMode.RETRACE) ReturnRoute.targetIndex(outing) else null
+        val target=when(mode) { GuidanceMode.RETRACE->index?.let { outing.points.getOrNull(it) };GuidanceMode.FIND_LANDMARK->destination?.point;else->null }
+        val nextPhoto=if(mode==GuidanceMode.RETRACE) outing.memories.firstOrNull { it.routeIndex==index } else destination
+        val goal=if(guide.memoryId!=null)guide.goalIndex else 0
         val usable=quality==FixQuality.USABLE
+        val remaining=if(mode==GuidanceMode.RETRACE && usable)ReturnRoute.remaining(outing,fix)else null
         mutable.value=old.copy(outing=outing,savedOutings=store.outings.value,fix=fix,fixQuality=quality,
+            mode=mode,selectedMemoryId=guide.memoryId,
             heading=if(old.replay) replayHeading else LiveSensors.heading.value,
-            headingReliable=if(old.replay) issue!="weak_gps" else LiveSensors.headingReliable.value,
-            target=target,targetTitle=if(old.mode==GuidanceMode.RETRACE) nearestMemory?.title?:"Next recorded waypoint" else memory?.title?:"Choose a saved place",
-            targetPhoto=nearestMemory?.photoPath?:"",bearing=if(usable && fix!=null && target!=null) TrailMath.bearing(fix,target) else null,
-            distanceMeters=if(usable && fix!=null && target!=null) TrailMath.distance(fix,target) else null,
-            remainingMeters=if(old.mode==GuidanceMode.RETRACE && outing.retraceIndex!=null) if(usable && fix!=null && target!=null) TrailMath.length(outing.points.take(outing.retraceIndex+1))+TrailMath.distance(fix,target) else null else null,
-            canConfirm=if(old.replay) usable && fix!=null && target!=null && TrailMath.distance(fix,target)<20 else TrailMath.canConfirm(fix,target,System.currentTimeMillis()),
-            sensorStatus=if(old.replay) "" else LiveSensors.failure.value,
+            headingReliable=if(old.replay)issue!="weak_gps" else LiveSensors.headingReliable.value,
+            target=target,targetTitle=if(mode==GuidanceMode.RETRACE) nextPhoto?.title?:"Next recorded waypoint" else destination?.title?:"Choose a saved place",
+            targetPhoto=nextPhoto?.photoPath?:"",routeTargetIndex=index,
+            destinationMemoryId=destination?.id,destinationTitle=destination?.title?:"Recorded start",
+            destinationPhoto=destination?.photoPath?:outing.memories.firstOrNull { it.routeIndex==0 }?.photoPath?:"",
+            destinationDistanceMeters=if(usable && fix!=null && destination?.point!=null)TrailMath.distance(fix,destination.point)else null,
+            returnRouteStartIndex=if(mode==GuidanceMode.RETRACE)goal else null,
+            returnRouteEndIndex=if(mode==GuidanceMode.RETRACE)guide.startIndex?:outing.points.lastIndex else null,
+            canReturnAlongRoute=destination?.let { ReturnRoute.plan(outing,it.id)!=null }?:false,
+            canResumeRetrace=outing.suspendedGuidance?.mode==GuidanceMode.RETRACE || outing.retraceIndex!=null,
+            guidanceStatus=when { mode==GuidanceMode.FIND_LANDMARK->"Direct bearing · a connecting path is not inferred";mode==GuidanceMode.RETRACE && remaining==null && usable->"Recorded segment only · a gap blocks the earlier route";mode==GuidanceMode.RETRACE->"Follow the next recorded point · confirm before advancing";else->"" },
+            bearing=if(usable && fix!=null && target!=null)TrailMath.bearing(fix,target)else null,
+            distanceMeters=if(usable && fix!=null && target!=null)TrailMath.distance(fix,target)else null,
+            remainingMeters=remaining,
+            canConfirm=if(old.replay)usable && fix!=null && target!=null && TrailMath.distance(fix,target)<20 else TrailMath.canConfirm(fix,target,System.currentTimeMillis()),
+            sensorStatus=if(old.replay)"" else LiveSensors.failure.value,
             mapAvailable=issue!="missing_maps" && fix?.let { it.latitude in 37.549..37.585 && it.longitude in -122.390..-122.345 }==true)
     }
     fun announce(text:String) { mutable.update { it.copy(notice=text) } }
@@ -81,7 +100,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         val id=currentId ?: return
         viewModelScope.launch { try { store.mutate(id) { block(it ?: liveOuting) } } catch(_:Exception) { announce("Could not save this change. Original records remain available.") } }
     }
-    private fun invalidate() { gate.invalidate();inferenceJob?.cancel();mutable.update { it.copy(busy=false,describingMemoryId=null,reminderMessageMemoryId=null) };session=UUID.randomUUID().toString() }
+    private fun invalidate() { gate.invalidate();inferenceJob?.cancel();mutable.update { it.copy(busy=false,describingMemoryId=null,reminderMessageMemoryId=null,rightWayResult=null,comparisonVerdict=null,comparisonReasons=emptyList(),pendingReminder=null) };session=UUID.randomUUID().toString() }
     fun action(action:TravisAction) {
         when(action) {
             TravisAction.Start -> {
@@ -91,41 +110,53 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 viewModelScope.launch {
                     try {
                         val existing=liveOuting
-                        val outing=if(existing.phase in listOf(OutingPhase.PAUSED,OutingPhase.RECORDING)) existing.copy(phase=OutingPhase.RECORDING,segment=existing.segment+1) else Outing(UUID.randomUUID().toString(),"Today's outing",System.currentTimeMillis(),OutingPhase.RECORDING)
+                        val outing=if(existing.phase in listOf(OutingPhase.PAUSED,OutingPhase.RECORDING)) existing.copy(phase=OutingPhase.RECORDING,segment=existing.segment+1,guidance=SavedGuidance()) else Outing(UUID.randomUUID().toString(),"Today's outing",System.currentTimeMillis(),OutingPhase.RECORDING)
                         currentId=outing.id;preferences.edit().putString("active",outing.id).apply();store.save(outing);RecordingService.start(getApplication(),outing.id)
                         mutable.update { it.copy(mode=GuidanceMode.NONE,selectedMemoryId=null,notice="Recording starts when a fresh GPS fix arrives.") };refresh()
                     } catch(_:Exception) { announce("Could not start recording. Check location permission.") }
                 }
             }
             TravisAction.Pause -> change { it.copy(phase=OutingPhase.PAUSED,segment=it.segment+1) }
-            TravisAction.End -> { invalidate();change { it.copy(phase=OutingPhase.ENDED) };if(!mutable.value.replay) RecordingService.stop(getApplication());announce("Outing saved on this phone.") }
+            TravisAction.End -> { invalidate();change { it.copy(phase=OutingPhase.ENDED,endedAt=System.currentTimeMillis(),guidance=SavedGuidance()) };if(!mutable.value.replay) RecordingService.stop(getApplication());announce("Outing saved on this phone.") }
             TravisAction.HeadBack -> {
                 invalidate();val outing=mutable.value.outing
                 if(outing.points.size<2) { announce("Record at least two measured points before retracing.");return }
                 if(!mutable.value.replay && !mutable.value.locationAllowed) { announce("Allow precise location to begin retracing.");return }
-                val index=outing.retraceIndex ?: TrailMath.previousTarget(outing.points,outing.points.lastIndex)
+                val index=outing.retraceIndex ?: ReturnRoute.next(outing,outing.points.lastIndex)
                 if(index==null) { announce("A recording gap separates these points. No continuous retrace is available.");return }
-                undo.clear();change { it.copy(phase=OutingPhase.ENDED,retraceIndex=index) }
-                mutable.update { it.copy(mode=GuidanceMode.RETRACE,captureMode=false,notice="Following the recorded route in reverse order.") }
-                if(!mutable.value.replay) try { RecordingService.start(getApplication(),outing.id) } catch(_:Exception) { announce("Could not start location for retracing.") }
-                refresh()
+                undo.clear();change { it.copy(phase=OutingPhase.ENDED,endedAt=it.endedAt?:System.currentTimeMillis(),retraceIndex=index,guidance=SavedGuidance(GuidanceMode.RETRACE,startIndex=it.points.lastIndex),suspendedGuidance=null) }
+                mutable.update { it.copy(captureMode=false,notice="Following the recorded route in reverse order.") }
+                startGuidanceLocation(outing.id)
             }
+            is TravisAction.TakeMeBack -> takeMeBack(action.id)
             TravisAction.Confirm -> {
                 if(!mutable.value.canConfirm) { announce("A recent, accurate fix near this target is required.");return }
-                invalidate()
-                if(mutable.value.mode==GuidanceMode.FIND_LANDMARK) {
-                    announce("Place recognized. Resume retracing whenever you're ready.");return
+                invalidate();val outing=mutable.value.outing
+                if(outing.guidance.mode==GuidanceMode.FIND_LANDMARK) { announce("Place recognized. Collection is a separate action; resume your route when ready.");return }
+                val index=ReturnRoute.targetIndex(outing)?:return
+                val goal=outing.guidance.goalIndex?:0
+                if(index==goal) {
+                    if(outing.guidance.memoryId!=null) {
+                        change { it.copy(guidance=it.guidance.copy(mode=GuidanceMode.FIND_LANDMARK,returnIndex=null)) }
+                        announce("At the saved route point. Compare your original photo and confirm the place.")
+                    } else {
+                        change { it.copy(retraceIndex=null,guidance=SavedGuidance()) }
+                        if(!mutable.value.replay)RecordingService.stop(getApplication())
+                        announce("Back at your recorded start. Outing complete.")
+                    }
+                } else {
+                    val previous=ReturnRoute.next(outing,index,goal)
+                    if(previous==null) announce("Recorded segment ends here. No route is inferred across the gap.")
+                    else { undo.add(index);change { if(it.guidance.memoryId!=null)it.copy(guidance=it.guidance.copy(returnIndex=previous))else it.copy(retraceIndex=previous) } }
                 }
-                val outing=mutable.value.outing;val index=outing.retraceIndex?:return
-                val previous=TrailMath.previousTarget(outing.points,index)
-                if(index==0) { change { it.copy(retraceIndex=null) };mutable.update { it.copy(mode=GuidanceMode.NONE) };if(!mutable.value.replay)RecordingService.stop(getApplication());announce("Back at your recorded start. Outing complete.") }
-                else if(previous==null) { announce("Recorded segment ends here. There is a gap before the earlier segment; no route is inferred across it.") }
-                else { undo.add(index);change { it.copy(retraceIndex=previous) } }
             }
-            TravisAction.Undo -> { invalidate();if(undo.isNotEmpty()) { val index=undo.removeAt(undo.lastIndex);change { it.copy(retraceIndex=index) } } }
-            TravisAction.ResumeRetrace -> { invalidate();mutable.update { it.copy(mode=if(it.outing.retraceIndex!=null) GuidanceMode.RETRACE else GuidanceMode.NONE,selectedMemoryId=null,notice="") };refresh() }
+            TravisAction.Undo -> { invalidate();if(undo.isNotEmpty()) { val index=undo.removeAt(undo.lastIndex);change { if(it.guidance.memoryId!=null && it.guidance.mode==GuidanceMode.RETRACE)it.copy(guidance=it.guidance.copy(returnIndex=index))else it.copy(retraceIndex=index) } } }
+            TravisAction.ResumeRetrace -> {
+                invalidate();change { it.copy(guidance=it.guidance.takeIf { g->g.mode==GuidanceMode.RETRACE } ?: it.suspendedGuidance ?: if(it.retraceIndex!=null)SavedGuidance(GuidanceMode.RETRACE,startIndex=it.points.lastIndex)else SavedGuidance(),suspendedGuidance=null) }
+                mutable.update { it.copy(notice="") };startGuidanceLocation(mutable.value.outing.id)
+            }
             TravisAction.CheckDirection -> {
-                val state=mutable.value;val index=state.outing.retraceIndex
+                val state=mutable.value;val index=state.routeTargetIndex
                 if(state.mode!=GuidanceMode.RETRACE || index==null) { announce("Start retracing a recorded outing before checking direction.");return }
                 val expected=state.outing.memories.firstOrNull { it.routeIndex==index }
                 val verdict=state.comparisonVerdict?.let { runCatching { Verdict.valueOf(it) }.getOrNull() }
@@ -138,7 +169,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 mutable.update { it.copy(rightWayResult=result) }
             }
             TravisAction.DismissAssistantResult -> mutable.update { it.copy(answer="",answerStatus=AssistantAnswerStatus.NONE,resultIds=emptyList(),answerGrounded=null,answerConfidence=null,safetyRefusal=false) }
-            TravisAction.StopGuidance -> { invalidate();mutable.update { it.copy(mode=GuidanceMode.NONE,selectedMemoryId=null,surface=TravisSurface.MAP) };if(!mutable.value.replay && mutable.value.outing.phase==OutingPhase.ENDED)RecordingService.stop(getApplication());refresh() }
+            TravisAction.StopGuidance -> { invalidate();change { it.copy(guidance=SavedGuidance(),suspendedGuidance=it.guidance.takeIf { g->g.mode==GuidanceMode.RETRACE }?:it.suspendedGuidance) };mutable.update { it.copy(mode=GuidanceMode.NONE,selectedMemoryId=null,surface=TravisSurface.MAP) };if(!mutable.value.replay && mutable.value.outing.phase==OutingPhase.ENDED)RecordingService.stop(getApplication());refresh() }
             TravisAction.Explore -> {
                 invalidate();issue="normal";replayOuting=ExploreFixture.outing();replayFix=ExploreFixture.points.last().copy(time=System.currentTimeMillis());replayHeading=20.0
                 mutable.update { it.copy(replay=true,mode=GuidanceMode.NONE,surface=TravisSurface.MAP,replayStep=14,selectedMemoryId=null,answer="",resultIds=emptyList(),notice="Explore demo · movement, camera preview and model answers are samples.") };refresh()
@@ -160,14 +191,21 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             TravisAction.CancelCapture -> mutable.update { it.copy(captureMode=false) }
             is TravisAction.SavePhoto -> savePhoto(action.note,action.pickup)
             is TravisAction.SwitchSurface -> {
-                if(mutable.value.surface!=action.surface) invalidate()
                 mutable.update { it.copy(surface=action.surface,captureMode=false) }
             }
-            is TravisAction.SelectMemory -> { invalidate();if(mutable.value.outing.memories.none { it.id==action.id }) return
-                mutable.update { it.copy(selectedMemoryId=action.id,mode=GuidanceMode.FIND_LANDMARK,surface=TravisSurface.AR,captureMode=false,notice="",comparisonVerdict=null,comparisonReasons=emptyList()) };refresh()
-                if(mutable.value.target==null) announce("This photo has no recorded location. You can recognize it visually; direction is unavailable.")
-                else if(!mutable.value.replay && mutable.value.locationAllowed) try { RecordingService.start(getApplication(),mutable.value.outing.id) } catch(_:Exception) { announce("Location could not start for Find. Check permission.") }
-                else if(!mutable.value.replay) announce("Allow precise location to update this Find direction.")
+            is TravisAction.SelectMemory -> {
+                invalidate();val memory=mutable.value.outing.memories.find { it.id==action.id }?:return
+                change { it.copy(guidance=SavedGuidance(GuidanceMode.FIND_LANDMARK,memory.id),suspendedGuidance=it.guidance.takeIf { g->g.mode==GuidanceMode.RETRACE }?:it.suspendedGuidance) }
+                mutable.update { it.copy(surface=TravisSurface.AR,captureMode=false,notice="") }
+                if(memory.point==null)announce("This photo has no recorded location. Direction is unavailable.")else startGuidanceLocation(mutable.value.outing.id)
+            }
+            is TravisAction.UpdateMemoryNote -> updateMemoryNote(action.id,action.note)
+            is TravisAction.DeleteMemory -> deleteMemory(action.id)
+            is TravisAction.SetArrivalReminder -> {
+                val memory=mutable.value.outing.memories.find { it.id==action.id }?:return
+                if(action.enabled && memory.point==null) { announce("This place has no saved location for an arrival reminder.");return }
+                change { it.copy(memories=it.memories.map { m->if(m.id==action.id)m.copy(arrival=if(action.enabled)ArrivalPhase.ARMED else ArrivalPhase.NONE)else m }) }
+                announce(if(action.enabled)"Arrival reminder requested. It runs while this outing's location service is active."else"Arrival reminder removed.")
             }
             is TravisAction.Ask -> ask(action.query)
             is TravisAction.AskAboutTrip -> askAboutTrip(action.query)
@@ -176,15 +214,24 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             TravisAction.ConfirmReminder -> confirmReminder()
             TravisAction.DismissReminder -> mutable.update { it.copy(pendingReminder=null,reminderMessageMemoryId=null,inferenceMessage="") }
             is TravisAction.RetryDescription -> mutable.value.outing.memories.firstOrNull { it.id==action.memoryId }?.let { describe(it,mutable.value.outing.id) }
-            is TravisAction.UpdateMemory -> updateMemory(action.id,action.title,action.description)
+            is TravisAction.UpdateMemory -> updateMemory(action.id,action.title,action.description,action.note)
             is TravisAction.CompareCurrentPhoto -> compareCurrentPhoto(action.memoryId)
             is TravisAction.Collect -> change { outing->outing.copy(memories=outing.memories.map { if(it.id==action.id && it.pickup!=PickupPhase.NONE)it.copy(pickup=PickupPhase.COLLECTED)else it }) }
-            is TravisAction.OpenOuting -> { if(!mutable.value.replay && liveOuting.phase in listOf(OutingPhase.RECORDING,OutingPhase.PAUSED) && action.id!=currentId) { announce("End the active outing before opening another.");return };invalidate();if(mutable.value.replay)action(TravisAction.ExitExplore);currentId=action.id;preferences.edit().putString("active",action.id).apply();liveOuting=store.outings.value.find { it.id==action.id }?:Outing();mutable.update { it.copy(mode=GuidanceMode.NONE,selectedMemoryId=null,answer="",resultIds=emptyList()) };refresh() }
+            is TravisAction.OpenOuting -> openOuting(action.id)
             is TravisAction.DemoIssue -> if(mutable.value.replay) { issue=action.issue;mutable.update { it.copy(busy=issue=="loading",answer=when(issue){"error"->"Sample error · local model unavailable";"no_match"->"Sample answer · no recorded match";else->""},resultIds=emptyList()) };refresh() }
             is TravisAction.SetReplayHeading -> if(mutable.value.replay) { replayHeading=action.degrees;refresh() }
-            is TravisAction.SetTimeReminder -> if(mutable.value.replay) announce("Sample reminder · in ${action.minutes} minutes") else if(mutable.value.notificationsAllowed) { TravisNotifications.schedule(getApplication(),action.minutes);announce("Reminder requested for about ${action.minutes} minutes from now. Android may delay delivery.") } else announce("Allow notifications to receive reminders.")
+            is TravisAction.SetTimeReminder -> {
+                val state=mutable.value
+                when {
+                    state.replay->announce("Sample reminder · in ${action.minutes} minutes")
+                    state.outing.id.isBlank()->announce("Start or open an outing before setting a reminder.")
+                    !state.notificationsAllowed->announce("Allow notifications to receive reminders.")
+                    else->try { TravisNotifications.schedule(getApplication(),action.minutes,state.outing.id,state.selectedMemoryId);announce("Reminder requested for about ${action.minutes} minutes from now. Android may delay delivery.") }catch(_:Exception) { announce("The reminder could not be scheduled. Your recording and saved places are unchanged.") }
+                }
+            }
             TravisAction.CancelInference -> { invalidate();announce("Model request cancelled. Route recording continues.") }
             TravisAction.DismissNotice -> mutable.update { it.copy(notice="") }
+            TravisAction.DismissNotification -> mutable.update { it.copy(notificationMemory=null,notificationOutingName="") }
             TravisAction.ImportModel,TravisAction.RequestPermissions -> Unit // Activity owns system launchers.
         }
     }
@@ -192,10 +239,63 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         invalidate();mutable.update { it.copy(busy=true) }
         val importSession=session
         inferenceJob=viewModelScope.launch {
-            try { withContext(Dispatchers.IO) { models.import(uri) };announce("Gemma 4 E2B imported and checksum verified.") }
+            try { withContext(Dispatchers.IO) { models.import(uri);ownedInference?.closeAndJoin();ownedInference=null };announce("Gemma 4 E2B imported and checksum verified.") }
             catch(_:CancellationException) { throw CancellationException() }
             catch(_:Exception) { announce("Model import failed. Use the exact verified Gemma 4 E2B file and check free storage.") }
             finally { if(session==importSession)mutable.update { it.copy(busy=false,modelReady=models.ready) } }
+        }
+    }
+    private fun startGuidanceLocation(outingId:String) {
+        if(mutable.value.replay || outingId.isBlank())return
+        if(!mutable.value.locationAllowed) { announce("Allow precise location to update guidance.");return }
+        try { RecordingService.start(getApplication(),outingId) }catch(_:Exception) { announce("Location could not start. Check permission.") }
+    }
+    private fun takeMeBack(memoryId:String) {
+        val outing=mutable.value.outing
+        val plan=ReturnRoute.plan(outing,memoryId)
+        if(plan==null) { announce("No continuous recorded return segment connects this place to your current progress. Find in AR offers a labelled direct bearing.");return }
+        invalidate();undo.clear()
+        change { it.copy(phase=OutingPhase.ENDED,endedAt=it.endedAt?:System.currentTimeMillis(),guidance=SavedGuidance(GuidanceMode.RETRACE,memoryId,plan.nextIndex,plan.goalIndex,plan.startIndex)) }
+        mutable.update { it.copy(surface=TravisSurface.MAP,captureMode=false,notice="Returning along your recording. The arrow follows the next route point.") }
+        startGuidanceLocation(outing.id)
+    }
+    private fun updateMemoryNote(id:String,note:String) {
+        if(note.length>2000) { announce("Keep notes under 2,000 characters.");return }
+        invalidate();change { it.copy(revision=it.revision+1,memories=it.memories.map { m->if(m.id==id)m.copy(note=note)else m }) }
+    }
+    private fun deleteMemory(id:String) {
+        invalidate()
+        change { outing->outing.copy(revision=outing.revision+1,memories=outing.memories.filterNot { it.id==id },
+            guidance=if(outing.guidance.memoryId==id)SavedGuidance()else outing.guidance) }
+        mutable.update { it.copy(resultIds=it.resultIds.filterNot { key->key==id },answer="",retryDescriptionId=null) }
+        announce("Saved place removed. Recorded route is preserved.")
+    }
+    private fun openOuting(id:String) {
+        val selected=store.outings.value.find { it.id==id }?:return
+        if(liveOuting.phase in listOf(OutingPhase.RECORDING,OutingPhase.PAUSED) && id!=currentId) { announce("End the active outing before opening another.");return }
+        invalidate()
+        if(id!=currentId)RecordingService.stop(getApplication())
+        replayOuting=null;replayFix=null;issue="normal";currentId=id;preferences.edit().putString("active",id).apply();liveOuting=selected
+        mutable.update { it.copy(replay=false,surface=TravisSurface.MAP,answer="",resultIds=emptyList()) };refresh()
+        if(selected.guidance.mode!=GuidanceMode.NONE)startGuidanceLocation(id)
+    }
+    fun openNotification(destination:NotificationDestination) {
+        viewModelScope.launch {
+            store.awaitLoaded()
+            val outing=store.outings.value.find { it.id==destination.outingId }
+            if(outing==null) { announce("That saved outing is no longer available.");return@launch }
+            val memory=outing.memories.find { it.id==destination.memoryId }
+            if(liveOuting.id!=outing.id && liveOuting.phase in listOf(OutingPhase.RECORDING,OutingPhase.PAUSED)) {
+                mutable.update { it.copy(notificationMemory=memory,notificationOutingName=outing.name,notice=if(memory==null)"Requested reminder for ${outing.name}"else "") }
+                return@launch
+            }
+            invalidate();if(currentId!=outing.id)RecordingService.stop(getApplication());replayOuting=null;currentId=outing.id;preferences.edit().putString("active",outing.id).apply();liveOuting=outing
+            mutable.update { it.copy(replay=false,surface=TravisSurface.MAP,answer="",resultIds=listOfNotNull(memory?.id),notice="Requested ${destination.kind} reminder") }
+            if(memory!=null && destination.kind !in setOf("departure","recording")) {
+                store.mutate(outing.id) { current->requireNotNull(current).copy(guidance=SavedGuidance(GuidanceMode.FIND_LANDMARK,memory.id),suspendedGuidance=current.guidance.takeIf { it.mode==GuidanceMode.RETRACE }?:current.suspendedGuidance) }
+            }
+            refresh()
+            if(mutable.value.mode!=GuidanceMode.NONE)startGuidanceLocation(outing.id)
         }
     }
     private fun savePhoto(note:String,pickup:Boolean) {
@@ -252,7 +352,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             }
         }
     }
-    override fun onCleared() { camera.close();inference.close();super.onCleared() }
+    override fun onCleared() { camera.close();ownedInference?.close();ownedInference=null;super.onCleared() }
     private fun ask(query:String) {
         if(query.isBlank()) return
         invalidate();val snapshot=mutable.value;mutable.update { it.copy(assistantMode=AssistantMode.FIND_PLACE,answer="",answerStatus=AssistantAnswerStatus.NONE,resultIds=emptyList(),answerGrounded=null,answerConfidence=null,safetyRefusal=false,inferenceMessage="") }
@@ -262,7 +362,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         }
         if(!models.ready) { mutable.update { it.copy(answer="Local model unavailable. Import the verified model; your saved memories remain browsable.",answerStatus=AssistantAnswerStatus.UNAVAILABLE,resultIds=emptyList()) };return }
         if(snapshot.outing.memories.isEmpty()) { mutable.update { it.copy(answer="No saved places yet. Capture your first landmark.",answerStatus=AssistantAnswerStatus.INFO) };return }
-        val candidates=snapshot.outing.memories.takeLast(12).mapIndexed { index,m->Checkpoint(m.id,index,ImageRef(m.id,m.photoPath,m.capturedAt),m.title,m.description.split(" · ").take(8),userNotes=m.note) }
+        val candidates=snapshot.outing.memories.withIndex().toList().takeLast(12).map { (index,m)->Checkpoint(m.id,index,ImageRef(m.id,m.photoPath,m.capturedAt),m.title,m.description.split(" · ").take(8),trackIndex=m.routeIndex,userNotes=m.note) }
         val scopeLabel=if(snapshot.outing.memories.size>12) "Latest 12 of ${snapshot.outing.memories.size} memories. " else ""
         val request=context("retrieval");gate.begin(request)
         inferenceJob=viewModelScope.launch {
@@ -273,7 +373,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 }
                 when(result) {
                     is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Searching your saved places on this phone…",answer="",resultIds=emptyList(),answerGrounded=null,answerConfidence=null,safetyRefusal=false) }
-                    is InferenceState.Success -> if(gate.consume(request)) { val clarification=result.value is DestinationProposal.AskClarification;mutable.update { it.copy(busy=false,answerStatus=AssistantAnswerStatus.LIVE,resultIds=when(val proposal=result.value){is DestinationProposal.Target->listOf(proposal.checkpointId);DestinationProposal.AskClarification->candidates.map { it.id };else->emptyList()},answer=scopeLabel+when(result.value){is DestinationProposal.Target->"Is this the place? Review the saved photo, then choose Find in AR.";DestinationProposal.AskClarification->"A few saved places could fit. Add a detail or choose from these photos.";DestinationProposal.NoRecordedMatch->"I don't see that in your saved places."},answerGrounded=null,answerConfidence=null,safetyRefusal=false,inferenceMessage=if(clarification)"Gemma 4 · local result · candidates are unconfirmed" else "Gemma 4 · local result") } }
+                    is InferenceState.Success -> if(gate.consume(request)) { val clarification=result.value is DestinationProposal.AskClarification;mutable.update { it.copy(busy=false,answerStatus=AssistantAnswerStatus.LIVE,resultIds=when(val proposal=result.value){is DestinationProposal.Target->listOf(proposal.checkpointId);DestinationProposal.AskClarification->candidates.map { it.id };else->emptyList()},answer=scopeLabel+when(result.value){is DestinationProposal.Target->"Is this the place? Review the original photo and note, then take the recorded route back.";DestinationProposal.AskClarification->"A few saved places could fit. Add a detail or choose from these photos.";DestinationProposal.NoRecordedMatch->"I don't see that in your saved places."},answerGrounded=null,answerConfidence=null,safetyRefusal=false,inferenceMessage=if(clarification)"Gemma 4 · local result · candidates are unconfirmed" else "Gemma 4 · local result") } }
                     is InferenceState.Failure -> { gate.consume(request);mutable.update { it.copy(busy=false,answerStatus=AssistantAnswerStatus.FAILURE,answer=result.message,resultIds=emptyList(),inferenceMessage="") } }
                 }
             }
@@ -347,23 +447,26 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
 
     private fun confirmReminder() {
         val suggestion=mutable.value.pendingReminder ?: return
-        change { outing->outing.copy(memories=outing.memories.map { if(it.id==suggestion.memoryId && it.pickup==PickupPhase.NONE)it.copy(pickup=PickupPhase.WAITING_TO_LEAVE)else it }) }
+        change { outing->outing.copy(memories=outing.memories.map { if(it.id==suggestion.memoryId && it.pickup==PickupPhase.NONE)it.copy(pickup=PickupPhase.WAITING_TO_LEAVE,pickupTask=suggestion.task)else it }) }
         mutable.update { it.copy(pendingReminder=null) }
         announce("Return reminder added for: ${suggestion.task}")
     }
 
-    private fun updateMemory(id:String,title:String,description:String) {
+    private fun updateMemory(id:String,title:String,description:String,note:String?=null) {
+        invalidate()
         val cleanTitle=title.trim().take(80);val cleanDescription=description.trim().take(1000)
         if(cleanTitle.isBlank()) { announce("Add a short place name.");return }
-        change { outing->outing.copy(revision=outing.revision+1,memories=outing.memories.map { if(it.id==id)it.copy(title=cleanTitle,description=cleanDescription,indexing=if(it.indexing.startsWith("Gemma"))it.indexing else "Your edit")else it }) }
+        change { outing->outing.copy(revision=outing.revision+1,memories=outing.memories.map { if(it.id==id)it.copy(title=cleanTitle,note=note?.take(2000)?:it.note,description=cleanDescription,indexing=if(cleanDescription!=it.description)"Edited by you"else it.indexing)else it }) }
     }
 
     private fun compareCurrentPhoto(memoryId:String) {
         if(mutable.value.busy) return
         val before=mutable.value
-        val expectedIndex=before.outing.retraceIndex
-        if(before.mode!=GuidanceMode.RETRACE || expectedIndex==null) { announce("Compare only with the next saved place on your recorded route.");return }
-        val memory=before.outing.memories.firstOrNull { it.id==memoryId && it.routeIndex==expectedIndex }
+        val expectedIndex=before.routeTargetIndex
+        val compareMode=before.mode
+        if(compareMode==GuidanceMode.NONE) { announce("Choose a saved place before comparing it.");return }
+        val memory=before.outing.memories.firstOrNull { it.id==memoryId &&
+            (if(compareMode==GuidanceMode.RETRACE)it.routeIndex==expectedIndex else it.id==before.selectedMemoryId) }
         if(memory==null) { announce("That photo is not the next saved place on your recorded route.");return }
         if(before.replay) { mutable.update { it.copy(comparisonVerdict="INSUFFICIENT_EVIDENCE",comparisonReasons=emptyList(),inferenceMessage="Explore sample · not a live model result") };return }
         if(!models.ready) { mutable.update { it.copy(comparisonVerdict=null,comparisonReasons=emptyList(),inferenceMessage="Import the verified local model to compare photos.") };return }
@@ -372,15 +475,16 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         val currentFile=File(getApplication<Application>().cacheDir,"compare-${UUID.randomUUID()}.jpg")
         mutable.update { it.copy(busy=true,comparisonVerdict=null,comparisonReasons=emptyList(),inferenceMessage="Taking a current photo for comparison…") }
         camera.takePhoto(currentFile) { captured ->
-            viewModelScope.launch {
-                if(session!=captureSession || currentId!=outingId || mutable.value.mode!=GuidanceMode.RETRACE || mutable.value.outing.retraceIndex!=expectedIndex) { currentFile.delete();mutable.update { it.copy(busy=false) };return@launch }
+            if(session!=captureSession) { currentFile.delete();return@takePhoto }
+            inferenceJob=viewModelScope.launch {
+                if(session!=captureSession || currentId!=outingId || mutable.value.mode!=compareMode || mutable.value.routeTargetIndex!=expectedIndex || (compareMode==GuidanceMode.FIND_LANDMARK && mutable.value.selectedMemoryId!=memoryId)) { currentFile.delete();return@launch }
                 if(!captured) { currentFile.delete();mutable.update { it.copy(busy=false,inferenceMessage="Couldn't take a comparison photo. The saved place is unchanged.") };return@launch }
                 val committed=store.outings.value.find { it.id==outingId }
                 if(committed==null || committed.revision!=revision) { currentFile.delete();mutable.update { it.copy(busy=false,inferenceMessage="Saved places changed. Compare again with the current photo.") };return@launch }
                 val request=RequestContext(session,UUID.randomUUID().toString(),outingId,revision,memoryId);gate.begin(request)
                 try {
                     inference.compare(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt),ImageRef("current-${UUID.randomUUID()}",currentFile.absolutePath,System.currentTimeMillis())).collect { result ->
-                        if(!gate.accepts(result.context) || currentId!=outingId || store.outings.value.find { it.id==outingId }?.revision!=revision || mutable.value.mode!=GuidanceMode.RETRACE || mutable.value.outing.retraceIndex!=expectedIndex) { if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false) } };return@collect }
+                        if(!gate.accepts(result.context) || currentId!=outingId || store.outings.value.find { it.id==outingId }?.revision!=revision || mutable.value.mode!=compareMode || mutable.value.routeTargetIndex!=expectedIndex || (compareMode==GuidanceMode.FIND_LANDMARK && mutable.value.selectedMemoryId!=memoryId)) { if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false) } };return@collect }
                         when(result) {
                             is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Comparing with your saved photo on this phone…") }
                             is InferenceState.Success -> if(gate.consume(request)) {

@@ -35,6 +35,7 @@ class OutingStore private constructor(context: Context) {
         }
     }
     suspend fun save(outing: Outing) { mutate(outing.id) { outing } }
+    suspend fun awaitLoaded() { loaded.await() }
     suspend fun mutate(id: String, change: (Outing?) -> Outing) {
         loaded.await()
         withContext(Dispatchers.IO) {
