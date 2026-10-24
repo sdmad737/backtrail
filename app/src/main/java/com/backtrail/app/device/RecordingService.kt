@@ -25,10 +25,10 @@ class RecordingService:Service(),LocationListener {
     }
     private val events=Channel<Event>(Channel.UNLIMITED)
     private var policy=RecordingPolicy()
-    private val counts=mutableMapOf<String,Int>()
+    private val reminders=PlaceReminderEvidence()
     private val delivery=FixDelivery()
     private var departure=DepartureEvidence()
-    private fun resetEvidence() { counts.clear();departure.interrupt() }
+    private fun resetEvidence() { reminders.reset();departure.interrupt() }
     override fun onCreate() {
         super.onCreate(); locations=getSystemService(LocationManager::class.java); store=OutingStore.get(this)
         scope.launch { LiveSensors.guidanceMode.collect { departure.modeChanged(it) } }
@@ -37,7 +37,7 @@ class RecordingService:Service(),LocationListener {
             for(event in events) {
                 try {
                     when(event) {
-                        is Event.Start -> if(event.id==outingId) { policy=RecordingPolicy();counts.clear();departure=DepartureEvidence().also { it.modeChanged(LiveSensors.guidanceMode.value) } }
+                        is Event.Start -> if(event.id==outingId) { policy=RecordingPolicy();reminders.reset();departure=DepartureEvidence().also { it.modeChanged(LiveSensors.guidanceMode.value) } }
                         is Event.Interrupted -> if(event.id==outingId) { policy.interrupt();resetEvidence() }
                         is Event.Fix -> if(event.id==outingId) record(event)
                     }
@@ -51,7 +51,7 @@ class RecordingService:Service(),LocationListener {
         val requestedId=intent?.getStringExtra("outing") ?: ""
         if(requestedId.isBlank()) { stopSelf();return START_NOT_STICKY }
         try {
-            startForeground(11,TravisNotifications.notification(this,"Travis · outing active","Location is active. Pause or end in Travis.",true))
+            startForeground(11,TravisNotifications.notification(this,"Travis · outing active","Location is active. Pause or end in Travis.",true,NotificationDestination(requestedId,kind="recording")))
             if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED) {
                 LiveSensors.failure.value="Precise location permission is needed for recording.";stopSelf();return START_NOT_STICKY
             }
@@ -88,29 +88,30 @@ class RecordingService:Service(),LocationListener {
             location.elapsedRealtimeNanos/1_000_000,elapsed,now)
         lateinit var observation:RecordingUpdate
         val newlyNotified=mutableListOf<Memory>()
+        val newlyArrived=mutableListOf<Memory>()
         delivery.commit(event.generation,persist={
         store.mutate(id) { old ->
             val outing=requireNotNull(old) { "Recording outing is missing" }
             observation=policy.accept(outing,sample)
             val fix=observation.fix
-            if(observation.evidenceInterrupted || TrailMath.quality(fix,now)!=FixQuality.USABLE) counts.clear()
+            if(observation.evidenceInterrupted || TrailMath.quality(fix,now)!=FixQuality.USABLE) reminders.reset()
             val changed=observation.outing
             if(fix==null) return@mutate changed
-            // Three consecutive valid samples are required for either leave/arrival transition.
+            // State is persisted before posting; reopening cannot repeat the same alert.
             val memories=changed.memories.map { memory ->
-                val point=memory.point ?: return@map memory
-                val next=TrailMath.pickup(memory.pickup,TrailMath.distance(fix,point),fix.accuracy,TrailMath.quality(fix,now)==FixQuality.USABLE)
-                val key=memory.id+next.name
-                if(next==memory.pickup) { counts.keys.filter { it.startsWith(memory.id) }.toList().forEach { counts.remove(it) }; return@map memory }
-                val count=(counts[key]?:0)+1;counts[key]=count
-                if(count<3 || (next==PickupPhase.NOTIFIED && !TravisNotifications.allowed(this@RecordingService))) return@map memory
-                memory.copy(pickup=next).also { if(next==PickupPhase.NOTIFIED)newlyNotified.add(it) }
+                val updated=reminders.observe(memory,fix,now,TravisNotifications.allowed(this@RecordingService))
+                if(memory.pickup!=PickupPhase.NOTIFIED && updated.pickup==PickupPhase.NOTIFIED) newlyNotified.add(updated)
+                if(memory.arrival!=ArrivalPhase.NOTIFIED && updated.arrival==ArrivalPhase.NOTIFIED) newlyArrived.add(updated)
+                updated
             }
             changed.copy(memories=memories)
         }
         },deliverCommitted={
             newlyNotified.forEach { memory ->
-                TravisNotifications.post(this@RecordingService,memory.id.hashCode(),"Pickup nearby · ${memory.title}",memory.note.ifBlank { "Check the original photo, then mark collected." })
+                TravisNotifications.post(this@RecordingService,memory.id.hashCode(),"Pickup nearby · ${memory.title}",memory.pickupTask.ifBlank { memory.note }.ifBlank { "Check the original photo, then mark collected." },NotificationDestination(id,memory.id,"pickup"))
+            }
+            newlyArrived.forEach { memory ->
+                TravisNotifications.post(this@RecordingService,("arrival:"+memory.id).hashCode(),"Near ${memory.title}","You are near the saved location. Check the original photo to recognize it.",NotificationDestination(id,memory.id,"arrival"))
             }
         },publish={
             val fix=observation.fix
@@ -123,12 +124,12 @@ class RecordingService:Service(),LocationListener {
                 LiveSensors.fix.value=fix
                 LiveSensors.failure.value=if(fix==null) "Waiting for a fresh, valid GPS fix" else ""
                 val updated=store.outings.value.find { it.id==id }
-                val index=updated?.retraceIndex
+                val index=updated?.let { if(it.guidance.mode==GuidanceMode.RETRACE && it.guidance.memoryId!=null) it.guidance.returnIndex else it.retraceIndex }
                 if(fix!=null && updated!=null && index!=null && index in updated.points.indices && event.guidanceRevision==departure.revision) {
                     val nearby=updated.points.subList(max(0,index-3),(index+4).coerceAtMost(updated.points.size))
                     val distance=nearby.minOfOrNull { TrailMath.distance(fix,it) } ?: 0.0
                     if(departure.observe("$id:${updated.points[index].id}",distance,fix.accuracy,TrailMath.quality(fix,now)==FixQuality.USABLE,elapsed) &&
-                        TravisNotifications.post(this@RecordingService,80,"Check your recorded trail","You appear away from the next recorded section. Check the map and saved photo.")) departure.delivered(elapsed)
+                        TravisNotifications.post(this@RecordingService,80,"Check your recorded trail","You appear away from the next recorded section. Check the map and saved photo.",NotificationDestination(id,updated.guidance.memoryId,"departure"))) departure.delivered(elapsed)
                 } else departure.interrupt()
             }
         })

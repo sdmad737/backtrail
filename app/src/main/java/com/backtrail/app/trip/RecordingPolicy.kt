@@ -20,10 +20,14 @@ class RecordingPolicy {
     private var lastRecordedElapsed: Long? = null
     private var routeInterrupted = true
     private var evidenceInterrupted = true
+    private var previousFix: Pair<TrailPoint, Long>? = null
+    private var jumpCandidate: Pair<TrailPoint, Long>? = null
 
     fun interrupt() {
         routeInterrupted = true
         evidenceInterrupted = true
+        previousFix = null
+        jumpCandidate = null
     }
 
     fun accept(outing: Outing, sample: RecordingSample): RecordingUpdate {
@@ -43,6 +47,22 @@ class RecordingPolicy {
             interrupt()
             return RecordingUpdate(outing, fix, true)
         }
+        val previous = previousFix
+        if (previous != null && !plausibleMovement(previous, fix, sample.elapsedMillis)) {
+            // A single GPS teleport must not move the map, grow the trace or arm a reminder.
+            // Two consistent observations can establish a new position, but never connect
+            // that reacquisition to the old route with an invented travelled segment.
+            routeInterrupted = true
+            evidenceInterrupted = true
+            val candidate = jumpCandidate
+            if (candidate == null || sample.elapsedMillis - candidate.second > 5_000 ||
+                !plausibleMovement(candidate, fix, sample.elapsedMillis)) {
+                jumpCandidate = fix to sample.elapsedMillis
+                return RecordingUpdate(outing, null, true)
+            }
+        }
+        previousFix = fix to sample.elapsedMillis
+        jumpCandidate = null
         val brokenEvidence = evidenceInterrupted
         evidenceInterrupted = false
         if (outing.phase != OutingPhase.RECORDING) {
@@ -57,5 +77,13 @@ class RecordingPolicy {
         lastRecordedElapsed = sample.elapsedMillis
         routeInterrupted = false
         return RecordingUpdate(outing.copy(points = outing.points + fix.copy(segment = segment), segment = segment), fix, brokenEvidence)
+    }
+
+    private fun plausibleMovement(previous: Pair<TrailPoint, Long>, fix: TrailPoint, elapsed: Long): Boolean {
+        val seconds = (elapsed - previous.second) / 1_000.0
+        // Deliberately generous for fast outdoor movement. Both reported uncertainty
+        // radii are removed before judging speed, so normal GPS wander is retained.
+        val minimumDistance = (TrailMath.distance(previous.first, fix) - previous.first.accuracy - fix.accuracy).coerceAtLeast(0.0)
+        return seconds > 0 && minimumDistance <= 35.0 * seconds + 10.0
     }
 }

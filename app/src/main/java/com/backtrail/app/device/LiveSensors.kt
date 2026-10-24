@@ -2,10 +2,13 @@ package com.backtrail.app.device
 
 import android.content.Context
 import android.hardware.*
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import com.backtrail.app.contracts.FixQuality
 import com.backtrail.app.contracts.TrailPoint
 import com.backtrail.app.trip.TrailMath
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlin.math.*
 
 object LiveSensors {
     val trackingRunning=MutableStateFlow(false)
@@ -20,22 +23,37 @@ object LiveSensors {
 class CameraHeading(context: Context) : SensorEventListener {
     private val manager=context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val sensor=manager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-    private var previous: Double?=null
+    private val filter=CameraBearingFilter()
+    private val handler=Handler(Looper.getMainLooper())
     private var accuracy=SensorManager.SENSOR_STATUS_UNRELIABLE
-    fun start() { if(sensor!=null) manager.registerListener(this,sensor,SensorManager.SENSOR_DELAY_UI) }
-    fun stop() { manager.unregisterListener(this); LiveSensors.heading.value=null; LiveSensors.headingReliable.value=false; previous=null }
-    override fun onAccuracyChanged(sensor:Sensor?, value:Int) { accuracy=value }
+    private val expire=Runnable { invalidate() }
+    private fun invalidate() {
+        LiveSensors.heading.value=null
+        LiveSensors.headingReliable.value=false
+        filter.reset()
+    }
+    fun start() {
+        invalidate()
+        if(sensor!=null) manager.registerListener(this,sensor,SensorManager.SENSOR_DELAY_UI)
+    }
+    fun stop() { manager.unregisterListener(this); handler.removeCallbacks(expire); invalidate() }
+    override fun onAccuracyChanged(sensor:Sensor?, value:Int) {
+        accuracy=value
+        if(value<SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM) invalidate()
+    }
     override fun onSensorChanged(event:SensorEvent) {
         accuracy=event.accuracy
-        val r=FloatArray(9); SensorManager.getRotationMatrixFromVector(r,event.values)
-        val east=-r[2].toDouble(); val north=-r[5].toDouble()
-        // Near-vertical viewing rays have no useful horizontal direction.
-        if(hypot(east,north)<0.25) { LiveSensors.heading.value=null; LiveSensors.headingReliable.value=false; return }
+        handler.removeCallbacks(expire)
+        handler.postDelayed(expire,1_500)
         val fix=LiveSensors.fix.value
-        val declination=fix?.let { GeomagneticField(it.latitude.toFloat(),it.longitude.toFloat(),0f,System.currentTimeMillis()).declination.toDouble() } ?: 0.0
-        val raw=(Math.toDegrees(atan2(east,north))+declination+360)%360
-        val smoothed=previous?.let { (it+0.18*TrailMath.delta(raw,it)+360)%360 } ?: raw
-        previous=smoothed; LiveSensors.heading.value=smoothed
-        LiveSensors.headingReliable.value=accuracy>=SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM && fix!=null
+        if(accuracy<SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM || TrailMath.quality(fix,System.currentTimeMillis())!=FixQuality.USABLE || SystemClock.elapsedRealtime()-event.timestamp/1_000_000 !in 0..1_500) {
+            invalidate(); return
+        }
+        val r=FloatArray(9); SensorManager.getRotationMatrixFromVector(r,event.values)
+        val declination=GeomagneticField(fix!!.latitude.toFloat(),fix.longitude.toFloat(),0f,System.currentTimeMillis()).declination.toDouble()
+        val raw=CameraBearing.fromRotation(r,declination)
+        if(raw==null) { invalidate(); return }
+        LiveSensors.heading.value=filter.accept(raw,event.timestamp/1_000_000)
+        LiveSensors.headingReliable.value=true
     }
 }

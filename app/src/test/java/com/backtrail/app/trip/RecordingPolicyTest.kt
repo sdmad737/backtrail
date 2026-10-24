@@ -74,10 +74,10 @@ class RecordingPolicyTest {
     @Test fun pausedTrackingUpdatesPositionWithoutExtendingRouteThenResumesWithGap() {
         val policy = RecordingPolicy()
         val first = policy.accept(recording, sample(1_000)).outing
-        val paused = policy.accept(first.copy(phase = OutingPhase.PAUSED, segment = 1), sample(2_000, lon = .001))
+        val paused = policy.accept(first.copy(phase = OutingPhase.PAUSED, segment = 1), sample(2_000, lon = .0001))
         assertEquals(first.points, paused.outing.points)
         assertNotNull(paused.fix)
-        val resumed = policy.accept(paused.outing.copy(phase = OutingPhase.RECORDING), sample(3_000, lon = .002))
+        val resumed = policy.accept(paused.outing.copy(phase = OutingPhase.RECORDING), sample(3_000, lon = .0002))
         assertEquals(listOf(0, 1), resumed.outing.points.map { it.segment })
     }
 
@@ -95,6 +95,50 @@ class RecordingPolicyTest {
         assertEquals(1, early.points.size)
         val next = policy.accept(early, sample(11_000, wall = 1_000)).outing
         assertEquals(2, next.points.size)
+    }
+
+    @Test fun isolatedTeleportCannotMoveGuidanceOrCreateAFalseRoute() {
+        val policy = RecordingPolicy()
+        val first = policy.accept(recording, sample(1_000)).outing
+        val spike = policy.accept(first, sample(2_000, lon = .01))
+        assertNull(spike.fix)
+        assertEquals(first, spike.outing)
+        assertTrue(spike.evidenceInterrupted)
+        val recovered = policy.accept(spike.outing, sample(3_000, lon = .0001))
+        assertNotNull(recovered.fix)
+        assertEquals(listOf(0, 1), recovered.outing.points.map { it.segment })
+        assertEquals(0.0, TrailMath.length(recovered.outing.points), .001)
+    }
+
+    @Test fun consistentNewFixesReacquireAcrossAGapWithoutConnectingTheJump() {
+        val policy = RecordingPolicy()
+        val first = policy.accept(recording, sample(1_000)).outing
+        val jump = policy.accept(first, sample(2_000, lon = .01))
+        val reacquired = policy.accept(jump.outing, sample(3_000, lon = .0101))
+        assertNotNull(reacquired.fix)
+        assertTrue(reacquired.evidenceInterrupted)
+        assertEquals(listOf(0, 1), reacquired.outing.points.map { it.segment })
+        assertEquals(0.0, TrailMath.length(reacquired.outing.points), .001)
+    }
+
+    @Test fun fastPlausibleMotionAndReportedUncertaintyAreNotErased() {
+        val policy = RecordingPolicy()
+        val first = policy.accept(recording, sample(1_000, accuracy = 20f)).outing
+        // About 67m separation minus 40m reported uncertainty in one second.
+        val next = policy.accept(first, sample(2_000, lon = .0006, accuracy = 20f))
+        assertNotNull(next.fix)
+        assertEquals(2, next.outing.points.size)
+        assertFalse(next.evidenceInterrupted)
+        assertEquals(0, next.outing.points.last().segment)
+    }
+
+    @Test fun aSecondUnrelatedTeleportDoesNotCountAsReacquisition() {
+        val policy = RecordingPolicy()
+        val first = policy.accept(recording, sample(1_000)).outing
+        val jump = policy.accept(first, sample(2_000, lon = .01))
+        val another = policy.accept(jump.outing, sample(3_000, lon = -.01))
+        assertNull(another.fix)
+        assertEquals(first, another.outing)
     }
 
     @Test fun endedOutingStillReceivesConsecutiveFixesForFindAndReminders() {
