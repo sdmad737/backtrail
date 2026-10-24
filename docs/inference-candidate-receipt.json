@@ -1,0 +1,65 @@
+{
+  "source_commit": "a45b7aabcf654fe9c518495a4a5c824d59328b46",
+  "source_branch": "origin/codex/inference",
+  "baseline_main": "58756719a90b6ec2c11864c3226ee36e27b7db49",
+  "receipt_written_at_utc": "2026-10-24T21:40:52.328662+00:00",
+  "command": "./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :app:lintDebug",
+  "build_passed": true,
+  "jvm": {
+    "tests": 49,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Fatal": 0,
+    "Warning": 22,
+    "Information": 0
+  },
+  "apks": [
+    {
+      "path": "local-data/inference-candidate.FeFjZR/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+      "bytes": 859913,
+      "sha256": "bc6e0bb24cd873df1400b4d614e931efd7374801c4bce8d97999c71a09522e4c",
+      "tensor_libraries": []
+    },
+    {
+      "path": "local-data/inference-candidate.FeFjZR/app/build/outputs/apk/debug/app-debug.apk",
+      "bytes": 48584625,
+      "sha256": "d864404296ccf9756314bec241220a626f268c8c1c4002e90864640e72d28a6a",
+      "tensor_libraries": [
+        {
+          "name": "lib/arm64-v8a/libLiteRtCompilerPlugin_google_tensor.so",
+          "bytes": 939376,
+          "zip_compression": 8
+        },
+        {
+          "name": "lib/arm64-v8a/libLiteRtDispatch_GoogleTensor.so",
+          "bytes": 579024,
+          "zip_compression": 8
+        }
+      ]
+    }
+  ],
+  "permissions": [
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.CAMERA",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.FOREGROUND_SERVICE_LOCATION",
+    "com.backtrail.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+  ],
+  "native_libraries": [
+    "libvndksupport.so",
+    "libOpenCL.so",
+    "libedgetpu_util.so",
+    "libedgetpu_litert.so"
+  ],
+  "extract_native_libraries": "true",
+  "installed_by_us": false,
+  "instrumentation_executed_by_us": false,
+  "normal_app_backend": "Still GPU; NPU is selected only by benchmark arguments",
+  "offline_assemble_passed": true
+}

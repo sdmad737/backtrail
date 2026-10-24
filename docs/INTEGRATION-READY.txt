@@ -1,0 +1,81 @@
+TRAVIS — INTEGRATION QUEUE, OCTOBER 24, 2026, APPROXIMATELY 14:40 PDT
+
+CURRENT SNAPSHOT
+Published app baseline: 58756719a90b6ec2c11864c3226ee36e27b7db49.
+Reviewed inference branch: a45b7aabcf654fe9c518495a4a5c824d59328b46.
+That branch already contains the baseline via its merge 57f3279. No pushed UI
+branch was visible in this fetch. Recheck teammates' final SHAs before merging.
+Their working trees were neither changed nor installed over by this pass.
+
+WHAT WE VERIFIED WHILE WAITING
+Baseline app: 19 emulator acceptance checks pass, including the actual Android
+pickup notification with the screen asleep and no repeat on additional fixes.
+GPS inputs and camera scene are simulated. No physical calibration is implied.
+
+Inference snapshot: exported into ignored local-data/inference-candidate.FeFjZR,
+then built using the existing wrapper and project; no competing architecture.
+Command: ./gradlew :app:testDebugUnitTest :app:assembleDebug
+         :app:assembleDebugAndroidTest :app:lintDebug
+Result: 49 JVM tests, zero failures/errors/skips; lint zero errors, 22 warnings.
+Both application and instrumentation APKs built. Instrumentation was NOT run.
+A subsequent --offline :app:assembleDebug passed from the dependency cache.
+Exact artifacts/checksums and merged permissions: inference-candidate-receipt.json.
+The application manifest has no INTERNET permission. Tensor dispatch/compiler
+libraries are in the ARM64 APK; required optional vendor-library declarations
+are merged from the runtime AAR. JNI libraries are compressed in the APK and
+extracted on install (extractNativeLibs=true), contrary to the branch's comment
+calling this uncompressed packaging. The extracted directory is the NPU path.
+
+Matching Google Tensor 2.3.0 runtime: downloaded here, publisher bytes and full
+SHA256 verified. tensor-runtime-receipt.json records exact metadata. The earlier
+hardware-desk runtime dependency is resolved. G6 model remains hash verified here.
+
+FIRST INTEGRATION: EXISTING SAVE -> DESCRIBE -> ASK -> FIND FLOW ON NPU
+1. Inference owner supplies a verified G6 model selection/import path alongside
+   the existing generic model. ModelStore currently accepts only the generic
+   2.588 GB hash. Do not overwrite it with the 3.314 GB G6 file under a false name.
+2. Integration owner wires the live TravisViewModel to that selected model,
+   explicit InferenceBackend.NPU and applicationInfo.nativeLibraryDir, matching
+   the measured benchmark configuration. The dependency alone does not switch
+   backends: the live constructor still defaults to GPU. No silent fallback.
+3. Close the live cached engine when its owner is cleared or model is retired.
+   The branch only closes it from the unused BacktrailViewModel. LocalVisionService
+   close can call native close synchronously, so schedule cleanup off the UI thread.
+4. Install the integrated candidate in a coordinated phone slot. With airplane
+   mode on AND Wi-Fi off, save a fresh photo, obtain a validated description,
+   ask a paraphrase, select its original photo, Find in AR and resume retrace.
+   Record APK/model/runtime hashes and backend; keep GPS recording during inference.
+
+GATES FOR THE ADDITIONAL INFERENCE APIS
+- askAboutTrip, askAboutPhoto, parseReminder, TripMemoryIndex and audio input have
+  no live callers at a45b7aa. Their existence is not end-to-end feature completion.
+  Preserve session/request/outing/revision validation and committed-memory ID
+  validation. Model output must not change route progress or create a reminder
+  without explicit user confirmation. Audio also needs capture and permission.
+- LocalEmbedder close does not use its inference mutex. Serialize initialize,
+  compute and close; reject work after close before enabling it in the live app.
+  Its default TENSOR backend is rejected in the device log; select NPU explicitly.
+- AlignmentMeter's first ALIGNED boundary is 0.73. Measured different-place photo
+  scores are 0.836-0.903. These defaults would label those wrong places aligned.
+  Keep the meter disabled until real same-place and nearby-different-place pairs
+  support calibration. Embedding scores alone cannot confirm location or no match.
+- The stricter comparison prompt eliminated false matches in six reported
+  negative pairs but also rejected a synthetic true pair. Obtain actual return
+  photos of the SAME landmark; no reliable recognition accuracy is established.
+
+EVIDENCE BOUNDARY
+The inference owner's INFERENCE-LOG.md reports actual Pixel 11 Pro / Tensor G6
+NPU description, comparison and embedding measurements, including fresh photos.
+Those are teammate-recorded results, not independently rerun here. The newer
+trip/photo question, reminder and audio APIs are explicitly not device-tested.
+The normal live app's NPU integration and outdoor navigation acceptance remain.
+
+WHAT THE USER CAN DO NOW
+Choose three distinctive nearby outdoor landmarks, with a safe short route and
+clear sky view. Pick one item/place for an opt-in return reminder. Obtain each
+teammate's handoff commit, known blocker and phone availability. Once the Pixel
+is free, take return photos at the same saved spots plus nearby wrong spots.
+Use the physical acceptance slot for Map -> save -> ask -> AR -> retrace -> pickup.
+Leave advanced world-tracked AR and voice out of the acceptance claim until they
+have actual live wiring and device evidence. Existing approximate camera guidance
+is already part of the required flow and remains in it.

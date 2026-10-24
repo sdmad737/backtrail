@@ -1,0 +1,25 @@
+{
+  "source": "https://dl.google.com/dl/android/maven2/com/google/ai/edge/litert/litert-npu-runtime-google-tensor/2.3.0/litert-npu-runtime-google-tensor-2.3.0.aar",
+  "path": ".tooling/gradle-home/caches/modules-2/files-2.1/com.google.ai.edge.litert/litert-npu-runtime-google-tensor/2.3.0/5269c92025c41d31fcaf6aa66f2ffac43b275f45/litert-npu-runtime-google-tensor-2.3.0.aar",
+  "bytes": 672727,
+  "sha256": "5f38ab3de4b99ef75edf13c595cf0c090b10a82d9697f5b55703409757e786f7",
+  "sha1": "5269c92025c41d31fcaf6aa66f2ffac43b275f45",
+  ".sha256": "5f38ab3de4b99ef75edf13c595cf0c090b10a82d9697f5b55703409757e786f7",
+  ".sha1": "5269c92025c41d31fcaf6aa66f2ffac43b275f45",
+  "publisher_content_length": 672727,
+  "bytes_match": true,
+  "sha1_match": true,
+  "sha256_match": true,
+  "libraries": [
+    {
+      "name": "jni/arm64-v8a/libLiteRtCompilerPlugin_google_tensor.so",
+      "bytes": 939376
+    },
+    {
+      "name": "jni/arm64-v8a/libLiteRtDispatch_GoogleTensor.so",
+      "bytes": 579024
+    }
+  ],
+  "verification_scope": "Downloaded Maven AAR bytes and complete SHA-256 against Google Maven metadata; not local NPU execution",
+  "receipt_written_at_utc": "2026-10-24T21:40:35.395852+00:00"
+}

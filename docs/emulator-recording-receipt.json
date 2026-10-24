@@ -13,6 +13,10 @@
     "Resume preserves the recording gap",
     "Foreground recording continues with emulator screen asleep",
     "Original virtual-camera JPEG and location persist",
+    "Pickup does not fire at capture location",
+    "Leaving arms the requested pickup without notifying",
+    "Android receives pickup notification with screen asleep",
+    "More arrival fixes do not repeat the pickup notification",
     "Find preserves the retrace cursor",
     "Find displays the original saved landmark",
     "Find clears the previous retrace notice",
@@ -22,9 +26,16 @@
     "Closing ended-outing guidance stops recording service",
     "Process relaunch preserves route and original photo metadata"
   ],
-  "outing_id": "29fd305d-2ed4-49f5-b35f-2e532237fd8a",
+  "outing_id": "812f328a-5b97-433b-9217-c1413f13e1ba",
+  "pickup_notification": {
+    "id": 1724909756,
+    "updated_at_ms": 1792877849833,
+    "title": "Pickup nearby \u00b7 Saved place"
+  },
   "passed": true,
-  "finished_at_utc": "2026-10-24T21:22:52.609481+00:00",
+  "finished_at_utc": "2026-10-24T21:38:04.268428+00:00",
   "apk_sha256": "d4e43ecb1c23c988b99af953dcf84d339a8f59291799db71f603b4ce80bcdefe",
-  "apk_installed_immediately_before_run": true
+  "apk_sha256_verified_on_emulator_after_run": true,
+  "apk_installed_immediately_before_run": false,
+  "source_commit": "58756719a90b6ec2c11864c3226ee36e27b7db49"
 }
