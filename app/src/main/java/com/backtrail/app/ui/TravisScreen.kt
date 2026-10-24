@@ -226,11 +226,11 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
     when {
         state.mode != GuidanceMode.NONE -> {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                val referencePhoto = state.destinationPhoto.ifBlank { state.targetPhoto }
-                if (referencePhoto.isNotBlank()) TravisPhoto(referencePhoto, "Original photo of your destination", Modifier.size(62.dp).clip(RoundedCornerShape(13.dp)))
+                val referencePhoto = state.targetPhoto
+                if (referencePhoto.isNotBlank()) TravisPhoto(referencePhoto, "Original photo of the next saved checkpoint", Modifier.size(62.dp).clip(RoundedCornerShape(13.dp)))
                 Column(Modifier.weight(1f)) {
                     Eyebrow(if (state.mode == GuidanceMode.RETRACE) "RETRACING YOUR STEPS" else "FINDING A SAVED PLACE")
-                    Text(if (state.mode == GuidanceMode.RETRACE) state.destinationTitle else state.targetTitle, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(state.targetTitle, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(
                         if (state.mode == GuidanceMode.RETRACE) (if(state.remainingMeters==null) "Route distance unavailable" else "~${distanceLabel(state.remainingMeters)} remaining via recorded route")
                         else if(state.distanceMeters==null) "Distance unavailable" else "${distanceLabel(state.distanceMeters)} straight-line distance",
@@ -239,7 +239,10 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 }
             }
             if (state.mode == GuidanceMode.RETRACE) {
-                Text("Next · ${state.targetTitle} · ${distanceLabel(state.distanceMeters)} direct to route point", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (state.destinationPhoto.isNotBlank() && state.destinationPhoto != state.targetPhoto) TravisPhoto(state.destinationPhoto, "Final destination photo", Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)))
+                    Text("Returning to ${state.destinationTitle} · ${if (state.distanceMeters == null) "next-point distance unavailable" else "next point ${distanceLabel(state.distanceMeters)} away"}", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
+                }
             }
             if (state.guidanceStatus.isNotBlank()) Text(state.guidanceStatus, style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
             if (state.mode == GuidanceMode.FIND_LANDMARK && state.canResumeRetrace) {
@@ -250,7 +253,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 PrimaryAction(if (state.mode == GuidanceMode.RETRACE) (if(state.targetPhoto.isBlank()) "Confirm waypoint" else "I recognize this") else "Found this place", "check", Modifier.weight(1f), state.canConfirm) { act(TravisAction.Confirm) }
-                QuietAction("Undo", "undo", Modifier.widthIn(min = 72.dp)) { act(TravisAction.Undo) }
+                if (state.mode == GuidanceMode.RETRACE) QuietAction("Undo", "undo", Modifier.widthIn(min = 72.dp)) { act(TravisAction.Undo) }
             }
             val memory = when (state.mode) {
                 GuidanceMode.FIND_LANDMARK -> outing.memories.firstOrNull { it.id == state.selectedMemoryId }
@@ -336,6 +339,9 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 if (outing.phase == OutingPhase.RECORDING) {
                     IconButton(onClick = { act(TravisAction.Pause) }, modifier = Modifier.semantics { contentDescription = "Pause recording" }) { TravisGlyph("pause", Modifier.size(22.dp), palette.primary) }
                 }
+            }
+            if (state.canResumeRetrace) {
+                OutlinedButton(onClick = { act(TravisAction.ResumeRetrace) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Resume saved retrace") }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 PrimaryAction(when (outing.phase) { OutingPhase.PAUSED -> "Resume outing"; OutingPhase.ENDED -> "Review saved places"; else -> "Save a place" }, if (outing.phase == OutingPhase.PAUSED) "play" else "camera", Modifier.weight(1f)) {

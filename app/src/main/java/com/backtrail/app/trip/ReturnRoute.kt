@@ -6,6 +6,108 @@ import kotlin.math.abs
 /** Ordered recorded geometry only. Never chooses a crossing by nearest position. */
 object ReturnRoute {
     data class Plan(val nextIndex: Int, val goalIndex: Int, val startIndex: Int)
+    data class UndoContext(val outingId: String, val memoryId: String?, val goalIndex: Int, val startIndex: Int)
+
+    private fun validIndex(outing: Outing, index: Int?) = index?.takeIf { it in outing.points.indices }
+
+    /** FIND retains returnIndex only after the user confirmed the destination's route point. */
+    private fun completedIndex(outing: Outing, guide: SavedGuidance): Int? {
+        if (guide.mode != GuidanceMode.FIND_LANDMARK || guide.memoryId == null) return null
+        val memory = outing.memories.find { it.id == guide.memoryId } ?: return null
+        val index = validIndex(outing, guide.returnIndex) ?: return null
+        return index.takeIf { it == guide.goalIndex && it == memory.routeIndex && memory.point != null }
+    }
+
+    private fun guideIndex(outing: Outing, guide: SavedGuidance): Int? = when (guide.mode) {
+        GuidanceMode.RETRACE -> validIndex(outing, if (guide.memoryId != null) guide.returnIndex else outing.retraceIndex)
+        GuidanceMode.FIND_LANDMARK -> completedIndex(outing, guide)
+        GuidanceMode.NONE -> null
+    }
+
+    private fun knownIndex(outing: Outing): Int? = guideIndex(outing, outing.guidance)
+        ?: outing.suspendedGuidance?.let { guideIndex(outing, it) }
+        ?: validIndex(outing, outing.retraceIndex)
+
+    fun suspendCurrent(outing: Outing): SavedGuidance? =
+        outing.guidance.takeIf { guideIndex(outing, it) != null }
+            ?: outing.suspendedGuidance?.takeIf { guideIndex(outing, it) != null }
+
+    fun suspendForFind(outing: Outing, memoryId: String): Outing {
+        if (outing.memories.none { it.id == memoryId }) return outing
+        return outing.copy(guidance = SavedGuidance(GuidanceMode.FIND_LANDMARK, memoryId),
+            suspendedGuidance = suspendCurrent(outing))
+    }
+
+    /** Call only after the ordinary measured-arrival/user-confirmation gate succeeds. */
+    fun completeTarget(outing: Outing): Outing? {
+        if (outing.guidance.mode != GuidanceMode.RETRACE) return null
+        val index = validIndex(outing, targetIndex(outing)) ?: return null
+        val goal = outing.guidance.goalIndex ?: 0
+        if (index != goal) return null
+        if (outing.guidance.memoryId == null) {
+            if (index != 0) return null
+            return outing.copy(retraceIndex = null, guidance = SavedGuidance(), suspendedGuidance = null)
+        }
+        val memory = outing.memories.find { it.id == outing.guidance.memoryId } ?: return null
+        if (memory.routeIndex != index || memory.point == null) return null
+        return outing.copy(guidance = outing.guidance.copy(mode = GuidanceMode.FIND_LANDMARK, returnIndex = index))
+    }
+
+    private fun continueHome(outing: Outing, confirmed: Int): Outing? {
+        if (confirmed == 0) return outing.copy(retraceIndex = null, guidance = SavedGuidance(), suspendedGuidance = null)
+        val next = next(outing, confirmed, 0) ?: return null
+        return outing.copy(retraceIndex = next, guidance = SavedGuidance(GuidanceMode.RETRACE, startIndex = confirmed), suspendedGuidance = null)
+    }
+
+    /** Explicit continuation can change the home cursor; merely finding a memory never does. */
+    fun resume(outing: Outing): Outing? {
+        if (outing.guidance.mode == GuidanceMode.RETRACE) return outing.takeIf { guideIndex(it, it.guidance) != null }
+        completedIndex(outing, outing.guidance)?.let { return continueHome(outing, it) }
+        outing.suspendedGuidance?.let { suspended ->
+            if (suspended.mode == GuidanceMode.RETRACE && guideIndex(outing, suspended) != null)
+                return outing.copy(guidance = suspended, suspendedGuidance = null)
+            completedIndex(outing, suspended)?.let { return continueHome(outing, it) }
+        }
+        val home = validIndex(outing, outing.retraceIndex) ?: return null
+        return outing.copy(guidance = SavedGuidance(GuidanceMode.RETRACE, startIndex = outing.points.lastIndex), suspendedGuidance = null, retraceIndex = home)
+    }
+
+    fun canResume(outing: Outing): Boolean = resume(outing) != null
+
+    /** Explicitly choose home, preserving known order instead of restarting at the tail. */
+    fun headBack(outing: Outing): Outing? {
+        completedIndex(outing, outing.guidance)?.let { return continueHome(outing, it) }
+        if (guideIndex(outing, outing.guidance) == null) outing.suspendedGuidance?.let { suspended ->
+            completedIndex(outing, suspended)?.let { return continueHome(outing, it) }
+        }
+        val known = knownIndex(outing)
+        val next = known ?: next(outing, outing.points.lastIndex, 0) ?: return null
+        return outing.copy(retraceIndex = next, guidance = SavedGuidance(GuidanceMode.RETRACE, startIndex = outing.points.lastIndex), suspendedGuidance = null)
+    }
+
+    fun undoContext(outing: Outing): UndoContext? {
+        if (outing.guidance.mode != GuidanceMode.RETRACE || validIndex(outing, targetIndex(outing)) == null) return null
+        val goal = if (outing.guidance.memoryId == null) 0 else outing.guidance.goalIndex ?: return null
+        val start = outing.guidance.startIndex ?: outing.points.lastIndex
+        if (goal !in outing.points.indices || start !in outing.points.indices || goal > start) return null
+        return UndoContext(outing.id, outing.guidance.memoryId, goal, start)
+    }
+
+    fun undo(outing: Outing, context: UndoContext?, previousIndex: Int): Outing? {
+        val current = validIndex(outing, targetIndex(outing)) ?: return null
+        val expected = undoContext(outing) ?: return null
+        if (context != expected || previousIndex <= current || previousIndex > expected.startIndex || previousIndex !in outing.points.indices) return null
+        if ((current..previousIndex).any { outing.points[it].segment != outing.points[current].segment }) return null
+        return if (outing.guidance.memoryId != null) outing.copy(guidance = outing.guidance.copy(returnIndex = previousIndex))
+            else outing.copy(retraceIndex = previousIndex)
+    }
+
+    fun removeMemory(outing: Outing, id: String): Outing {
+        if (outing.memories.none { it.id == id }) return outing
+        return outing.copy(revision = outing.revision + 1, memories = outing.memories.filterNot { it.id == id },
+            guidance = if (outing.guidance.memoryId == id) SavedGuidance() else outing.guidance,
+            suspendedGuidance = outing.suspendedGuidance?.takeUnless { it.memoryId == id })
+    }
 
     fun targetIndex(outing: Outing): Int? =
         if (outing.guidance.memoryId != null && outing.guidance.mode == GuidanceMode.RETRACE)
@@ -15,13 +117,14 @@ object ReturnRoute {
         val memory = outing.memories.find { it.id == memoryId } ?: return null
         val goal = memory.routeIndex ?: return null
         if (memory.point == null || goal !in outing.points.indices) return null
-        val progress = (if (outing.guidance.mode == GuidanceMode.RETRACE) targetIndex(outing)
-            else outing.suspendedGuidance?.returnIndex ?: outing.retraceIndex)?.takeIf { it in outing.points.indices }
+        val progress = knownIndex(outing)
         val from = progress ?: outing.points.lastIndex
         if (from !in outing.points.indices || goal > from) return null
         if ((goal..from).any { outing.points[it].segment != outing.points[from].segment }) return null
         // A paused return resumes its known next point, never a newly selected nearest crossing.
-        val target = progress ?: next(outing, from, goal) ?: goal
+        val confirmed = completedIndex(outing, outing.guidance)
+            ?: if (guideIndex(outing, outing.guidance) == null) outing.suspendedGuidance?.let { completedIndex(outing, it) } else null
+        val target = if (progress != null && confirmed == null) progress else next(outing, from, goal) ?: goal
         return Plan(target, goal, from)
     }
 

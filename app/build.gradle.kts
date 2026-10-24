@@ -12,6 +12,10 @@ android {
 
     defaultConfig {
         applicationId = "com.backtrail.app"
+        // Preserve a teammate-signed installation while validating this same app on-device.
+        val sideBySide = providers.gradleProperty("travisSideBySide").orNull == "true"
+        if (sideBySide) applicationId = "com.backtrail.app.integration"
+        resValue("string", "launcher_name", if (sideBySide) "Travis Integration" else "Travis")
         minSdk = 28
         targetSdk = 36
         versionCode = 1

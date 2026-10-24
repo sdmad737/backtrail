@@ -146,7 +146,7 @@ internal fun TravisCameraGuidance(state: TravisUiState, camera: @Composable (Mod
                 !usable -> {
                     TravisGlyph("info", Modifier.size(36.dp), Color.White)
                     Text(if (state.fixQuality != FixQuality.USABLE) "Waiting for a reliable location" else "Direction unavailable", color = Color.White, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-                    Text(if (state.fixQuality == FixQuality.STALE) "Last location is stale. Use the original photo." else "Hold the phone upright and wait for a reliable reading.", color = Color.White.copy(alpha = .9f), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
+                    Text(if (state.fixQuality == FixQuality.STALE) "Last location is stale. Use the original photo." else if (state.fixQuality != FixQuality.USABLE) "Wait for a fresh location. Use the saved photo and map." else "Hold the phone upright and wait for a reliable reading.", color = Color.White.copy(alpha = .9f), textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
                 }
                 else -> {
                     Surface(shape = RoundedCornerShape(20.dp), color = Color.Black.copy(alpha = .5f)) {

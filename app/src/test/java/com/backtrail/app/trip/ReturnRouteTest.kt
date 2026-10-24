@@ -37,4 +37,144 @@ class ReturnRouteTest {
         val out=outing().copy(guidance=SavedGuidance(GuidanceMode.RETRACE,"m",1,0,2))
         assertTrue(ReturnRoute.remaining(out,bent.last())!! > TrailMath.distance(bent.first(),bent.last()))
     }
+    private fun longerOuting(): Outing {
+        val points = listOf(point(0,0.0,0.0),point(1,.0001,0.0),point(2,.0001,.0001),
+            point(3,.0001,.0002),point(4,.0001,.0003),point(5,.0001,.0004))
+        return Outing(id="walk",points=points,memories=listOf(
+            Memory("a","Jacket",capturedAt=1,point=points[3],routeIndex=3),
+            Memory("b","Bench",capturedAt=2,point=points[1],routeIndex=1),
+            Memory("start","Start",capturedAt=0,point=points[0],routeIndex=0)))
+    }
+    private fun atMemoryGoal(home: Int? = null): Outing = longerOuting().copy(retraceIndex=home,
+        guidance=SavedGuidance(GuidanceMode.RETRACE,"a",3,3,5))
+
+    @Test fun confirmedMemoryKeepsProgressWithoutChangingPreservedHomeCursor() {
+        val completed=ReturnRoute.completeTarget(atMemoryGoal(home=4))!!
+        assertEquals(GuidanceMode.FIND_LANDMARK,completed.guidance.mode)
+        assertEquals(3,completed.guidance.returnIndex)
+        assertEquals(4,completed.retraceIndex)
+        assertTrue(ReturnRoute.canResume(completed))
+        val continued=ReturnRoute.resume(completed)!!
+        assertEquals(1,continued.retraceIndex) // next saved photo before the bend
+        assertNull(continued.guidance.memoryId)
+        assertEquals(3,continued.guidance.startIndex)
+        assertEquals(continued,ReturnRoute.resume(continued)) // no double advancement
+    }
+
+    @Test fun directMemoryReturnCanContinueHomeWithoutAnEarlierHeadBack() {
+        val completed=ReturnRoute.completeTarget(atMemoryGoal())!!
+        assertNull(completed.retraceIndex)
+        val continued=ReturnRoute.resume(completed)!!
+        assertEquals(1,continued.retraceIndex)
+        assertEquals(GuidanceMode.RETRACE,continued.guidance.mode)
+        assertEquals(continued,ReturnRoute.headBack(completed))
+    }
+
+    @Test fun subsequentEarlierMemoryStartsFromConfirmedProgressNotOriginalTail() {
+        val completed=ReturnRoute.completeTarget(atMemoryGoal())!!
+        assertEquals(3,ReturnRoute.plan(completed,"b")!!.startIndex)
+        val selected=ReturnRoute.suspendForFind(completed,"b")
+        assertEquals(3,selected.suspendedGuidance!!.returnIndex)
+        assertEquals(1,ReturnRoute.plan(selected,"b")!!.nextIndex)
+        assertEquals(3,ReturnRoute.plan(selected,"b")!!.startIndex)
+        assertTrue(ReturnRoute.canResume(selected))
+    }
+
+    @Test fun findDetourResumesTheSameMemoryReturnAndKeepsHomeCursor() {
+        val returning=atMemoryGoal(home=4).copy(guidance=SavedGuidance(GuidanceMode.RETRACE,"a",4,3,5))
+        val selected=ReturnRoute.suspendForFind(returning,"b")
+        assertEquals(returning.guidance,selected.suspendedGuidance)
+        val resumed=ReturnRoute.resume(selected)!!
+        assertEquals(returning.guidance,resumed.guidance)
+        assertEquals(4,resumed.retraceIndex)
+        assertNull(resumed.suspendedGuidance)
+    }
+
+    @Test fun stoppedCompletedMemoryStillResumesFromItsConfirmedPoint() {
+        val completed=ReturnRoute.completeTarget(atMemoryGoal())!!
+        val stopped=completed.copy(guidance=SavedGuidance(),suspendedGuidance=ReturnRoute.suspendCurrent(completed))
+        assertTrue(ReturnRoute.canResume(stopped))
+        assertEquals(1,ReturnRoute.resume(stopped)!!.retraceIndex)
+    }
+
+    @Test fun completionCannotAdvanceBeforeTheMemoryGoal() {
+        val returning=atMemoryGoal().copy(guidance=SavedGuidance(GuidanceMode.RETRACE,"a",4,3,5))
+        assertNull(ReturnRoute.completeTarget(returning))
+    }
+
+    @Test fun continuationStopsAtARecordingGapInsteadOfJumpingHome() {
+        val base=atMemoryGoal()
+        val gapped=base.copy(points=base.points.mapIndexed { i,p->p.copy(segment=if(i<3)0 else 1) })
+        val completed=ReturnRoute.completeTarget(gapped)!!
+        assertNull(ReturnRoute.resume(completed))
+        assertNull(ReturnRoute.headBack(completed))
+        assertFalse(ReturnRoute.canResume(completed))
+        assertEquals(3,completed.guidance.returnIndex)
+    }
+
+    @Test fun confirmedStartCompletesExactlyRatherThanRestartingAtTail() {
+        val atStart=longerOuting().copy(guidance=SavedGuidance(GuidanceMode.RETRACE,"start",0,0,5))
+        val completedMemory=ReturnRoute.completeTarget(atStart)!!
+        val home=ReturnRoute.resume(completedMemory)!!
+        assertNull(home.retraceIndex)
+        assertNull(home.suspendedGuidance)
+        assertEquals(GuidanceMode.NONE,home.guidance.mode)
+        val homeTarget=longerOuting().copy(retraceIndex=0,guidance=SavedGuidance(GuidanceMode.RETRACE,startIndex=5))
+        assertEquals(GuidanceMode.NONE,ReturnRoute.completeTarget(homeTarget)!!.guidance.mode)
+    }
+
+    @Test fun undoCannotWriteMemoryReturnProgressIntoHomeWhileFinding() {
+        val returning=atMemoryGoal(home=5)
+        val context=ReturnRoute.undoContext(returning)!!
+        val finding=ReturnRoute.suspendForFind(returning,"b")
+        assertNull(ReturnRoute.undo(finding,context,4))
+        assertEquals(5,finding.retraceIndex)
+        val undone=ReturnRoute.undo(returning,context,4)!!
+        assertEquals(4,undone.guidance.returnIndex)
+        assertEquals(5,undone.retraceIndex)
+    }
+
+    @Test fun undoContextSurvivesProgressButRejectsOtherOutingOrGoalOrGap() {
+        val returning=atMemoryGoal(home=4)
+        val context=ReturnRoute.undoContext(returning)!!
+        assertEquals(context,ReturnRoute.undoContext(returning.copy(guidance=returning.guidance.copy(returnIndex=4))))
+        assertNull(ReturnRoute.undo(returning.copy(id="another"),context,4))
+        assertNull(ReturnRoute.undo(returning.copy(guidance=returning.guidance.copy(memoryId="b",goalIndex=1)),context,4))
+        assertNull(ReturnRoute.undo(returning,context,2))
+        val gapped=returning.copy(points=returning.points.mapIndexed { i,p->p.copy(segment=if(i<4)0 else 1) })
+        assertNull(ReturnRoute.undo(gapped,context,4))
+    }
+
+    @Test fun deletingSuspendedDestinationCannotResumeAFalseRecordedStart() {
+        val base=atMemoryGoal(home=4)
+        val finding=ReturnRoute.suspendForFind(base,"b")
+        val removed=ReturnRoute.removeMemory(finding,"a")
+        assertNull(removed.suspendedGuidance)
+        assertEquals("b",removed.guidance.memoryId)
+        assertEquals(4,removed.retraceIndex)
+        assertEquals(base.points,removed.points)
+        assertEquals(base.revision+1,removed.revision)
+        assertFalse(removed.memories.any { it.id=="a" })
+        val removedActive=ReturnRoute.removeMemory(base,"a")
+        assertEquals(GuidanceMode.NONE,removedActive.guidance.mode)
+        assertEquals(4,removedActive.retraceIndex)
+    }
+
+    @Test fun continuingFromMemoryKeepsUnphotographedBendAsNextTarget() {
+        val base=atMemoryGoal().let { it.copy(memories=it.memories.filter { m->m.id=="a" }) }
+        val completed=ReturnRoute.completeTarget(base)!!
+        val resumed=ReturnRoute.resume(completed)!!
+        assertEquals(1,resumed.retraceIndex)
+        assertEquals(0,ReturnRoute.next(resumed,1,0))
+    }
+
+    @Test fun knownSegmentCanContinueButCannotCrossEarlierGap() {
+        val base=atMemoryGoal().let { it.copy(points=it.points.mapIndexed { i,p->p.copy(segment=if(i==0)0 else 1) }) }
+        val completed=ReturnRoute.completeTarget(base)!!
+        val resumed=ReturnRoute.resume(completed)!!
+        assertEquals(1,resumed.retraceIndex)
+        assertNull(ReturnRoute.next(resumed,1,0))
+        assertNull(ReturnRoute.remaining(resumed,resumed.points[3]))
+    }
+
 }

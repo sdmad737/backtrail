@@ -17,7 +17,7 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"
         android:icon="@drawable/travis_logo"
-        android:label="@string/app_name"
+        android:label="@string/launcher_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Backtrail">
         <uses-native-library android:name="libvndksupport.so" android:required="false" />

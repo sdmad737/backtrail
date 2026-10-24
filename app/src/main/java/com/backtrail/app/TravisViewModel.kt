@@ -14,18 +14,26 @@ import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class TravisViewModel(app:Application):AndroidViewModel(app) {
     private val store=OutingStore.get(app)
     private val models=ModelStore(app)
     private var ownedInference: LocalVisionService? = null
-    private val inference: LocalVisionService get() = ownedInference ?: run {
-        val (file, backend) = models.preferred ?: (models.file to InferenceBackend.GPU)
-        LocalVisionService(file, getApplication<Application>().cacheDir, backend,
-            nativeLibraryDir=getApplication<Application>().applicationInfo.nativeLibraryDir,
-            traceSink={ trace -> mutable.update { it.copy(modelBackend=backend.name,modelFileName=file.name,
-                modelLoadMillis=trace.initMs,modelGenerateMillis=trace.generateMs,modelOutcome=trace.outcome) } }
-        ).also { ownedInference=it }
+    private val modelChangeMutex = Mutex()
+    private suspend fun inference(): LocalVisionService {
+        if(modelChangeMutex.isLocked) mutable.update { it.copy(busy=true,inferenceMessage="Finishing local model setup…") }
+        return modelChangeMutex.withLock {
+            ownedInference ?: run {
+                val (file, backend) = models.preferred ?: (models.file to InferenceBackend.GPU)
+                LocalVisionService(file, getApplication<Application>().cacheDir, backend,
+                    nativeLibraryDir=getApplication<Application>().applicationInfo.nativeLibraryDir,
+                    traceSink={ trace -> mutable.update { it.copy(modelBackend=backend.name,modelFileName=file.name,
+                        modelLoadMillis=trace.initMs,modelGenerateMillis=trace.generateMs,modelOutcome=trace.outcome) } }
+                ).also { ownedInference=it }
+            }
+        }
     }
     private val mutable=MutableStateFlow(TravisUiState())
     val state=mutable.asStateFlow()
@@ -41,6 +49,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
     private var session=UUID.randomUUID().toString()
     private val gate=RequestGate()
     private val undo=mutableListOf<Int>()
+    private var undoContext:ReturnRoute.UndoContext?=null
     private val recentFixes=mutableListOf<TrailPoint>()
     init {
         viewModelScope.launch { store.outings.collect { items -> liveOuting=items.find { it.id==currentId } ?: Outing();refresh() } }
@@ -85,7 +94,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             returnRouteStartIndex=if(mode==GuidanceMode.RETRACE)goal else null,
             returnRouteEndIndex=if(mode==GuidanceMode.RETRACE)guide.startIndex?:outing.points.lastIndex else null,
             canReturnAlongRoute=destination?.let { ReturnRoute.plan(outing,it.id)!=null }?:false,
-            canResumeRetrace=outing.suspendedGuidance?.mode==GuidanceMode.RETRACE || outing.retraceIndex!=null,
+            canResumeRetrace=ReturnRoute.canResume(outing),
             guidanceStatus=when { mode==GuidanceMode.FIND_LANDMARK->"Direct bearing · a connecting path is not inferred";mode==GuidanceMode.RETRACE && remaining==null && usable->"Recorded segment only · a gap blocks the earlier route";mode==GuidanceMode.RETRACE->"Follow the next recorded point · confirm before advancing";else->"" },
             bearing=if(usable && fix!=null && target!=null)TrailMath.bearing(fix,target)else null,
             distanceMeters=if(usable && fix!=null && target!=null)TrailMath.distance(fix,target)else null,
@@ -122,11 +131,12 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 invalidate();val outing=mutable.value.outing
                 if(outing.points.size<2) { announce("Record at least two measured points before retracing.");return }
                 if(!mutable.value.replay && !mutable.value.locationAllowed) { announce("Allow precise location to begin retracing.");return }
-                val index=outing.retraceIndex ?: ReturnRoute.next(outing,outing.points.lastIndex)
-                if(index==null) { announce("A recording gap separates these points. No continuous retrace is available.");return }
-                undo.clear();change { it.copy(phase=OutingPhase.ENDED,endedAt=it.endedAt?:System.currentTimeMillis(),retraceIndex=index,guidance=SavedGuidance(GuidanceMode.RETRACE,startIndex=it.points.lastIndex),suspendedGuidance=null) }
-                mutable.update { it.copy(captureMode=false,notice="Following the recorded route in reverse order.") }
-                startGuidanceLocation(outing.id)
+                val returning=ReturnRoute.headBack(outing)
+                if(returning==null) { announce("A recording gap separates these points. No continuous retrace is available.");return }
+                undo.clear();undoContext=null;change { old->ReturnRoute.headBack(old)?.copy(phase=OutingPhase.ENDED,endedAt=old.endedAt?:System.currentTimeMillis())?:old }
+                mutable.update { it.copy(captureMode=false,notice=if(returning.guidance.mode==GuidanceMode.NONE)"Back at your recorded start. Outing complete."else"Following the recorded route in reverse order.") }
+                if(returning.guidance.mode==GuidanceMode.NONE) { if(!mutable.value.replay)RecordingService.stop(getApplication()) }
+                else startGuidanceLocation(outing.id)
             }
             is TravisAction.TakeMeBack -> takeMeBack(action.id)
             TravisAction.Confirm -> {
@@ -136,24 +146,36 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 val index=ReturnRoute.targetIndex(outing)?:return
                 val goal=outing.guidance.goalIndex?:0
                 if(index==goal) {
+                    undo.clear();undoContext=null
                     if(outing.guidance.memoryId!=null) {
-                        change { it.copy(guidance=it.guidance.copy(mode=GuidanceMode.FIND_LANDMARK,returnIndex=null)) }
+                        change { ReturnRoute.completeTarget(it)?:it }
                         announce("At the saved route point. Compare your original photo and confirm the place.")
                     } else {
-                        change { it.copy(retraceIndex=null,guidance=SavedGuidance()) }
+                        change { ReturnRoute.completeTarget(it)?:it }
                         if(!mutable.value.replay)RecordingService.stop(getApplication())
                         announce("Back at your recorded start. Outing complete.")
                     }
                 } else {
                     val previous=ReturnRoute.next(outing,index,goal)
                     if(previous==null) announce("Recorded segment ends here. No route is inferred across the gap.")
-                    else { undo.add(index);change { if(it.guidance.memoryId!=null)it.copy(guidance=it.guidance.copy(returnIndex=previous))else it.copy(retraceIndex=previous) } }
+                    else { undoContext=ReturnRoute.undoContext(outing);undo.add(index);change { if(it.guidance.memoryId!=null)it.copy(guidance=it.guidance.copy(returnIndex=previous))else it.copy(retraceIndex=previous) } }
                 }
             }
-            TravisAction.Undo -> { invalidate();if(undo.isNotEmpty()) { val index=undo.removeAt(undo.lastIndex);change { if(it.guidance.memoryId!=null && it.guidance.mode==GuidanceMode.RETRACE)it.copy(guidance=it.guidance.copy(returnIndex=index))else it.copy(retraceIndex=index) } } }
+            TravisAction.Undo -> {
+                val context=undoContext
+                if(context!=null && context==ReturnRoute.undoContext(mutable.value.outing) && undo.isNotEmpty()) {
+                    invalidate();val index=undo.removeAt(undo.lastIndex)
+                    change { ReturnRoute.undo(it,context,index)?:it }
+                }
+            }
             TravisAction.ResumeRetrace -> {
-                invalidate();change { it.copy(guidance=it.guidance.takeIf { g->g.mode==GuidanceMode.RETRACE } ?: it.suspendedGuidance ?: if(it.retraceIndex!=null)SavedGuidance(GuidanceMode.RETRACE,startIndex=it.points.lastIndex)else SavedGuidance(),suspendedGuidance=null) }
-                mutable.update { it.copy(notice="") };startGuidanceLocation(mutable.value.outing.id)
+                val resumed=ReturnRoute.resume(mutable.value.outing)
+                if(resumed==null) { announce("The recorded segment ends here. No return path is inferred across a gap.");return }
+                invalidate();undo.clear();undoContext=null;change { ReturnRoute.resume(it)?:it }
+                if(resumed.guidance.mode==GuidanceMode.NONE) {
+                    if(!mutable.value.replay)RecordingService.stop(getApplication())
+                    announce("Back at your recorded start. Outing complete.")
+                } else { mutable.update { it.copy(notice="") };startGuidanceLocation(mutable.value.outing.id) }
             }
             TravisAction.CheckDirection -> {
                 val state=mutable.value;val index=state.routeTargetIndex
@@ -169,7 +191,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 mutable.update { it.copy(rightWayResult=result) }
             }
             TravisAction.DismissAssistantResult -> mutable.update { it.copy(answer="",answerStatus=AssistantAnswerStatus.NONE,resultIds=emptyList(),answerGrounded=null,answerConfidence=null,safetyRefusal=false) }
-            TravisAction.StopGuidance -> { invalidate();change { it.copy(guidance=SavedGuidance(),suspendedGuidance=it.guidance.takeIf { g->g.mode==GuidanceMode.RETRACE }?:it.suspendedGuidance) };mutable.update { it.copy(mode=GuidanceMode.NONE,selectedMemoryId=null,surface=TravisSurface.MAP) };if(!mutable.value.replay && mutable.value.outing.phase==OutingPhase.ENDED)RecordingService.stop(getApplication());refresh() }
+            TravisAction.StopGuidance -> { invalidate();change { it.copy(guidance=SavedGuidance(),suspendedGuidance=ReturnRoute.suspendCurrent(it)) };mutable.update { it.copy(mode=GuidanceMode.NONE,selectedMemoryId=null,surface=TravisSurface.MAP) };if(!mutable.value.replay && mutable.value.outing.phase==OutingPhase.ENDED)RecordingService.stop(getApplication());refresh() }
             TravisAction.Explore -> {
                 invalidate();issue="normal";replayOuting=ExploreFixture.outing();replayFix=ExploreFixture.points.last().copy(time=System.currentTimeMillis());replayHeading=20.0
                 mutable.update { it.copy(replay=true,mode=GuidanceMode.NONE,surface=TravisSurface.MAP,replayStep=14,selectedMemoryId=null,answer="",resultIds=emptyList(),notice="Explore demo · movement, camera preview and model answers are samples.") };refresh()
@@ -195,7 +217,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             }
             is TravisAction.SelectMemory -> {
                 invalidate();val memory=mutable.value.outing.memories.find { it.id==action.id }?:return
-                change { it.copy(guidance=SavedGuidance(GuidanceMode.FIND_LANDMARK,memory.id),suspendedGuidance=it.guidance.takeIf { g->g.mode==GuidanceMode.RETRACE }?:it.suspendedGuidance) }
+                change { ReturnRoute.suspendForFind(it,memory.id) }
                 mutable.update { it.copy(surface=TravisSurface.AR,captureMode=false,notice="") }
                 if(memory.point==null)announce("This photo has no recorded location. Direction is unavailable.")else startGuidanceLocation(mutable.value.outing.id)
             }
@@ -236,13 +258,27 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         }
     }
     fun importModel(uri:Uri) {
-        invalidate();mutable.update { it.copy(busy=true) }
+        invalidate();mutable.update { it.copy(busy=true,inferenceMessage="Preparing the verified local model…") }
         val importSession=session
         inferenceJob=viewModelScope.launch {
-            try { withContext(Dispatchers.IO) { models.import(uri);ownedInference?.closeAndJoin();ownedInference=null };announce("Gemma 4 E2B imported and checksum verified.") }
-            catch(_:CancellationException) { throw CancellationException() }
-            catch(_:Exception) { announce("Model import failed. Use the exact verified Gemma 4 E2B file and check free storage.") }
-            finally { if(session==importSession)mutable.update { it.copy(busy=false,modelReady=models.ready) } }
+            try {
+                modelChangeMutex.withLock {
+                    val previous = ownedInference
+                    // The lock excludes all new requests until teardown is complete. Scope
+                    // cancellation must not strand a closed service or start a second engine.
+                    withContext(NonCancellable) { previous?.closeAndJoin() }
+                    if (ownedInference === previous) ownedInference = null
+                    currentCoroutineContext().ensureActive()
+                    withContext(Dispatchers.IO) { models.import(uri) }
+                }
+                announce("Gemma 4 E2B imported and checksum verified.")
+            }
+            catch(cancelled:CancellationException) { throw cancelled }
+            catch(_:Exception) { if(session==importSession)announce("Model import failed. Use the exact verified Gemma 4 E2B file and check free storage.") }
+            finally { mutable.update { it.copy(modelReady=models.ready,
+                busy=if(session==importSession)false else it.busy,
+                inferenceMessage=if(session==importSession)""else it.inferenceMessage,
+            ) } }
         }
     }
     private fun startGuidanceLocation(outingId:String) {
@@ -265,8 +301,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
     }
     private fun deleteMemory(id:String) {
         invalidate()
-        change { outing->outing.copy(revision=outing.revision+1,memories=outing.memories.filterNot { it.id==id },
-            guidance=if(outing.guidance.memoryId==id)SavedGuidance()else outing.guidance) }
+        change { ReturnRoute.removeMemory(it,id) }
         mutable.update { it.copy(resultIds=it.resultIds.filterNot { key->key==id },answer="",retryDescriptionId=null) }
         announce("Saved place removed. Recorded route is preserved.")
     }
@@ -292,7 +327,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             invalidate();if(currentId!=outing.id)RecordingService.stop(getApplication());replayOuting=null;currentId=outing.id;preferences.edit().putString("active",outing.id).apply();liveOuting=outing
             mutable.update { it.copy(replay=false,surface=TravisSurface.MAP,answer="",resultIds=listOfNotNull(memory?.id),notice="Requested ${destination.kind} reminder") }
             if(memory!=null && destination.kind !in setOf("departure","recording")) {
-                store.mutate(outing.id) { current->requireNotNull(current).copy(guidance=SavedGuidance(GuidanceMode.FIND_LANDMARK,memory.id),suspendedGuidance=current.guidance.takeIf { it.mode==GuidanceMode.RETRACE }?:current.suspendedGuidance) }
+                store.mutate(outing.id) { current->ReturnRoute.suspendForFind(requireNotNull(current),memory.id) }
             }
             refresh()
             if(mutable.value.mode!=GuidanceMode.NONE)startGuidanceLocation(outing.id)
@@ -337,15 +372,30 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         invalidate();val committed=store.outings.value.find { it.id==outingId } ?: return
         val request=RequestContext(session,UUID.randomUUID().toString(),outingId,committed.revision,memory.id);gate.begin(request)
         inferenceJob=viewModelScope.launch {
-            inference.describe(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt)).collect { result->
+            inference().describe(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt)).collect { result->
                 if(!gate.accepts(result.context) || currentId!=outingId || store.outings.value.find { it.id==outingId }?.revision!=request.tripRevision || mutable.value.replay) { if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false,describingMemoryId=null) } };return@collect }
                 when(result) {
                     is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Reading your photo on this phone…",retryDescriptionId=null,describingMemoryId=memory.id) }
                     is InferenceState.Success -> {
-                        if(gate.consume(request)) { try {
-                            val unclear=result.value.label.equals("Unclear view",ignoreCase=true) || result.value.fixedFeatures.isEmpty()
-                            store.mutate(outingId) { old->requireNotNull(old).copy(memories=old.memories.map { if(it.id==memory.id && it.photoPath==memory.photoPath)it.copy(description=if(unclear)"" else result.value.fixedFeatures.joinToString(" · "),title=if(it.note.isBlank())result.value.label else it.title,indexing="Gemma 4 · local result")else it }) }
-                        } catch(_:Exception) { announce("Photo and route preserved. The model description could not be saved.") } finally { mutable.update { it.copy(busy=false,inferenceMessage="Gemma 4 · local result",retryDescriptionId=null,describingMemoryId=null) } } }
+                        if(gate.consume(request)) {
+                            fun stillCurrent() = session==request.sessionId && currentId==outingId && !mutable.value.replay
+                            try {
+                                var accepted = false
+                                store.mutate(outingId) { old ->
+                                    DescriptionCommit.apply(requireNotNull(old), request, memory.photoPath, result.value).also {
+                                        accepted = it.accepted
+                                    }.outing
+                                }
+                                if(stillCurrent()) mutable.update { it.copy(
+                                    inferenceMessage=if(accepted)"Gemma 4 · local result"else"Saved places changed. Try interpreting this photo again.",
+                                    retryDescriptionId=if(accepted)null else memory.id,
+                                ) }
+                            } catch(cancelled:CancellationException) { throw cancelled }
+                            catch(_:Exception) { if(stillCurrent()) mutable.update { it.copy(
+                                inferenceMessage="Photo and route preserved. The model description could not be saved.",retryDescriptionId=memory.id,
+                            ) } }
+                            finally { if(stillCurrent())mutable.update { it.copy(busy=false,describingMemoryId=null) } }
+                        }
                     }
                     is InferenceState.Failure -> { gate.consume(request);mutable.update { it.copy(busy=false,inferenceMessage="Photo preserved. ${result.message}",retryDescriptionId=memory.id,describingMemoryId=null) } }
                 }
@@ -366,7 +416,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         val scopeLabel=if(snapshot.outing.memories.size>12) "Latest 12 of ${snapshot.outing.memories.size} memories. " else ""
         val request=context("retrieval");gate.begin(request)
         inferenceJob=viewModelScope.launch {
-            inference.resolveDestination(request,query.take(500),candidates).collect { result->
+            inference().resolveDestination(request,query.take(500),candidates).collect { result->
                 if(!gate.accepts(result.context) || mutable.value.outing.id!=snapshot.outing.id || mutable.value.outing.revision!=request.tripRevision || mutable.value.replay) {
                     if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false,answer="Saved memories changed. Ask again to search the current set.",resultIds=emptyList()) } }
                     return@collect
@@ -392,7 +442,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         val scope=if(snapshot.outing.memories.size>memories.size) "Using the ${memories.size} most recent saved places. " else ""
         val request=context("trip-question");gate.begin(request)
         inferenceJob=viewModelScope.launch {
-            inference.askAboutTrip(request,Question.Text(query.take(Question.MAX_QUESTION_CHARS)),memories).collect { result ->
+            inference().askAboutTrip(request,Question.Text(query.take(Question.MAX_QUESTION_CHARS)),memories).collect { result ->
                 if(!gate.accepts(result.context) || mutable.value.outing.id!=request.tripId || mutable.value.outing.revision!=request.tripRevision || mutable.value.replay) { if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false,answer="Saved places changed. Ask again to search the current set.",resultIds=emptyList()) } };return@collect }
                 when(result) {
                     is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Looking through your saved places on this phone…",answer="",resultIds=emptyList(),answerGrounded=null,answerConfidence=null,safetyRefusal=false) }
@@ -410,7 +460,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         if(!models.ready) { mutable.update { it.copy(answer="Local model unavailable. Import the verified model to ask about this saved photo.",answerStatus=AssistantAnswerStatus.UNAVAILABLE,resultIds=listOf(memoryId),answerGrounded=null) };return }
         val request=RequestContext(session,UUID.randomUUID().toString(),snapshot.outing.id,snapshot.outing.revision,memory.id);gate.begin(request)
         inferenceJob=viewModelScope.launch {
-            inference.askAboutPhoto(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt),Question.Text(query.take(Question.MAX_QUESTION_CHARS))).collect { result ->
+            inference().askAboutPhoto(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt),Question.Text(query.take(Question.MAX_QUESTION_CHARS))).collect { result ->
                 if(!gate.accepts(result.context) || mutable.value.outing.id!=request.tripId || mutable.value.outing.revision!=request.tripRevision || mutable.value.replay) { if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false) } };return@collect }
                 when(result) {
                     is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Looking at your saved photo on this phone…",answer="",resultIds=listOf(memory.id),answerGrounded=null,answerConfidence=null,safetyRefusal=false) }
@@ -434,7 +484,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         if(!models.ready) { announce("Import the verified local model to interpret this note.");return }
         invalidate();val request=RequestContext(session,UUID.randomUUID().toString(),snapshot.outing.id,snapshot.outing.revision,memory.id);gate.begin(request)
         inferenceJob=viewModelScope.launch {
-            inference.parseReminder(request,Question.Text(memory.note.take(Question.MAX_QUESTION_CHARS))).collect { result ->
+            inference().parseReminder(request,Question.Text(memory.note.take(Question.MAX_QUESTION_CHARS))).collect { result ->
                 if(!gate.accepts(result.context) || mutable.value.outing.id!=request.tripId || mutable.value.outing.revision!=request.tripRevision || mutable.value.replay) { if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false,pendingReminder=null) } };return@collect }
                 when(result) {
                     is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Checking whether your note asks for a return reminder…",pendingReminder=null,reminderMessageMemoryId=memory.id) }
@@ -483,7 +533,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 if(committed==null || committed.revision!=revision) { currentFile.delete();mutable.update { it.copy(busy=false,inferenceMessage="Saved places changed. Compare again with the current photo.") };return@launch }
                 val request=RequestContext(session,UUID.randomUUID().toString(),outingId,revision,memoryId);gate.begin(request)
                 try {
-                    inference.compare(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt),ImageRef("current-${UUID.randomUUID()}",currentFile.absolutePath,System.currentTimeMillis())).collect { result ->
+                    inference().compare(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt),ImageRef("current-${UUID.randomUUID()}",currentFile.absolutePath,System.currentTimeMillis())).collect { result ->
                         if(!gate.accepts(result.context) || currentId!=outingId || store.outings.value.find { it.id==outingId }?.revision!=revision || mutable.value.mode!=compareMode || mutable.value.routeTargetIndex!=expectedIndex || (compareMode==GuidanceMode.FIND_LANDMARK && mutable.value.selectedMemoryId!=memoryId)) { if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false) } };return@collect }
                         when(result) {
                             is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Comparing with your saved photo on this phone…") }
@@ -494,8 +544,11 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                             is InferenceState.Failure -> { gate.consume(request);mutable.update { it.copy(busy=false,comparisonVerdict="ERROR",comparisonReasons=emptyList(),inferenceMessage=result.message) } }
                         }
                     }
-                } catch(_:CancellationException) { gate.invalidate() }
-                catch(_:Exception) { mutable.update { it.copy(busy=false,comparisonVerdict="ERROR",comparisonReasons=emptyList(),inferenceMessage="Comparison failed. Your saved photo and route are unchanged.") } }
+                } catch(cancelled:CancellationException) {
+                    if(gate.accepts(request)) { gate.invalidate();mutable.update { it.copy(busy=false) } }
+                    throw cancelled
+                }
+                catch(_:Exception) { if(gate.consume(request)) mutable.update { it.copy(busy=false,comparisonVerdict="ERROR",comparisonReasons=emptyList(),inferenceMessage="Comparison failed. Your saved photo and route are unchanged.") } }
                 finally { currentFile.delete() }
             }
         }
