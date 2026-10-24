@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,8 +22,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -32,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.backtrail.app.contracts.*
+import com.backtrail.app.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -87,7 +91,7 @@ fun TravisScreen(
                     Modifier.fillMaxWidth().padding(start = 20.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TravisGlyph("trail", Modifier.size(31.dp), palette.primary)
+                    TravisLogo(Modifier.width(38.dp).height(34.dp))
                     Spacer(Modifier.width(9.dp))
                     Column(Modifier.weight(1f)) {
                         Text("travis", fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = (-1.5).sp)
@@ -246,8 +250,13 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
             TextButton(onClick = { act(TravisAction.StopGuidance) }) { Text("Close guidance") }
         }
         outing.phase == OutingPhase.READY && outing.points.isEmpty() -> {
-            Eyebrow("YOUR OFFLINE FIELD COMPANION")
-            Text("Go a little further.", fontSize = 27.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-.8).sp)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                TravisLogo(Modifier.width(62.dp).height(56.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Eyebrow("YOUR OFFLINE FIELD COMPANION")
+                    Text("Go a little further.", fontSize = 27.sp, lineHeight = 31.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-.8).sp)
+                }
+            }
             Text("Keep your trail. Remember the places. Find your way back.", style = MaterialTheme.typography.bodyMedium, color = palette.onSurfaceVariant)
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 SmallStatus(if (state.fix==null) "Venue map prepared" else if (state.mapAvailable) "Map saved" else "Outside saved map", state.mapAvailable || state.fix==null)
@@ -290,6 +299,16 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
             }
         }
     }
+}
+
+@Composable
+internal fun TravisLogo(modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(R.drawable.travis_logo),
+        contentDescription = "Travis trail logo",
+        modifier = modifier,
+        contentScale = ContentScale.Fit,
+    )
 }
 
 @Composable
