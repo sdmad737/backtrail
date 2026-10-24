@@ -110,9 +110,40 @@ conflicts. **The feature lists are not reliable evidence on non-matches**: the U
 reasons only with SUPPORTS_MATCH, and a match should also require photo-embedding agreement
 once that is calibrated on real pairs.
 
+### 2026-10-24 14:15 · Tensor G6 accelerator enabled · NPU backend
+
+Root causes, in order: (1) no `libLiteRtDispatch_GoogleTensor.so` in the APK; (2) the copy
+from litert-samples `sample_app_tpu` was built for an older runtime ("Unsupported dispatch
+runtime version"); (3) without the manifest's `uses-native-library libedgetpu_litert.so`
+the driver could not reach the vendor runtime ("Failed to initialize SB"). Fix: dependency
+`com.google.ai.edge.litert:litert-npu-runtime-google-tensor:2.3.0` (published 2026-10-06,
+matches the LiteRT runtime in litertlm 0.18.0), which ships the driver and the manifest
+entries, plus uncompressed JNI packaging. LiteRT-LM 0.18.1 alone did not help. The
+`TENSOR` backend is still rejected by the embedding engine ("Unsupported encoder backend:
+5"); use `NPU`. The log shows compiler-plugin errors ("ODC mode does not support multiple
+subgraphs") on some subgraphs; runs still succeed.
+
+Gemma 4 E2B, `gemma-4-E2B-it_Google_Tensor_G6.litertlm`, NPU, describe, `junction-a`:
+
+| Run | Engine | Load ms | Generate ms | Peak RSS |
+|---|---|---|---|---|
+| 1 | cold | 1,493 | 9,383 | 851 MB |
+| 2 | warm | 0 | 7,733 | |
+
+Answer: label "Red brick buildings and street scene"; features now include "Shop front with
+'Lalibela'", white window frames, balcony, street lamp post. The G6 build read the sign; the
+generic GPU build never did on this photo.
+
+EmbeddingGemma 2 740M, G6 file, NPU: load 1,108 ms; text query 13–16 ms; document
+13–18 ms; one photo 228 ms (GPU: 19,185 / ~100 / ~110 / 918 ms). Demo queries: top-1
+correct 7 of 7 answerable ("back to where I parked": car 0.711 vs mailbox 0.709, a margin
+too small to act on without Gemma). Unanswerable queries still score 0.69–0.71.
+
+**Decision: NPU for both models**, GPU as fallback.
+
 ## Open questions
 
-- Whether LiteRT-LM 0.18.1 runs the Tensor G6 builds.
+- Compare (two photos) on NPU.
 - EmbeddingGemma latency on device, and whether photo embeddings separate same-place from
   different-place pairs — needs photo pairs taken at the demo route.
 - `SpotRetriever` and `AlignmentMeter` thresholds are placeholders until calibrated here.
