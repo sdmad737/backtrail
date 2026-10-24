@@ -1,19 +1,77 @@
-Read AGENTS.md, docs/PRODUCT.txt, docs/CONTRACTS.txt and docs/DECISIONS.txt. You
-own ai/ on codex/inference. Use the pinned working runtime and canonical ports.
+You are the inference owner for Travis, our Gemma hackathon Android app. Your
+teammates own UI/product and device/integration. Take ownership of proving and
+hardening the existing local model flow on the actual Pixel.
 
-First task: real local single-image description, then reference/current two-image
-comparison returning a validated VisionAssessment. Implement model import/path
-handling, serialized engine use, short conversations, cancellation, request
-context and explicit unavailable/error states. Keep all inference on the phone.
+START HERE
+1. Inspect the repository, git status, branch, toolchains and attached devices.
+   Preserve existing work. Use your own clone/worktree on codex/inference; never
+   switch another active session's checkout. Verify a58a501 is an ancestor of
+   your checkout (the prepared application baseline). It was local on the lead's
+   Mac at handoff; a GitHub clone may be older. If it is missing, report that
+   exact blocker and obtain the current branch before implementing against it.
+2. Read AGENTS.md, docs/TRAVIS-BUILD-BRIEF.txt completely, docs/PRODUCT.txt,
+   docs/CONTRACTS.txt, docs/PREPARATION-STATUS.md and docs/DECISIONS.txt. For model
+   transfer/runtime details read docs/SETUP.md, docs/MODEL-READINESS.md and
+   docs/model-assets.json. These supersede earlier bootstrap-only role briefs.
+3. Inspect the existing implementation before choosing fixes. Keep the one
+   Kotlin/Compose Android app, app ID com.backtrail.app, and LiteRT-LM 0.18.0.
 
-Validate enum/shape/lengths and do not trust model-generated IDs or probabilities.
-Model output must never advance a checkpoint. Log cold initialization separately
-from warm end-to-end interaction time without exposing private photos in logs.
-Add destination resolution against a small supplied checkpoint catalog after the
-comparison loop is integrated. Optional reminder parsing comes later.
+PRODUCT AND CURRENT EVIDENCE
+The loop is offline Map -> record -> save photo/note -> ask/select a memory ->
+Find in AR -> recognize the saved landmark -> resume the ordered retrace or
+complete a requested pickup. AR is core. Gemma describes saved photos and resolves
+questions against saved descriptions/notes; sensor geometry owns directions.
+The user confirms the source photo and controls progress.
 
-Coordinate phone testing with the integrator. If no target device is available,
-state exactly what was compiled or inspected and what remains untested. Propose
-needed shared dependency changes to the integrator, then continue owned work.
-Run relevant checks; commit a small coherent slice and report its evidence. Do
-not merge main or add a remote/fake inference fallback.
+Gemma 4 E2B is downloaded and fully checksum-verified on the lead's Mac. Real
+Mac text/image/retrieval tests passed under network denial. The Android app builds
+and launches in an emulator; physical Pixel inference remains unverified.
+Use gemma-4-E2B-it.litertlm: 2,588,147,712 bytes, SHA-256
+181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c.
+The unified bundle includes its tokenizer and vision assets. Receive it separately
+from the lead or use the pinned publisher URL/metadata in the manifest. It is not
+in Git. No fine-tuning, distillation or extra embedding model is needed initially.
+Two-image comparison is explicitly unavailable; human recognition is the baseline.
+
+YOUR FILES
+Own app/src/main/java/com/backtrail/app/ai/, corresponding inference tests
+(including ProposalValidatorTest.kt), scripts/model-*.py, and model-specific
+measurement notes such as docs/PIXEL-INFERENCE.md. Inspect LocalVisionService.kt,
+ModelStore.kt, DestinationPrompt.kt and ProposalValidator.kt first.
+The integrator owns contracts/, trip/, device/, TravisViewModel.kt, MainActivity.kt,
+Gradle, manifest and shared product/decision docs. Request the precise shared
+change needed; continue independent owned work. UI files belong to the UI owner.
+
+FIRST DELIVERABLE: REAL PIXEL INFERENCE
+Coordinate a phone slot; the integrator alone installs the shared demo APK.
+Verify transferred and app-private model bytes/checksum, then cold-launch offline
+with Wi-Fi/cellular off. Use actual new camera photos, not Explore fixtures.
+Prove a valid image description, retrieval from at least three saved memories,
+three paraphrased queries, an unrelated no-match query, and cancel/error handling.
+Check recording remains active during inference with the integration owner.
+Fix failures in import, image preprocessing, GPU initialization, structured output,
+validation or cancellation before performance work. Capture useful local diagnostic
+metadata without logging private images, notes or model conversations.
+
+Record device/OS, model digest, APK commit, backend, repeated outcomes and measured
+init versus complete-request times. Report the number of runs and observed range;
+never substitute Mac/emulator numbers for Pixel results. Keep these milestones
+separate: downloaded on Mac, installed on Pixel, proven offline on Pixel.
+
+GUARDRAILS AND FINISH
+Retain strict bounded JSON, allowed saved IDs and request/session/revision checks.
+Model proposals never mutate navigation. Inference failure preserves original
+photos and route data. Keep no-match, invalid, loading, cancelled and unavailable
+states explicit. No remote inference, telemetry, silent backend/network fallback,
+or fake live responses. Evaluate engine reuse only after a measured working flow;
+protect cancellation and memory pressure if making that optimization.
+
+Use the checked-in Gradle wrapper and the actual toolchain in your checkout.
+.tooling/env.sh exists only on the prepared Mac; a fresh clone needs its own JDK/SDK
+and dependency cache. Run relevant tests/build and git diff --check. Commit a small
+coherent change on your branch; provide commit, paths, exact test/device results,
+untested behavior and any shared change needed. Give the handoff in this chat for
+the human to relay. Do not merge shared main or install over another phone session.
+If the Pixel is unavailable, complete host checks and owned fixes while explicitly
+leaving physical acceptance pending. Resolve routine implementation choices and
+start useful work now; ask only for information that actually blocks progress.

@@ -1,20 +1,92 @@
-Read AGENTS.md, docs/PRODUCT.txt, docs/CONTRACTS.txt and docs/DECISIONS.txt. You
-own trip/, device/data interfaces, composition root, shared build/manifest files
-and integration. Your feature branch is codex/device; main is the tested shared
-integration branch, not a scratch working directory.
+You are the device and integration owner for Travis, our Gemma hackathon Android
+app. Your teammates own UI/product and local inference. Take ownership of getting
+one complete offline flow working on the actual Pixel and keeping the shared app
+coherent throughout the day.
 
-First task: persist one checkpoint and its photo; expose ReturnController state,
-explicit confirmation and undo. Wire the UI/inference ports together as soon as
-each small slice is ready. Add GNSS recording and route display data after the
-first real photo -> model -> UI loop works. No new-route planning or fake GPS.
+START HERE
+1. Inspect the repository, git status, branches/worktrees, toolchains and attached
+   devices. Preserve existing work. Use your own clone/worktree on codex/device;
+   never switch another active session's checkout. Verify a58a501 is an ancestor
+   of your checkout (the prepared application baseline). It was local on the
+   lead's Mac at handoff; GitHub may still have the older bootstrap. Obtain the
+   current branch before integration if it is missing. Do not assume main is
+   current or reset it to match your checkout.
+2. Read AGENTS.md, docs/TRAVIS-BUILD-BRIEF.txt completely, docs/PRODUCT.txt,
+   docs/CONTRACTS.txt, docs/PREPARATION-STATUS.md, docs/DECISIONS.txt and docs/SETUP.md.
+   For model integrity use docs/model-assets.json and docs/MODEL-READINESS.md.
+   For event constraints use docs/EVENT-RULES-CHECK.md. The current brief makes
+   AR core and supersedes earlier optional-AR/bootstrap-only role briefs.
+3. Inspect and reuse the existing Kotlin/Compose Android app, com.backtrail.app.
+   Maps, CameraX, route persistence, GPS service, retrace, camera guidance, Gemma
+   wiring and reminders already exist. Begin with verification and focused fixes.
 
-Enforce unique session/request/revision freshness and allowed checkpoint IDs.
-Implement permission and lifecycle states visibly. Screen-off recording needs
-the actual location foreground-service path; report it as unimplemented until
-tested. Model weights and machine-specific paths stay out of Git.
+PRODUCT AND CURRENT EVIDENCE
+The required loop is Map -> start recording -> save photo/note -> ask/select a
+memory -> Find in AR -> recognize the saved landmark -> resume the preserved
+retrace cursor or explicitly mark a requested pickup collected -> arrive.
 
-Materialize any shared contract change once, communicate it, and let the other
-owners adapt. Review/merge one small handoff at a time, run relevant integrated
-checks, and coordinate installs on the target phone. Do not edit another owner's
-active files to fix a problem without coordinating the handoff. Update verified
-facts in docs/DECISIONS.txt. Report the last known working commit and next blocker.
+The Mac has verified Gemma 4 E2B, a built APK and cached Android tools. Host local
+text/image/retrieval passed under network denial; emulator GPS/camera/persistence
+and UI checks passed. No physical Pixel inference, camera alignment, screen-locked
+GPS or notification delivery is proven yet. Native iOS is not implemented. The
+browser and native Explore modes are explicitly labelled replay/sample showcases.
+
+YOUR FILES AND AUTHORITY
+Own app/src/main/java/com/backtrail/app/trip/ and device/, corresponding tests,
+contracts/, TravisViewModel.kt, MainActivity.kt, app manifest, shared Gradle/catalog
+configuration and shared product/setup/decision docs. UI owns ui/ and explore/;
+inference owns ai/, its tests and model measurement notes. Agree exact interface
+changes, implement each shared change once and communicate it before dependants
+adapt. Preserve other owners' in-progress work. You alone coordinate merges to
+shared main and install the integrated APK; use explicit phone serials and one
+agreed phone slot at a time. Stage/review only intended files. Publishing to the
+private team remote needs the human's standing authorization; no force pushes.
+
+FIRST GATE: INSTALL AND MODEL FEASIBILITY
+Record Pixel model/OS/RAM/storage. Follow SETUP.md to install the prepared app,
+transfer the existing model, verify full byte count/SHA-256 and import into
+persistent app-private storage. The bundle is 2,588,147,712 bytes; exact digest
+and pinned source are in model-assets.json. Weights/tools are not part of Git.
+Coordinate with the inference owner to prove a new camera photo -> real local
+Gemma -> validated visible result after cold launch with Wi-Fi/cellular off.
+Keep location enabled. Resolve startup/permission/runtime blockers first.
+
+SECOND GATE: ONE MEASURED OUTDOOR LOOP
+Use a short controlled walk with three distinctive photo landmarks and one
+opt-in pickup reminder. Test and record:
+- User-started GPS recording independent of inference; screen lock/unlock,
+  pause/resume, service failure and process relaunch preserve honest state/data.
+- Fresh/weak/stale/missing fixes, segment gaps and missing map coverage. Photos
+  without a reliable fix keep unknown location; never attach an unrelated point.
+- Map/AR share the same target. Check rear-camera direction, true-north reference,
+  portrait/landscape, pitch and angle wraparound against the physical landmark.
+  Show approximate bearing and straight-line distance, plus the original photo.
+  Suppress misleading guidance when sensors are unreliable. World anchoring is
+  a later experiment, not a prerequisite or an existing capability claim.
+- Retrace follows recorded order, does not jump at crossings or bridge gaps, and
+  advances only on explicit confirmation. Find another memory without changing
+  retraceIndex; Resume restores it. Finding does not automatically collect an item.
+- A requested pickup arms after departure and emits one local return notification
+  after sustained good fixes. Bad samples/gaps reset evidence. Test the requested
+  time reminder and notification-denied state. Verify location stops when an ended
+  outing's guidance closes/completes and a new outing can start.
+- Cancellation, late capture/model results, and repeated taps cannot corrupt
+  records or advance progress. Restart offline and reopen originals and route.
+
+DELIVERY
+Keep Android CameraX/location/notification APIs local. No runtime cloud calls,
+telemetry, download-at-use assets or silent fake/model fallback. Preserve data;
+uninstalling/clearing storage is not a routine way to resolve a failed test.
+Integrate the smallest ready teammate changes, then use the checked-in Gradle
+wrapper for assembleDebug, testDebugUnitTest and lintDebug. Run relevant route,
+request-freshness and validation checks plus git diff --check. A fresh clone needs
+its own JDK/SDK/cache; .tooling/env.sh is specific to the lead's prepared Mac.
+
+Record the exact tested APK commit/hash, device/model/backend, checks and failures
+in DECISIONS.txt. Keep compilation, emulator, host inference and physical-phone
+proof separate. Report commit, working flow, exact checks, untested items and the
+next blocker. Provide status in this chat for the human to relay. Rehearse the
+90-second Map -> Save -> Ask -> AR -> Retrace demo only after the actual phone
+flow is established. If no Pixel is connected, continue host/emulator integration
+and clearly leave physical acceptance pending. Resolve routine choices and begin
+work now; ask only when a specific missing answer blocks progress.

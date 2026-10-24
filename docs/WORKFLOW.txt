@@ -1,3 +1,19 @@
+CURRENT TRAVIS HANDOFF — OCTOBER 24, 2026
+The app is already implemented through preparation commit a58a501. Start all
+workstreams from a shared checkout containing that commit and the updated role
+prompts. The latest preparation/onboarding work is local on the lead's Mac until
+explicitly shared; do not assume GitHub main contains it. Each teammate needs a
+separate clone/worktree. Their local tools/model files are not supplied by Git.
+
+Current prompts: prompts/02-inference.txt and prompts/03-device-integration.txt.
+The lead owns UI/product. The device teammate becomes the integration owner when
+that role is started. Phone install slots are serialized by that owner. AR is
+already core; the earlier bootstrap sequence and scope statements below are
+historical examples, not instructions to rebuild or defer the current AR flow.
+Use PRODUCT.txt, CONTRACTS.txt and PREPARATION-STATUS.md for current behavior.
+
+EARLIER WORKFLOW REFERENCE
+
 THREE PEOPLE, THREE CODEX SESSIONS, ONE APP
 
 RECOMMENDED: THREE LAPTOPS
