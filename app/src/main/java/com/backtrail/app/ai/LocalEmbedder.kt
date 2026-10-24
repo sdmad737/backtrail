@@ -31,6 +31,11 @@ class LocalEmbedder(
 ) : AutoCloseable {
     private val mutex = Mutex()
     private var engine: EmbeddingEngine? = null
+    private val cleanup = NativeResourceCleanup(mutex) {
+        val previous = engine
+        engine = null
+        previous?.close()
+    }
 
     /** Milliseconds spent in the most recent initialization, or -1 if none happened yet. */
     @Volatile var lastInitMs: Long = -1
@@ -45,12 +50,14 @@ class LocalEmbedder(
     suspend fun embedImage(jpeg: ByteArray): FloatArray = embed(listOf(InputData.Image(jpeg)))
 
     private suspend fun embed(input: List<InputData>): FloatArray = mutex.withLock {
+        check(!cleanup.isClosed) { "Embedding service is closed." }
         withContext(Dispatchers.IO) {
             engineLocked().computeEmbedding(input, OPTIONS_FOR[dimensions] ?: options(dimensions)).embedding
         }
     }
 
     private fun engineLocked(): EmbeddingEngine {
+        check(!cleanup.isClosed) { "Embedding service is closed." }
         engine?.let { return it }
         val created = EmbeddingEngine(
             EmbeddingEngineConfig(
@@ -72,11 +79,9 @@ class LocalEmbedder(
         return created
     }
 
-    override fun close() {
-        // Best effort without suspending: an in-flight embed finishes on its own engine reference.
-        engine?.close()
-        engine = null
-    }
+    override fun close() = cleanup.close()
+
+    suspend fun closeAndJoin() = cleanup.closeAndJoin()
 
     companion object {
         /** The model card reports quality close to 768d down to 256d; 128d hurts images badly. */

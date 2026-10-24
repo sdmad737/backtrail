@@ -39,6 +39,18 @@ object ProposalValidator {
         }
     }
 
+    /** Gemma supplies every supported record; code owns the zero/one/many result state. */
+    fun destinationMatches(raw: String, allowedIds: Set<String>): DestinationProposal {
+        val ids = decode<DestinationMatchesJson>(raw).checkpointIds
+        require(ids.size <= allowedIds.size && ids.all { it in allowedIds })
+        require(ids.distinct().size == ids.size)
+        return when (ids.size) {
+            0 -> DestinationProposal.NoRecordedMatch
+            1 -> DestinationProposal.Target(ids.single())
+            else -> DestinationProposal.AskClarification
+        }
+    }
+
     private inline fun <reified T> decode(raw: String): T {
         require(raw.length in 2..8_192)
         return json.decodeFromString<T>(raw)
@@ -50,4 +62,7 @@ object ProposalValidator {
 
     @Serializable
     private data class DestinationJson(val action: String, val checkpointId: String? = null)
+
+    @Serializable
+    private data class DestinationMatchesJson(val checkpointIds: List<String>)
 }

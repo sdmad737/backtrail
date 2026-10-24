@@ -49,7 +49,11 @@ class LocalVisionService(
     private val runCounter = AtomicInteger(0)
     private val backendName = if (visionBackend == backend) backend.name else "${backend.name}+vision:${visionBackend.name}"
     private var engine: Engine? = null
-    @Volatile private var closed = false
+    private val cleanup = NativeResourceCleanup(mutex) {
+        val previous = engine
+        engine = null
+        previous?.close()
+    }
 
     override fun describe(
         context: RequestContext,
@@ -104,6 +108,10 @@ class LocalVisionService(
         validate: (String) -> T,
     ): Flow<InferenceState<T>> = flow {
         emit(InferenceState.Loading(context))
+        if (cleanup.isClosed) {
+            emit(InferenceState.Failure(context, FailureKind.UNAVAILABLE, "The local model is closing. Try again when it is ready."))
+            return@flow
+        }
         if (!model.isFile) {
             emit(InferenceState.Failure(context, FailureKind.UNAVAILABLE, "Import the local Gemma model first."))
             return@flow
@@ -198,7 +206,6 @@ class LocalVisionService(
             outcome = "fatal"
             emit(InferenceState.Failure(context, FailureKind.UNAVAILABLE, "This phone ran out of memory for the local model."))
         } finally {
-            if (closed) releaseLocked()
             mutex.unlock()
             trace(op, runIndex, initMs, generateMs, validateMs, outcome, warm).also { traceSink?.invoke(it) }.log()
         }
@@ -206,7 +213,7 @@ class LocalVisionService(
 
     /** Caller holds [mutex]. A failed initialization leaves no engine behind, so the next request retries. */
     private fun engineLocked(): Engine {
-        check(!closed) { "Vision service is closed." }
+        check(!cleanup.isClosed) { "Vision service is closed." }
         engine?.let { return it }
         Engine.setNativeMinLogSeverity(LogSeverity.ERROR)
         val created = Engine(
@@ -233,23 +240,12 @@ class LocalVisionService(
 
     /**
      * Releases the native engine without blocking the caller (it may be the main thread).
-     * If a request is in flight, that request releases the engine when it finishes.
+     * If a request is in flight, cleanup waits for it on an independent IO coroutine.
      */
-    override fun close() {
-        closed = true
-        if (mutex.tryLock()) {
-            try {
-                releaseLocked()
-            } finally {
-                mutex.unlock()
-            }
-        }
-    }
+    override fun close() = cleanup.close()
 
-    private fun releaseLocked() {
-        engine?.close()
-        engine = null
-    }
+    /** Cancel the request first, then await this before constructing a replacement service. */
+    suspend fun closeAndJoin() = cleanup.closeAndJoin()
 
     /**
      * Answers a question about the walker's own saved spots (already narrowed, e.g. by
@@ -268,6 +264,9 @@ class LocalVisionService(
         if (memories.size > MAX_TRIP_SPOTS) {
             return failure(context, FailureKind.INVALID_RESULT, "Narrow the question to at most $MAX_TRIP_SPOTS saved places.")
         }
+        if (memories.any { it.id.isBlank() } || memories.map { it.id }.toSet().size != memories.size) {
+            return failure(context, FailureKind.INVALID_RESULT, "The saved-place catalog changed. Select the places again.")
+        }
         val idMap = memories.mapIndexed { i, m -> "s${i + 1}" to m.id }.toMap()
         val withPhotos = memories.filter { it.photoPath.isNotBlank() && File(it.photoPath).isFile }
         return request(
@@ -277,13 +276,7 @@ class LocalVisionService(
             contents = {
                 val parts = mutableListOf<Content>(Content.Text(TRIP_PROMPT))
                 memories.forEachIndexed { i, m ->
-                    val minutesAgo = ((nowMillis - m.capturedAt) / 60_000).coerceAtLeast(0)
-                    parts += Content.Text(
-                        "Spot s${i + 1}, saved $minutesAgo minutes ago. Title: ${m.title.take(100)}. " +
-                            "Seen: ${m.description.take(800).ifBlank { "not described" }}. " +
-                            "Walker's note: ${m.note.take(800).ifBlank { "none" }}." +
-                            if (m in withPhotos) " Photo:" else "",
-                    )
+                    parts += Content.Text(TripRecordPrompt.record("s${i + 1}", m, nowMillis, m in withPhotos))
                     if (m in withPhotos) parts += Content.ImageFile(m.photoPath)
                 }
                 parts += Content.Text("The walker's question:")
@@ -362,9 +355,9 @@ class LocalVisionService(
             images = emptyList(),
             contents = { Contents.of(Content.Text(prompt)) },
             schema = DestinationPrompt.schema(allowedIds),
-            maxOutputTokens = 96,
+            maxOutputTokens = 384,
             invalidMessage = "Gemma returned an invalid result. Your route and saved places are unchanged.",
-            validate = { ProposalValidator.destination(it, allowedIds) },
+            validate = { ProposalValidator.destinationMatches(it, allowedIds) },
         )
     }
 
@@ -442,6 +435,11 @@ class LocalVisionService(
         const val TRIP_PROMPT = "You help a walker remember their own trip. Below are spots they saved, each with an id, " +
             "how long ago it was saved, what was seen there, their own note, and usually the photo. " +
             "Answer their question in one or two short, plain sentences using only these spots. " +
+            "For before/after/first/last, compare exact capturedAtMillis and routeSampleIndex (smaller is earlier). " +
+            "The order of supplied records and short ids is not chronology. A null route index is unknown. " +
+            "If the reference record is absent or ambiguous, or time and route order conflict, ask which place they mean. " +
+            "Distinguish the walker's userNote from generated observations. Name the concrete evidence for the answer. " +
+            "A saved possession was last recorded there; do not claim it remains there now. " +
             "Put the ids of the spots you used in sourceIds and set grounded true. " +
             "If these spots do not answer the question, set grounded false, leave sourceIds empty, and say you don't see " +
             "that in their saved places. Never guess locations, directions, distances or safety. " +
