@@ -214,6 +214,9 @@ class LocalVisionService(
                 modelPath = model.absolutePath,
                 backend = backend.toRuntime(nativeLibraryDir),
                 visionBackend = visionBackend.toRuntime(nativeLibraryDir),
+                // Without an audio backend, Question.Audio has no encoder to run on.
+                audioBackend = InferenceBackend.CPU.toRuntime(nativeLibraryDir),
+                maxNumImages = MAX_TRIP_SPOTS,
                 maxNumTokens = 4096,
                 cacheDir = cache.absolutePath,
             ),
