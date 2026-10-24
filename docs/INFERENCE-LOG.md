@@ -182,6 +182,36 @@ and "not sure" costs one more look. Real same-spot pairs are needed to measure t
 gateback/gatepath (same path, opposite directions). Same-spot pairs needed before any
 threshold can be set.
 
+### 2026-10-24 ~14:40 · 8 real photos · NPU (G6 build) · `1f8d728`
+Second batch taken at 14:25: `pine-b`, `pergola-b` (same spots as the first batch, new
+angle), `redwood-a`, `redwood-b` (a large tree, wide shot and close-up with a stone
+lantern; paired by the main session from the photos, not labelled by the photographer).
+8 photos → 28 pairs: 3 same-spot, 25 different-spot.
+
+**compare**
+
+| Prompt | Same-spot found (of 3) | False "same spot" (of 25) | Unsure | Correct "different" | Warm ms (min / median / max) |
+|---|---|---|---|---|---|
+| v1 | **3** | **9** (36%) | 16 | 0 | 5,240 / 7,953 / 10,490 |
+| v2 (default) | 1 (pine) | **0** | 1 | 24 | 4,935 / 8,471 / 16,202 |
+
+v1 calls nearly every pergola/pine/tree pair a match; v2 never does, but called the
+pergola and the redwood pairs DIFFERENT_PLACE. On this garden — one property where every
+spot shares the same pergola, paving and trees — neither prompt is good enough on its own.
+**Product rule:** compare only against the *expected next spot* on the recorded route
+(ordinary code: route order + GPS distance), show "not sure" as the honest fallback, and
+the user decides. A wrong "same spot" never advances the route by itself.
+
+**Photo embeddings** (8 photos, 278–305 ms each): same-spot cosines 0.944 (pine),
+0.938 (pergola), 0.914 (redwood); different-spot cosines 0.795–0.930. The two highest
+pairs are both same-spot, but one different pair (pine-b/redwood-a, 0.930) beats the
+redwood pair. Good enough to drive a "warmer/colder" lining-up meter against one known
+saved photo; not good enough to identify which spot you are at.
+
+**describe** (warm 3.0–8.9 s): "Wooden pergola structure over water", "Large tree trunk
+and stone steps", "Large tree trunk left", "Stone pergola structure and dense evergreen
+trees" (pine-b: the pergola is wood, not stone).
+
 ## Open questions
 
 - EmbeddingGemma latency on device, and whether photo embeddings separate same-place from

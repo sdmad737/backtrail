@@ -130,3 +130,14 @@ Do not demo or claim (not verified in the log): to-do reminders firing at a plac
 - **Limits?** Only tested on one Pixel 11 Pro, short routes with a few spots, one device, no backup (deleting a trip loses it). Vision may say "not sure" at night, in snow or where levels look alike. It is also 7-9 s per photo, not instant.
 - **Cancelling mid-inference?** A native-side limitation in LiteRT-LM 0.18.0: collection cancel does not stop the model, so we call `cancelProcess()` and refuse overlapping requests rather than queue them.
 - **Privacy of your test photos?** The garden photos are kept on the device and the Mac, never committed.
+
+
+## Appended by the main session · 8-photo accuracy (2026-10-24 ~14:40, NPU)
+
+28 pairs from a real garden walk (3 same-spot, 25 different-spot):
+- Strict prompt (default): **0 of 25 false "same spot"**, found 1 of 3 true matches.
+- Lenient prompt: found 3 of 3, but **9 of 25 false "same spot"**.
+- Pitch line: "On look-alike spots, Travis would rather say *not sure* than send you the
+  wrong way. It checks only the spot your recorded route expects next, and you decide."
+- Do not claim a match accuracy percentage beyond these counts; the set is small and one
+  property.
