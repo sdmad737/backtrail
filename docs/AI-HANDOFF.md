@@ -15,17 +15,17 @@ airplane mode, with Gemma 4 E2B and EmbeddingGemma 2 running on the Tensor G6 NP
 |---|---|---|---|---|
 | Describe a saved photo | `LocalVisionService.describe` | 6.6–8.9 s | Verified on Pixel | Yes, runs after Save photo |
 | Find a saved place ("take me back to…") | `LocalVisionService.resolveDestination` | not measured | Built (teammate's prompt, on the shared engine) | Yes, the Ask box |
-| Same spot? (live photo vs saved photo) | `LocalVisionService.compare` | ~8.5 s | Verified on Pixel: 0 of 25 false matches, found 1 of 3 real matches | **No** |
-| Ask about my trip (last X hours optional) | `TripMemoryIndex.rank`, then `LocalVisionService.askAboutTrip` | rank 25–30 ms, answer 7.9–9.4 s | Verified on Pixel | **No** |
-| Ask about a photo ("what tree is this?") | `LocalVisionService.askAboutPhoto` | 8.8–10.2 s | Verified on Pixel | **No** |
-| Safety refusal (eat, drink, touch, dangerous) | built into `askAboutPhoto` | instant for typed questions | Verified on Pixel | **No** |
-| Reminder from a note | `LocalVisionService.parseReminder` | 4.6–5.9 s | Verified on Pixel (3 of 3 correct) | **No** |
+| Same spot? (live photo vs saved photo) | `LocalVisionService.compare` | ~8.5 s | Verified on Pixel: 0 of 25 false matches, found 1 of 3 real matches | Yes, for the expected retrace spot |
+| Ask about my trip | `LocalVisionService.askAboutTrip` | answer 7.9–9.4 s | Verified on Pixel | Yes, limited to four recent places; no semantic ranking |
+| Ask about a photo ("what tree is this?") | `LocalVisionService.askAboutPhoto` | 8.8–10.2 s | Verified on Pixel | Yes |
+| Safety refusal (eat, drink, touch, dangerous) | built into `askAboutPhoto` | instant for typed questions | Verified on Pixel | Yes |
+| Reminder from a note | `LocalVisionService.parseReminder` | 4.6–5.9 s | Verified on Pixel (3 of 3 correct) | Yes, user confirms Add or Dismiss |
 | Voice questions | `Question.Audio(wav)` into any of the above | ~8.6 s | Verified on Pixel with a generated WAV | **No** (no mic recording yet) |
 | Am I going the right way? | `RightWayCheck.check` | instant, no model | Unit-tested (8 tests), **not run on a walk** | **No** |
 | Lining-up meter while aiming the camera | `LocalEmbedder.embedImage` + `AlignmentMeter.update` | ~0.3 s per frame | Embedder verified; meter thresholds **not calibrated** | **No** |
 
-"Verified on Pixel" means a benchmark test ran the real model on the phone. None of the new
-features has been tapped through in the app's own screens yet.
+"Verified on Pixel" means a benchmark test ran the real model on the phone. UI wiring is
+implemented for the marked features; a benchmark result does not replace app-flow testing.
 
 ---
 
@@ -110,10 +110,11 @@ section 6).
   sure" often; the UX must make that state useful.
 
 ### 4.4 Ask about my trip
-- **Step 1:** `TripMemoryIndex.rank(questionText, outing.memories, withinHours = h or null, limit = 4)`.
-  `withinHours` limits the search to the last *h* hours, e.g. `0.5` for the last 30 minutes.
-- **Step 2:** `askAboutTrip(ctx, Question.Text(questionText), ranked.map { it.memory })`. At
-  most 4 memories (`MAX_TRIP_SPOTS`).
+- **Current product path:** `askAboutTrip(ctx, Question.Text(questionText), memories)` with at most
+  the four most recent saved places (`MAX_TRIP_SPOTS`). The product excludes a second embedding
+  model, so this UI does not claim semantic ranking or a whole-trip search.
+- If the product later selects and ships `TripMemoryIndex`, rank by the typed question first;
+  `withinHours` can limit search to the last *h* hours (for example `0.5` for 30 minutes).
 - **Success:** `TripAnswer(answer, sourceIds, grounded)`
   - `grounded = true`: show `answer` plus the photos of `sourceIds` (real memory ids), each
     opening that memory.
@@ -196,17 +197,27 @@ section 6).
 
 ---
 
-## 5. What's left to build, in priority order
+## 5. Native UI integration status
 
-1. **Same-spot check in the retrace flow (4.3):** a camera button at the expected spot,
-   then `compare`, then Confirm or the not-sure options.
-2. **Trip questions (4.4):** a text box over the current outing, plus indexing after each save.
-3. **"Am I going the right way?" (4.8):** a button in retrace/AR mode and the fix ring buffer.
-4. **Reminder from a note (4.6):** call it when a note is saved, with the Add/Dismiss prompt.
-5. **Photo questions (4.5)** from the camera screen.
-6. **Microphone recording (4.7):** the `RECORD_AUDIO` permission and 16 kHz WAV capture,
-   routed by the button pressed.
-7. Optional: **lining-up meter (4.9)** and **step counter** for 4.8.
+The native UI exposes local photo description, saved-place lookup, trip questions, questions
+about an original saved photo, conservative two-photo comparison, and reminder proposals
+parsed from a saved note. Results use request/session/trip revision gates and remain proposals.
+The UI shows source photos for grounded answers, uses a calm card for safety refusals, hides
+comparison reasons on non-matches, and requires an explicit user action to add a reminder or
+continue guidance. Explore paths remain visibly labelled samples.
+
+Trip questions use at most four recent places because the product excludes an extra embedding
+model. Voice input is also excluded from the current product scope. The alignment meter stays
+hidden because its thresholds are uncalibrated. Run the app's own flows on the Pixel separately
+from benchmark and compilation evidence.
+
+## 6. What's left to build
+
+1. **"Am I going the right way?" (4.8):** expose `RightWayCheck` in retrace mode and retain a
+   rolling 30-second window of measured fixes.
+2. Optional: microphone recording (4.7), only if product scope adds voice input.
+3. Optional: lining-up meter (4.9) and step counter; both need product selection and
+   calibration/permission work.
 
 Before the demo, tap through each wired feature once on the Pixel in airplane mode, and note
 anything that behaves differently from this doc.

@@ -142,14 +142,25 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             }
             TravisAction.CancelCapture -> mutable.update { it.copy(captureMode=false) }
             is TravisAction.SavePhoto -> savePhoto(action.note,action.pickup)
-            is TravisAction.SwitchSurface -> mutable.update { it.copy(surface=action.surface,captureMode=false) }
+            is TravisAction.SwitchSurface -> {
+                if(mutable.value.surface!=action.surface) invalidate()
+                mutable.update { it.copy(surface=action.surface,captureMode=false) }
+            }
             is TravisAction.SelectMemory -> { invalidate();if(mutable.value.outing.memories.none { it.id==action.id }) return
-                mutable.update { it.copy(selectedMemoryId=action.id,mode=GuidanceMode.FIND_LANDMARK,surface=TravisSurface.AR,captureMode=false,notice="") };refresh()
+                mutable.update { it.copy(selectedMemoryId=action.id,mode=GuidanceMode.FIND_LANDMARK,surface=TravisSurface.AR,captureMode=false,notice="",comparisonVerdict=null,comparisonReasons=emptyList()) };refresh()
                 if(mutable.value.target==null) announce("This photo has no recorded location. You can recognize it visually; direction is unavailable.")
                 else if(!mutable.value.replay && mutable.value.locationAllowed) try { RecordingService.start(getApplication(),mutable.value.outing.id) } catch(_:Exception) { announce("Location could not start for Find. Check permission.") }
                 else if(!mutable.value.replay) announce("Allow precise location to update this Find direction.")
             }
             is TravisAction.Ask -> ask(action.query)
+            is TravisAction.AskAboutTrip -> askAboutTrip(action.query)
+            is TravisAction.AskAboutPhoto -> askAboutPhoto(action.memoryId, action.query)
+            is TravisAction.SuggestReminder -> suggestReminder(action.memoryId)
+            TravisAction.ConfirmReminder -> confirmReminder()
+            TravisAction.DismissReminder -> mutable.update { it.copy(pendingReminder=null) }
+            is TravisAction.RetryDescription -> mutable.value.outing.memories.firstOrNull { it.id==action.memoryId }?.let { describe(it,mutable.value.outing.id) }
+            is TravisAction.UpdateMemory -> updateMemory(action.id,action.title,action.description)
+            is TravisAction.CompareCurrentPhoto -> compareCurrentPhoto(action.memoryId)
             is TravisAction.Collect -> change { outing->outing.copy(memories=outing.memories.map { if(it.id==action.id && it.pickup!=PickupPhase.NONE)it.copy(pickup=PickupPhase.COLLECTED)else it }) }
             is TravisAction.OpenOuting -> { if(!mutable.value.replay && liveOuting.phase in listOf(OutingPhase.RECORDING,OutingPhase.PAUSED) && action.id!=currentId) { announce("End the active outing before opening another.");return };invalidate();if(mutable.value.replay)action(TravisAction.ExitExplore);currentId=action.id;preferences.edit().putString("active",action.id).apply();liveOuting=store.outings.value.find { it.id==action.id }?:Outing();mutable.update { it.copy(mode=GuidanceMode.NONE,selectedMemoryId=null,answer="",resultIds=emptyList()) };refresh() }
             is TravisAction.DemoIssue -> if(mutable.value.replay) { issue=action.issue;mutable.update { it.copy(busy=issue=="loading",answer=when(issue){"error"->"Sample error · local model unavailable";"no_match"->"Sample answer · no recorded match";else->""},resultIds=emptyList()) };refresh() }
@@ -212,11 +223,14 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             inference.describe(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt)).collect { result->
                 if(!gate.accepts(result.context) || currentId!=outingId || store.outings.value.find { it.id==outingId }?.revision!=request.tripRevision || mutable.value.replay) { if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false) } };return@collect }
                 when(result) {
-                    is InferenceState.Loading -> mutable.update { it.copy(busy=true) }
+                    is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Reading your photo on this phone…",retryDescriptionId=null) }
                     is InferenceState.Success -> {
-                        if(gate.consume(request)) { try { store.mutate(outingId) { old->requireNotNull(old).copy(memories=old.memories.map { if(it.id==memory.id && it.photoPath==memory.photoPath)it.copy(description=result.value.fixedFeatures.joinToString(" · "),title=if(it.note.isBlank())result.value.label else it.title,indexing="Gemma 4 · local result")else it }) } } catch(_:Exception) { announce("Photo and route preserved. The model description could not be saved.") } finally { mutable.update { it.copy(busy=false) } } }
+                        if(gate.consume(request)) { try {
+                            val unclear=result.value.label.equals("Unclear view",ignoreCase=true) || result.value.fixedFeatures.isEmpty()
+                            store.mutate(outingId) { old->requireNotNull(old).copy(memories=old.memories.map { if(it.id==memory.id && it.photoPath==memory.photoPath)it.copy(description=if(unclear)"" else result.value.fixedFeatures.joinToString(" · "),title=if(it.note.isBlank())result.value.label else it.title,indexing="Gemma 4 · local result")else it }) }
+                        } catch(_:Exception) { announce("Photo and route preserved. The model description could not be saved.") } finally { mutable.update { it.copy(busy=false,inferenceMessage="Gemma 4 · local result",retryDescriptionId=null) } } }
                     }
-                    is InferenceState.Failure -> { gate.consume(request);mutable.update { it.copy(busy=false) };announce("Photo preserved. ${result.message}") }
+                    is InferenceState.Failure -> { gate.consume(request);mutable.update { it.copy(busy=false,inferenceMessage="Photo preserved. ${result.message}",retryDescriptionId=memory.id) } }
                 }
             }
         }
@@ -224,13 +238,13 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
     override fun onCleared() { camera.close();inference.close();super.onCleared() }
     private fun ask(query:String) {
         if(query.isBlank()) return
-        invalidate();val snapshot=mutable.value
+        invalidate();val snapshot=mutable.value;mutable.update { it.copy(assistantMode=AssistantMode.FIND_PLACE,answer="",answerStatus=AssistantAnswerStatus.NONE,resultIds=emptyList(),answerGrounded=null,answerConfidence=null,safetyRefusal=false,inferenceMessage="") }
         if(snapshot.replay) {
             val q=query.lowercase();val ids=snapshot.outing.memories.filter { m-> (q.contains("bottle") && m.id=="demo-bridge") || (q.contains("creek") && m.id=="demo-creek") || ((q.contains("start")||q.contains("car")||q.contains("entrance")) && m.id=="demo-start") }.map { it.id }
-            mutable.update { it.copy(resultIds=ids,answer=if(ids.isEmpty())"Sample answer · no recorded match. Try ‘Where did I leave my bottle?’" else "Sample answer · found a saved memory. Check the source photo before finding it in AR.") };return
+            mutable.update { it.copy(resultIds=ids,answerStatus=AssistantAnswerStatus.SAMPLE,answer=if(ids.isEmpty())"Sample answer · no recorded match. Try ‘Where did I leave my bottle?’" else "Sample answer · found a saved memory. Check the source photo before finding it in AR.") };return
         }
-        if(!models.ready) { mutable.update { it.copy(answer="Local model unavailable. Import the verified model; your saved memories remain browsable.",resultIds=emptyList()) };return }
-        if(snapshot.outing.memories.isEmpty()) { mutable.update { it.copy(answer="No saved places yet. Capture your first landmark.") };return }
+        if(!models.ready) { mutable.update { it.copy(answer="Local model unavailable. Import the verified model; your saved memories remain browsable.",answerStatus=AssistantAnswerStatus.UNAVAILABLE,resultIds=emptyList()) };return }
+        if(snapshot.outing.memories.isEmpty()) { mutable.update { it.copy(answer="No saved places yet. Capture your first landmark.",answerStatus=AssistantAnswerStatus.INFO) };return }
         val candidates=snapshot.outing.memories.takeLast(12).mapIndexed { index,m->Checkpoint(m.id,index,ImageRef(m.id,m.photoPath,m.capturedAt),m.title,m.description.split(" · ").take(8),userNotes=m.note) }
         val scopeLabel=if(snapshot.outing.memories.size>12) "Latest 12 of ${snapshot.outing.memories.size} memories. " else ""
         val request=context("retrieval");gate.begin(request)
@@ -241,10 +255,124 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                     return@collect
                 }
                 when(result) {
-                    is InferenceState.Loading -> mutable.update { it.copy(busy=true,answer=scopeLabel+"Searching saved memories on this phone…",resultIds=emptyList()) }
-                    is InferenceState.Success -> if(gate.consume(request)) { mutable.update { it.copy(busy=false,resultIds=when(val proposal=result.value){is DestinationProposal.Target->listOf(proposal.checkpointId);else->emptyList()},answer=scopeLabel+when(result.value){is DestinationProposal.Target->"Gemma 4 · local result. Review this saved photo.";DestinationProposal.AskClarification->"Several places may fit. Try a more specific detail.";DestinationProposal.NoRecordedMatch->"No recorded match. Your other memories are still available."}) } }
-                    is InferenceState.Failure -> { gate.consume(request);mutable.update { it.copy(busy=false,answer=result.message,resultIds=emptyList()) } }
+                    is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Searching your saved places on this phone…",answer="",resultIds=emptyList(),answerGrounded=null,answerConfidence=null,safetyRefusal=false) }
+                    is InferenceState.Success -> if(gate.consume(request)) { val clarification=result.value is DestinationProposal.AskClarification;mutable.update { it.copy(busy=false,answerStatus=AssistantAnswerStatus.LIVE,resultIds=when(val proposal=result.value){is DestinationProposal.Target->listOf(proposal.checkpointId);DestinationProposal.AskClarification->candidates.map { it.id };else->emptyList()},answer=scopeLabel+when(result.value){is DestinationProposal.Target->"Is this the place? Review the saved photo, then choose Find in AR.";DestinationProposal.AskClarification->"A few saved places could fit. Add a detail or choose from these photos.";DestinationProposal.NoRecordedMatch->"I don't see that in your saved places."},answerGrounded=null,answerConfidence=null,safetyRefusal=false,inferenceMessage=if(clarification)"Gemma 4 · local result · candidates are unconfirmed" else "Gemma 4 · local result") } }
+                    is InferenceState.Failure -> { gate.consume(request);mutable.update { it.copy(busy=false,answerStatus=AssistantAnswerStatus.FAILURE,answer=result.message,resultIds=emptyList(),inferenceMessage="") } }
                 }
+            }
+        }
+    }
+
+    private fun askAboutTrip(query:String) {
+        if(query.isBlank() || mutable.value.busy) return
+        invalidate();val snapshot=mutable.value;mutable.update { it.copy(assistantMode=AssistantMode.TRIP_QUESTION,answer="",answerStatus=AssistantAnswerStatus.NONE,resultIds=emptyList(),answerGrounded=null,answerConfidence=null,safetyRefusal=false,inferenceMessage="") }
+        if(snapshot.replay) { mutable.update { it.copy(answer="Sample answer · the creek crossing was beside the wooden footbridge.",answerStatus=AssistantAnswerStatus.SAMPLE,resultIds=listOf("demo-creek"),answerGrounded=true,inferenceMessage="Explore sample · not a live model result") };return }
+        if(!models.ready) { mutable.update { it.copy(answer="Local model unavailable. Import the verified model; your saved places remain available.",answerStatus=AssistantAnswerStatus.UNAVAILABLE,resultIds=emptyList(),answerGrounded=null) };return }
+        if(snapshot.outing.memories.isEmpty()) { mutable.update { it.copy(answer="No saved places yet. Capture your first landmark.",answerStatus=AssistantAnswerStatus.INFO,resultIds=emptyList(),answerGrounded=false) };return }
+        // Product scope excludes a second embedding model. Limit this question to the four most recent
+        // saved places and say so; never imply a whole-trip semantic ranking occurred.
+        val memories=snapshot.outing.memories.takeLast(LocalVisionService.MAX_TRIP_SPOTS)
+        val scope=if(snapshot.outing.memories.size>memories.size) "Using the ${memories.size} most recent saved places. " else ""
+        val request=context("trip-question");gate.begin(request)
+        inferenceJob=viewModelScope.launch {
+            inference.askAboutTrip(request,Question.Text(query.take(Question.MAX_QUESTION_CHARS)),memories).collect { result ->
+                if(!gate.accepts(result.context) || mutable.value.outing.id!=request.tripId || mutable.value.outing.revision!=request.tripRevision || mutable.value.replay) { if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false,answer="Saved places changed. Ask again to search the current set.",resultIds=emptyList()) } };return@collect }
+                when(result) {
+                    is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Looking through your saved places on this phone…",answer="",resultIds=emptyList(),answerGrounded=null,answerConfidence=null,safetyRefusal=false) }
+                    is InferenceState.Success -> if(gate.consume(request)) mutable.update { it.copy(busy=false,answer=scope+result.value.answer,answerStatus=AssistantAnswerStatus.LIVE,resultIds=if(result.value.grounded)result.value.sourceIds else emptyList(),answerGrounded=result.value.grounded,answerConfidence=null,safetyRefusal=false,inferenceMessage="Gemma 4 · local result") }
+                    is InferenceState.Failure -> { gate.consume(request);mutable.update { it.copy(busy=false,answer=result.message,answerStatus=AssistantAnswerStatus.FAILURE,resultIds=emptyList(),answerGrounded=null,inferenceMessage="") } }
+                }
+            }
+        }
+    }
+
+    private fun askAboutPhoto(memoryId:String,query:String) {
+        if(query.isBlank() || mutable.value.busy) return
+        invalidate();val snapshot=mutable.value;mutable.update { it.copy(assistantMode=AssistantMode.PHOTO_QUESTION,answer="",answerStatus=AssistantAnswerStatus.NONE,resultIds=emptyList(),answerGrounded=null,answerConfidence=null,safetyRefusal=false,inferenceMessage="") };val memory=snapshot.outing.memories.firstOrNull { it.id==memoryId } ?: return
+        if(snapshot.replay) { mutable.update { it.copy(answer="Sample answer · the saved photo shows a wooden footbridge.",answerStatus=AssistantAnswerStatus.SAMPLE,resultIds=listOf(memoryId),answerGrounded=true,answerConfidence="MEDIUM",safetyRefusal=false,inferenceMessage="Explore sample · not a live model result") };return }
+        if(!models.ready) { mutable.update { it.copy(answer="Local model unavailable. Import the verified model to ask about this saved photo.",answerStatus=AssistantAnswerStatus.UNAVAILABLE,resultIds=listOf(memoryId),answerGrounded=null) };return }
+        val request=RequestContext(session,UUID.randomUUID().toString(),snapshot.outing.id,snapshot.outing.revision,memory.id);gate.begin(request)
+        inferenceJob=viewModelScope.launch {
+            inference.askAboutPhoto(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt),Question.Text(query.take(Question.MAX_QUESTION_CHARS))).collect { result ->
+                if(!gate.accepts(result.context) || mutable.value.outing.id!=request.tripId || mutable.value.outing.revision!=request.tripRevision || mutable.value.replay) { if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false) } };return@collect }
+                when(result) {
+                    is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Looking at your saved photo on this phone…",answer="",resultIds=listOf(memory.id),answerGrounded=null,answerConfidence=null,safetyRefusal=false) }
+                    is InferenceState.Success -> if(gate.consume(request)) mutable.update { it.copy(busy=false,answer=result.value.answer,answerStatus=AssistantAnswerStatus.LIVE,resultIds=listOf(memory.id),answerGrounded=true,answerConfidence=result.value.confidence.name,safetyRefusal=result.value.safetyRefusal,inferenceMessage=if(result.value.safetyRefusal)"" else "Gemma 4 · local result") }
+                    is InferenceState.Failure -> { gate.consume(request);mutable.update { it.copy(busy=false,answer=result.message,answerStatus=AssistantAnswerStatus.FAILURE,resultIds=listOf(memory.id),answerGrounded=null,inferenceMessage="") } }
+                }
+            }
+        }
+    }
+
+    private fun suggestReminder(memoryId:String) {
+        if(mutable.value.busy) return
+        val snapshot=mutable.value;val memory=snapshot.outing.memories.firstOrNull { it.id==memoryId } ?: return
+        if(memory.note.isBlank()) { announce("Add a note before asking Gemma to interpret a reminder.");return }
+        if(snapshot.replay) {
+            val task=memory.note.substringAfter("remind me",memory.note).trim().trimStart(':', ' ', 't','o')
+            if(task.isNotBlank() && memory.note.contains("remind",ignoreCase=true)) mutable.update { it.copy(pendingReminder=ReminderSuggestion(memory.id,task.take(160)),inferenceMessage="Explore sample · not a live model result") }
+            else mutable.update { it.copy(pendingReminder=null,inferenceMessage="") }
+            return
+        }
+        if(!models.ready) { announce("Import the verified local model to interpret this note.");return }
+        invalidate();val request=RequestContext(session,UUID.randomUUID().toString(),snapshot.outing.id,snapshot.outing.revision,memory.id);gate.begin(request)
+        inferenceJob=viewModelScope.launch {
+            inference.parseReminder(request,Question.Text(memory.note.take(Question.MAX_QUESTION_CHARS))).collect { result ->
+                if(!gate.accepts(result.context) || mutable.value.outing.id!=request.tripId || mutable.value.outing.revision!=request.tripRevision || mutable.value.replay) { if(gate.accepts(result.context)) gate.invalidate();return@collect }
+                when(result) {
+                    is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Checking whether your note asks for a return reminder…",pendingReminder=null) }
+                    is InferenceState.Success -> if(gate.consume(request)) mutable.update { it.copy(busy=false,pendingReminder=result.value.takeIf { it.remindOnReturn }?.let { ReminderSuggestion(memory.id,it.task) },inferenceMessage="") }
+                    is InferenceState.Failure -> { gate.consume(request);mutable.update { it.copy(busy=false,pendingReminder=null,inferenceMessage="") } }
+                }
+            }
+        }
+    }
+
+    private fun confirmReminder() {
+        val suggestion=mutable.value.pendingReminder ?: return
+        change { outing->outing.copy(memories=outing.memories.map { if(it.id==suggestion.memoryId && it.pickup==PickupPhase.NONE)it.copy(pickup=PickupPhase.WAITING_TO_LEAVE)else it }) }
+        mutable.update { it.copy(pendingReminder=null) }
+        announce("Return reminder added for: ${suggestion.task}")
+    }
+
+    private fun updateMemory(id:String,title:String,description:String) {
+        val cleanTitle=title.trim().take(80);val cleanDescription=description.trim().take(1000)
+        if(cleanTitle.isBlank()) { announce("Add a short place name.");return }
+        change { outing->outing.copy(revision=outing.revision+1,memories=outing.memories.map { if(it.id==id)it.copy(title=cleanTitle,description=cleanDescription,indexing=if(it.indexing.startsWith("Gemma"))it.indexing else "Your edit")else it }) }
+    }
+
+    private fun compareCurrentPhoto(memoryId:String) {
+        if(mutable.value.busy) return
+        val before=mutable.value
+        val memory=before.outing.memories.firstOrNull { it.id==memoryId } ?: return
+        if(before.replay) { mutable.update { it.copy(comparisonVerdict="INSUFFICIENT_EVIDENCE",comparisonReasons=emptyList(),inferenceMessage="Explore sample · not a live model result") };return }
+        if(!models.ready) { mutable.update { it.copy(comparisonVerdict=null,comparisonReasons=emptyList(),inferenceMessage="Import the verified local model to compare photos.") };return }
+        if(!before.cameraAllowed) { announce("Allow camera access to take a current comparison photo.");return }
+        invalidate();val snapshot=mutable.value;val outingId=snapshot.outing.id;val revision=snapshot.outing.revision;val captureSession=session
+        val currentFile=File(getApplication<Application>().cacheDir,"compare-${UUID.randomUUID()}.jpg")
+        mutable.update { it.copy(busy=true,comparisonVerdict=null,comparisonReasons=emptyList(),inferenceMessage="Taking a current photo for comparison…") }
+        camera.takePhoto(currentFile) { captured ->
+            viewModelScope.launch {
+                if(session!=captureSession || currentId!=outingId || mutable.value.selectedMemoryId!=memoryId || mutable.value.mode!=GuidanceMode.FIND_LANDMARK) { currentFile.delete();return@launch }
+                if(!captured) { currentFile.delete();mutable.update { it.copy(busy=false,inferenceMessage="Couldn't take a comparison photo. The saved place is unchanged.") };return@launch }
+                val committed=store.outings.value.find { it.id==outingId }
+                if(committed==null || committed.revision!=revision) { currentFile.delete();mutable.update { it.copy(busy=false,inferenceMessage="Saved places changed. Compare again with the current photo.") };return@launch }
+                val request=RequestContext(session,UUID.randomUUID().toString(),outingId,revision,memoryId);gate.begin(request)
+                try {
+                    inference.compare(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt),ImageRef("current-${UUID.randomUUID()}",currentFile.absolutePath,System.currentTimeMillis())).collect { result ->
+                        if(!gate.accepts(result.context) || currentId!=outingId || store.outings.value.find { it.id==outingId }?.revision!=revision || mutable.value.selectedMemoryId!=memoryId || mutable.value.mode!=GuidanceMode.FIND_LANDMARK) { if(gate.accepts(result.context)) gate.invalidate();return@collect }
+                        when(result) {
+                            is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Comparing with your saved photo on this phone…") }
+                            is InferenceState.Success -> if(gate.consume(request)) {
+                                val supports=result.value.verdict==Verdict.SUPPORTS_MATCH
+                                mutable.update { it.copy(busy=false,comparisonVerdict=result.value.verdict.name,comparisonReasons=if(supports)result.value.matchingFeatures else emptyList(),inferenceMessage="Gemma 4 · local result · not a location fix") }
+                            }
+                            is InferenceState.Failure -> { gate.consume(request);mutable.update { it.copy(busy=false,comparisonVerdict="ERROR",comparisonReasons=emptyList(),inferenceMessage=result.message) } }
+                        }
+                    }
+                } catch(_:CancellationException) { gate.invalidate() }
+                catch(_:Exception) { mutable.update { it.copy(busy=false,comparisonVerdict="ERROR",comparisonReasons=emptyList(),inferenceMessage="Comparison failed. Your saved photo and route are unchanged.") } }
+                finally { currentFile.delete() }
             }
         }
     }

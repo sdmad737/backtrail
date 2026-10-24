@@ -22,6 +22,9 @@ import kotlinx.serialization.Serializable
 )
 enum class GuidanceMode { NONE, RETRACE, FIND_LANDMARK }
 enum class TravisSurface { MAP, AR }
+enum class AssistantMode { FIND_PLACE, TRIP_QUESTION, PHOTO_QUESTION }
+enum class AssistantAnswerStatus { NONE, LIVE, UNAVAILABLE, FAILURE, INFO, SAMPLE }
+@Serializable data class ReminderSuggestion(val memoryId: String, val task: String)
 data class TravisUiState(
     val outing: Outing = Outing(), val savedOutings: List<Outing> = emptyList(),
     val fix: TrailPoint? = null, val fixQuality: FixQuality = FixQuality.UNAVAILABLE,
@@ -34,6 +37,12 @@ data class TravisUiState(
     val replay: Boolean = false, val replayStep: Int = 0,
     val modelReady: Boolean = false, val busy: Boolean = false,
     val answer: String = "", val resultIds: List<String> = emptyList(),
+    val assistantMode: AssistantMode = AssistantMode.FIND_PLACE,
+    val answerStatus: AssistantAnswerStatus = AssistantAnswerStatus.NONE,
+    val answerGrounded: Boolean? = null, val answerConfidence: String? = null,
+    val safetyRefusal: Boolean = false, val pendingReminder: ReminderSuggestion? = null,
+    val inferenceMessage: String = "", val retryDescriptionId: String? = null,
+    val comparisonVerdict: String? = null, val comparisonReasons: List<String> = emptyList(),
     val notice: String = "", val sensorStatus: String = "", val mapAvailable: Boolean = false,
     val cameraAllowed: Boolean = false, val locationAllowed: Boolean = false,
     val notificationsAllowed: Boolean = false, val captureMode: Boolean = false,
@@ -60,6 +69,14 @@ sealed interface TravisAction {
     data class SwitchSurface(val surface: TravisSurface) : TravisAction
     data class SelectMemory(val id: String) : TravisAction
     data class Ask(val query: String) : TravisAction
+    data class AskAboutTrip(val query: String) : TravisAction
+    data class AskAboutPhoto(val memoryId: String, val query: String) : TravisAction
+    data class SuggestReminder(val memoryId: String) : TravisAction
+    data object ConfirmReminder : TravisAction
+    data object DismissReminder : TravisAction
+    data class RetryDescription(val memoryId: String) : TravisAction
+    data class UpdateMemory(val id: String, val title: String, val description: String) : TravisAction
+    data class CompareCurrentPhoto(val memoryId: String) : TravisAction
     data class SavePhoto(val note: String, val pickup: Boolean) : TravisAction
     data class Collect(val id: String) : TravisAction
     data class OpenOuting(val id: String) : TravisAction

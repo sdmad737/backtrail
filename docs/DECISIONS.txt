@@ -139,3 +139,12 @@ The prompts prioritize physical Pixel proof and distinguish it from host/emulato
 results. Only the lead installs the integrated build; teammates coordinate phone
 testing slots. No teammates were contacted/invited or code implementation changed
 during this onboarding update. The user explicitly chose this role split.
+
+2026-10-24 / codex/travis-ai-ui-integration / Production main already contains the
+cloned Travis UI; its UI branch is an ancestor and did not need replay. Integrated
+the missing local Gemma trip question, saved-photo question, safety refusal,
+two-photo comparison, note reminder proposal, editable descriptions, and handoff
+loading/retry/clarification states. Trip Q is scoped to four recent records because
+the product excludes a second embedding model; the UI states that no semantic
+ranking ran. No alignment score is presented. Test/build/emulator evidence is
+recorded in the final handoff after verification.
