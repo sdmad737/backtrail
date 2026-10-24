@@ -1,0 +1,83 @@
+{
+  "hardware": "macOS-27.0.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "runtime": "litert-lm-api 0.18.0",
+  "backend": "cpu",
+  "model_path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it.litertlm",
+  "started_at_utc": "2026-10-24T07:52:30Z",
+  "context_tokens": 4096,
+  "max_output_tokens": 384,
+  "thinking": false,
+  "tests": [
+    {
+      "name": "text",
+      "started_at_utc": "2026-10-24T07:52:32Z",
+      "raw_response": "{\"status\":\"ready\"}",
+      "seconds": 1.539,
+      "expected": {
+        "status": "ready"
+      },
+      "pass": true
+    },
+    {
+      "name": "image",
+      "started_at_utc": "2026-10-24T07:52:34Z",
+      "raw_response": "The image displays a brown sign with the word \"TRAVIS\" written on it, mounted on a brown post. To the right of the sign is a blue cylindrical object, and a red circular object is positioned between the sign and the blue object. The background is a light, muted color, and the foreground is a tan or beige color.",
+      "seconds": 4.541,
+      "pass": true
+    },
+    {
+      "name": "retrieval_jacket",
+      "started_at_utc": "2026-10-24T07:52:38Z",
+      "raw_response": "{\"action\":\"PROPOSE_TARGET\",\"checkpointId\":\"junction\"}",
+      "seconds": 1.197,
+      "expected": {
+        "action": "PROPOSE_TARGET",
+        "checkpointId": "junction"
+      },
+      "pass": true
+    },
+    {
+      "name": "retrieval_water",
+      "started_at_utc": "2026-10-24T07:52:39Z",
+      "raw_response": "{\"action\":\"creek\"}",
+      "seconds": 0.672,
+      "expected": {
+        "action": "PROPOSE_TARGET",
+        "checkpointId": "creek"
+      },
+      "pass": false
+    },
+    {
+      "name": "retrieval_car",
+      "started_at_utc": "2026-10-24T07:52:40Z",
+      "raw_response": "{\"action\":\"PROPOSE_TARGET\",\"checkpointId\":\"car\"}",
+      "seconds": 0.921,
+      "expected": {
+        "action": "PROPOSE_TARGET",
+        "checkpointId": "car"
+      },
+      "pass": true
+    },
+    {
+      "name": "retrieval_no_match",
+      "started_at_utc": "2026-10-24T07:52:41Z",
+      "raw_response": "{\"action\":\"NO_RECORDED_MATCH\"}",
+      "seconds": 0.815,
+      "expected": {
+        "action": "NO_RECORDED_MATCH"
+      },
+      "pass": true
+    }
+  ],
+  "evidence": "Host inference only. Retrieval catalog is a synthetic test fixture.",
+  "bundle_input_modalities": {
+    "text": true,
+    "vision": true,
+    "audio": true,
+    "video": false
+  },
+  "bundle_max_vision_tokens": 280,
+  "engine_initialization_seconds": 1.278,
+  "finished_at_utc": "2026-10-24T07:52:42Z"
+}

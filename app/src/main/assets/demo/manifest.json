@@ -1,0 +1,39 @@
+{
+  "purpose": "Offline Travis Explore illustration and host vision smoke-test images. These photographs are from different real places; the sample route does not claim they share a location.",
+  "downloaded": "2026-10-24",
+  "assets": [
+    {
+      "file": "stone-bridge.jpg",
+      "title": "Boulder Bridge at Rock Creek Park",
+      "credit": "National Park Service",
+      "license": "Public domain (United States federal government work)",
+      "source": "https://npgallery.nps.gov/AssetDetail/FF52F1CC-F2B0-94C2-76208D18B140202A",
+      "download": "https://npgallery.nps.gov/GetAsset/FF52F1CC-F2B0-94C2-76208D18B140202A/proxyhires.jpg",
+      "license_evidence": "NPGallery metadata explicitly states PhotoCredit NPS and Public domain:Full Granting Rights.",
+      "sha256": "a42ae9075bab7c9c603490cecea4320a797b2378b5d69bb7701059b3238f0c18",
+      "bytes": 371769
+    },
+    {
+      "file": "log-bridge.jpg",
+      "title": "Log bridge on Quinault Trail",
+      "credit": "NPS / Jon Preston",
+      "license": "Public domain (United States federal government work)",
+      "source": "https://www.nps.gov/media/photo/gallery-item.htm?gid=F23B92B0-155D-4519-3E8887C9EDC70F23&id=41bf0829-1dd8-b71b-0b7a-df777cbf78d3",
+      "download": "https://npgallery.nps.gov/GetAsset/41bf0829-1dd8-b71b-0b7a-df777cbf78d3/proxyhires.jpg",
+      "license_evidence": "NPS page credits NPS Photo by Jon Preston and states NPS-credited images without copyright symbols are public domain.",
+      "sha256": "44a60d4cb39d4818003a4a1d9059281ec1151acc40143725b8f071090e37ff57",
+      "bytes": 389479
+    },
+    {
+      "file": "redwood-creek.jpg",
+      "title": "Redwood Creek",
+      "credit": "NPS Photo",
+      "license": "Public domain (United States federal government work)",
+      "source": "https://commons.wikimedia.org/wiki/File:Redwood_creek.jpg",
+      "download": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Redwood_creek.jpg",
+      "license_evidence": "Commons source identifies NPS Photo and PD-USGov-NPS, with archived original NPS source.",
+      "sha256": "617ce25b214a3b889d42975d3561f05b1db783dd633daadb8b34739d4c8c26de",
+      "bytes": 49420
+    }
+  ]
+}

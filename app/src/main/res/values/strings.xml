@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Backtrail</string>
+    <string name="app_name">Travis</string>
     <style name="Theme.Backtrail" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">true</item>

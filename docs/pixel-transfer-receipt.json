@@ -1,0 +1,22 @@
+{
+  "started_at_utc": "2026-10-24T20:34:56.642001+00:00",
+  "device": {
+    "model": "Pixel 11 Pro",
+    "android": "17",
+    "sdk": "37",
+    "abi": "arm64-v8a",
+    "soc": "Tensor G6",
+    "build": "CD1A.260618.001.C2"
+  },
+  "apk_sha256": "03fbe56c9bcb1d0768d4b4cb0a055ff25750caacf3e57db61137290aefec0470",
+  "model_bytes": 2588147712,
+  "model_sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+  "apk_installed_this_run": true,
+  "download_copy_verified_this_run": true,
+  "app_private_copy_verified_this_run": false,
+  "offline_inference_tested_this_run": false,
+  "download_path": "/sdcard/Download/gemma-4-E2B-it.litertlm",
+  "finished_at_utc": "2026-10-24T20:35:59.658447+00:00",
+  "evidence_scope": "Historical baseline installation/Downloads transfer, not the current integration APK",
+  "subsequent_private_check": "2026-10-24T20:36Z: app-private file check exited 1; private import not verified"
+}

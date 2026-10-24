@@ -1,84 +1,64 @@
-BACKTRAIL — CURRENT BUILD DECISION
+TRAVIS — CURRENT PRODUCT, OCTOBER 24, 2026
 
-PROMISE
-Backtrail remembers the route, landmarks and things you meant to do on the way
-back, entirely on your phone.
+AUTHORITY
+The latest user request and TRAVIS-BUILD-BRIEF.txt supersede earlier optional-AR,
+visual-only dead-reckoning and GPS-only briefs. Preserve the chosen Android starter.
+Previous bootstrap decisions remain under history/ for provenance, not current scope.
 
-USER
-A walker following a short unfamiliar outdoor route they expect to retrace.
-The initial demonstration uses two or three recognizable junctions with a good
-GNSS view, not an unvalidated expedition or rescue scenario.
+PROMISE AND CORE LOOP
+Know where you are, record where you have been, remember meaningful places and
+help retrace the actual ordered route with no cloud runtime dependency.
+Start outing -> record -> save photo + optional note/reminder -> ask/select a
+saved memory -> Find in AR -> recognize the original landmark -> resume retrace
+or explicitly mark the requested pickup collected -> return to recorded start.
 
-ONE INTERACTION LOOP
-Start walk -> record GPS track -> save return-facing landmark photos and notes
--> select a remembered destination -> follow the recorded trail in reverse
--> compare a live junction view with its saved reference -> confirm -> arrive.
-An optional simple return reminder attaches the user's own intent to a saved
-checkpoint, for example 'Remind me to collect my jacket here on the way back.'
+CORE SURFACES
+Map: prepared offline surroundings, measured position/uncertainty, segmented
+recorded route and photo markers. Missing map coverage leaves the trace visible.
+AR: live rear camera, sensor-driven approximate direction and straight-line
+measured distance to the selected saved location or next recorded waypoint.
+Show the original photo where available. Suppress cues for stale/weak fixes or
+unreliable heading. No photo is silently borrowed from another checkpoint.
+One compact, scrollable bottom sheet carries state and primary actions. Find
+and Retrace are distinct modes sharing one source of truth across Map/AR.
+Selecting a memory never advances or replaces the saved retrace cursor.
 
-INTERFACE
-Map is home: downloaded surroundings if available, actual track, position
-quality, start and saved photo pins. Look opens camera comparison. Ask opens a
-bottom sheet for retrieving trip evidence or proposing a supported action.
-Natural language does not replace visible controls or the map.
+GEMMA'S ROLE
+Gemma 4 E2B + LiteRT-LM 0.18.0 describe a saved real image and resolve a free-text
+query against up to 12 recent saved descriptions/notes. The model returns strict
+bounded JSON with allowed IDs. User reviews the source photo and chooses Find.
+No fabricated coordinates, model-driven progress or automatic claim of recognition.
+Invalid/late/unavailable results remain visible. Original photos and GPS survive
+model failures. No distillation, fine-tuning or extra embedding model selected.
+Two-image automated comparison is explicitly unavailable in this baseline.
 
-PRIORITIES
-P0: one shared app compiles, runs and performs real local Gemma image inference.
-P1: record/open a checkpoint; show reference and current photos; validate live
-    comparison; user-confirmed state and undo; save/reopen the route.
-P2: recorded GNSS path, simple return flow, remembered-destination selection,
-    readable map/route screen and recording/permission failure states.
-P3: Match my view saved-photo overlay or divider; one return-reminder action.
-P4: approximate camera compass, checkpoint suggestions, one offline guide card.
-Only advance once the preceding integrated slice works. P0-P2 form the core.
+DETERMINISTIC RESPONSIBILITIES
+GPS service, segment boundaries, true bearing geometry, quality gates, ordered
+reverse traversal, persistence, reminders and explicit confirmation/undo belong
+to ordinary code. Retrace stops at recording gaps; it invents no connecting route.
+Arrival in Find does not mark a pickup collected. Collection is a separate action.
+Return reminders require opt-in, departure, then repeated good arrival fixes.
+A requested time reminder uses an inexact local Android alarm.
 
-MAP AND AR SCOPE
-Use one prepared offline map region if setup succeeds; a clearly labelled route
-plot is the fallback. A map download is not a new-route planning engine.
-Reference overlays are manually aligned. Do not claim automatic image
-registration, ground-anchored route arrows or GPS-free global localization.
-Return begins at the recorded endpoint on a simple route. No loops, arbitrary
-relocalization, novel shortcuts or autonomous rerouting in the initial build.
+PLATFORMS AND DEMO
+One native Android app is the technical foundation. Portable Explore is an
+interactive browser product showcase for iPhone and Android screen sizes. It has
+replay coordinates/heading, NPS photo previews and explicitly sample model answers.
+It is isolated from saved live outings. Native iOS remains future work.
+The native app also has an opt-in Explore mode. Normal startup is live mode and
+never silently substitutes fixtures for missing models or sensors.
 
-GEMMA DOES
-Describe distinctive visible features, resolve a user's description against
-existing recorded checkpoints, compare reference/current images, and interpret
-a small supported intent such as a checkpoint-bound reminder.
+SCOPE LIMITS
+Approximate camera guidance is core; richer world-tracked AR remains a hardware
+exploration gate. No ground-anchored arrows, GPS-free localization, autonomous
+route planning, shortcuts, route safety certification, rescue transmission,
+cloud fallback, survival chatbot, plant-safety verdicts, voice input/output,
+continuous pocket camera, telemetry or download-at-use assets in the demo.
+A physical Pixel trial is the next gate, not a property proven by compilation.
 
-ORDINARY CODE DOES
-GPS and heading geometry, distance estimates, route ordering, request identity,
-JSON and semantic validation, persistence, progress, reminder triggers and undo.
-
-USER DOES
-Confirm inferred destinations/actions, correct labels, verify checkpoints and
-control route progress. A possible visual match is not proof of location.
-
-TARGET STACK (PROVISIONAL UNTIL BOOTSTRAP)
-Android / Kotlin / Compose / CameraX / LiteRT-LM 0.18.0 / native Gemma 4 E2B
-gemma-4-E2B-it.litertlm. Local JSON + JPEGs is sufficient. Choose one working
-starter configuration and freeze it. Do not maintain iOS concurrently. If only
-iPhones are available, decide on Swift + a Mac before platform work starts.
-
-EVENT FACTS FROM ORGANIZER EMAIL AND PUBLISHED EVENT PAGE
-October 24, 2026; doors10 a.m., keynotes11 a.m.–noon Pacific; teams3–4; one main
-track; Gemma-based runtime100%on-device; special awards can stack; prototyping
-before arrival is explicitly encouraged; hardware loaners first come first
-served. Enter Mobile AI for the phone build. The published event page says to
-save a project draft by 7 p.m.; finalist selection begins from saved drafts.
-Demos/judging start at 8 p.m. Confirm any later final cutoff, required materials
-and demo length at check-in. Do not invent a judging rubric. Sources and the
-complete preparation checklist are in PREP-TOMORROW.md.
-
-EXCLUDED FROM THE BUILD
-Food/poison/water-safety verdicts, universal survival chatbot, long-distance
-world-anchored AR, live weather, remote rescue, cloud model calls, camera running
-continuously in the pocket, model distillation/fine-tuning, multiple platforms.
-General campfire/knots help can later use curated downloaded guide cards; current
-fire permission cannot be inferred from model memory while offline.
-
-EVIDENCE STATUS
-The local bootstrap added one Android starter and compiled a debug APK. Proposal
-validation and stale-result unit tests run on the development Mac. No emulator
-or phone launch, phone inference or GNSS test has been performed, and no accuracy
-or latency number has been measured for Backtrail. The navigation loop is not yet
-implemented. Read DECISIONS.txt for exact commands, results and remaining work.
+EVIDENCE
+PREPARATION-STATUS.md records the completed preparation. MODEL-READINESS.md and
+model-assets.json record exact asset integrity and actual host inference. No
+physical offline inference is claimed. Event-time install/transfer and integration
+results are in DEVICE-INTEGRATION.txt. Organizer requirements and sources are in
+EVENT-RULES-CHECK.md. Advance preparation is recorded before the event.

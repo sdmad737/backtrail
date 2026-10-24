@@ -1,0 +1,87 @@
+TRAVIS — TENSOR G6 CANDIDATE, OCTOBER 24 HACKATHON
+
+DECISION
+Read the supplied 10-page Tensor SDK Agent Skills guide completely, including
+screenshots. Use its precompiled Gemma route as a candidate for teammate 1.
+Keep the current Kotlin/Compose app and verified GPU baseline. No runtime switch,
+new framework, compiler installation, skill installation or NPU claim was made.
+This is work during the event, separate from earlier preparation receipts.
+
+WHAT IS READY ON THIS MAC
+models/gemma-4-E2B-it_Google_Tensor_G6.litertlm
+3313938293 bytes
+SHA256 f86c7c19c736e9307267946edef58b0a45494a9127036d54d90dd6b7617c95b7
+Publisher litert-community/gemma-4-E2B-it-litert-lm
+Pinned revision b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1
+Full download completed; exact bytes and complete SHA256 match pinned publisher
+LFS metadata. LITERTLM header checked; partial renamed only after verification.
+The weights remain ignored and are not in Git. Exact path/receipt and inspected
+metadata: tensor-g6-candidate.json. Other teammates must acquire their own copy.
+
+Official local LiteRT-LM 0.18 ModelInfo inspection reports text/vision/audio inputs,
+4224 context tokens, vision token budget 280; TEXT backends CPU/GPU/NPU,
+VISION and AUDIO backends CPU/GPU. This is metadata inspection, NOT inference.
+Candidate plan: explicit NPU text + GPU vision, provided compatible runtime and
+phone verification succeed. No separate tokenizer/projector model is indicated.
+No text/image test has run on this G6 candidate. Baseline model host tests remain
+valid only for models/gemma-4-E2B-it.litertlm, not this newly downloaded candidate.
+
+COMPANION RUNTIME BLOCKER
+The app's existing LiteRT-LM 0.18.0 AAR contains liblitertlm_jni.so but lacks
+libLiteRtDispatch_GoogleTensor.so. LiteRT-LM v0.18.0 pins LiteRT source revision
+26895c9fbcc25c43faa8c1a98cd1fd28951602c3, matching the LiteRT 2.3.0 dispatch API.
+The Tensor SDK 2.1 release matrix lists LiteRT 2.3.0 and G6 Android 26D1.
+The available public 2.2.0 NPU runtime ZIP is not proof of 2.3.0 compatibility;
+its Google Tensor dispatch header differs. It has NOT been packaged into Travis.
+The public 2.3.0 release did not supply an equivalent NPU runtime ZIP at inspection.
+
+Ask the hardware desk/Harold for the Tensor SDK 2.1 package and the matching
+ARM64 Google Tensor dispatch library for LiteRT-LM 0.18.0 / LiteRT 2.3.0.
+Also ask whether the loan Pixel build CD1A.260618.001.C2 is compatible or needs an
+organizer-supported update. Do not flash/update this shared phone casually.
+The PDF's Agent Skills Drive link requires Google sign-in; its contents were not
+accessible in this session. The SDK tarball/skill ZIP were not found locally.
+The PDF names Latest_SDK_v2.1_2026_10_14. Compilation needs Linux or Colab, but
+recompilation is unnecessary merely to try the published G6 .litertlm.
+No email was sent and no authentication or permissions were changed.
+
+PRECISE SHARED ADDITIONS FOR THE INTEGRATION OWNER
+Once teammate 1 verifies a compatible dispatch artifact and its authoritative
+size/hash: package it for arm64-v8a, add required non-mandatory vendor shared-library
+manifest declarations, and pass applicationInfo.nativeLibraryDir to the NPU backend.
+The official Tensor sample declares libedgetpu_client.google.so,
+libedgetpu_litert.so and libedgetpu_util.so. Confirm the selected SDK's requirements.
+A separate candidate import must validate this candidate's exact bytes/hash;
+the current baseline importer deliberately accepts only the verified GPU bundle.
+Never rename the G6 file over the baseline and weaken hash checking to bypass it.
+Do not copy the older sample's silent NPU->GPU->CPU or text-only fallback. An
+unsupported backend/image path must be visible and must not stop GPS recording.
+No contracts, ai/, UI or dependency changes were made for this candidate.
+
+PHONE STATUS — SEPARATE MILESTONES
+The earlier setup receipt identifies Pixel 11 Pro, Tensor G6, Android 17/API37.
+Baseline APK installed successfully and baseline GPU model reached Downloads
+with a full matching device checksum. App-private import was not verified;
+the later private-file check failed. Offline phone inference remains unproven.
+The Pixel is currently unavailable. G6 candidate: Mac download verified only;
+not transferred, not app-installed, not run offline on phone.
+
+FIRST DEVICE SLOT
+1. Complete baseline private import and run a real fresh photo + text query with
+   Wi-Fi/cellular off; preserve this known configured GPU option.
+2. In a coordinated inference-owner slot, package verified matching runtime and
+   explicit G6 backend. Record exact APK/model/runtime digests and phone build.
+3. Run fresh image description and bounded memory retrieval while GPS records;
+   record actual backend, latency, RAM/thermal/failures. Require visible errors,
+   validated result IDs, original photo and explicit user confirmation.
+Only measured execution can establish an NPU claim. This file cannot.
+
+PRIMARY REFERENCES
+Supplied document: /Users/shahinmadantschi/Downloads/[EXTERNAL] Tensor SDK Agent Skills - Google Gemma Hardware Hackathon.pdf
+Model metadata: https://huggingface.co/api/models/litert-community/gemma-4-E2B-it-litert-lm/revision/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1?blobs=true
+Model download: https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1/gemma-4-E2B-it_Google_Tensor_G6.litertlm
+Tensor SDK: https://developers.google.com/edge/tensor-sdk
+Release matrix: https://developers.google.com/edge/tensor-sdk/release-notes
+Pinned runtime: https://github.com/google-ai-edge/LiteRT-LM/blob/v0.18.0/WORKSPACE
+Kotlin API: https://github.com/google-ai-edge/LiteRT-LM/blob/v0.18.0/docs/api/kotlin/getting_started.md
+Tensor sample: https://github.com/google-ai-edge/litert-samples/tree/main/samples/litert/google/sample_app_tpu

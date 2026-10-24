@@ -1,0 +1,23 @@
+{
+  "hardware": "macOS-27.0.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "runtime": "litert-lm-api 0.18.0",
+  "backend": "gpu",
+  "model_path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it.litertlm",
+  "started_at_utc": "2026-10-24T07:56:14Z",
+  "constrained": true,
+  "context_tokens": 4096,
+  "max_output_tokens": 384,
+  "thinking": false,
+  "tests": [],
+  "evidence": "Host inference only. Retrieval catalog is a synthetic test fixture.",
+  "bundle_input_modalities": {
+    "text": true,
+    "vision": true,
+    "audio": true,
+    "video": false
+  },
+  "bundle_max_vision_tokens": 280,
+  "engine_error": "RuntimeError: Failed to create LiteRT-LM engine for /Users/shahinmadantschi/Downloads/backtrail-team-handoff/models/gemma-4-E2B-it.litertlm",
+  "failure_after_seconds": 0.259
+}

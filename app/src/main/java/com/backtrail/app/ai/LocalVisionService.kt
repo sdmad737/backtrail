@@ -248,8 +248,35 @@ class LocalVisionService(
         engine = null
     }
 
-    override fun resolveDestination(context: RequestContext, query: String, allowedCheckpoints: List<Checkpoint>): Flow<InferenceState<DestinationProposal>> =
-        flowOf(InferenceState.Failure(context, FailureKind.UNAVAILABLE, "Destination resolution is not implemented in this starter."))
+    /** Text-only pick among saved places (prompt and schema from [DestinationPrompt], main@b344256+). */
+    override fun resolveDestination(
+        context: RequestContext,
+        query: String,
+        allowedCheckpoints: List<Checkpoint>,
+    ): Flow<InferenceState<DestinationProposal>> {
+        val prompt = try {
+            DestinationPrompt.build(query, allowedCheckpoints)
+        } catch (_: IllegalArgumentException) {
+            return failure(context, FailureKind.INVALID_RESULT, "Use a question up to 500 characters and a catalog of at most 12 saved places.")
+        }
+        if (allowedCheckpoints.isEmpty()) {
+            return failure(context, FailureKind.UNAVAILABLE, "Save a place before asking Gemma to find it.")
+        }
+        val allowedIds = allowedCheckpoints.map { it.id }.toSet()
+        return request(
+            context = context,
+            op = "destination",
+            images = emptyList(),
+            contents = { Contents.of(Content.Text(prompt)) },
+            schema = DestinationPrompt.schema(allowedIds),
+            maxOutputTokens = 96,
+            invalidMessage = "Gemma returned an invalid result. Your route and saved places are unchanged.",
+            validate = { ProposalValidator.destination(it, allowedIds) },
+        )
+    }
+
+    private fun <T> failure(context: RequestContext, kind: FailureKind, message: String): Flow<InferenceState<T>> =
+        flowOf(InferenceState.Failure(context, kind, message))
 
     private fun trace(
         op: String,
