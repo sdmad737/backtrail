@@ -1,5 +1,14 @@
 TRAVIS — DEVICE / NAVIGATION INTEGRATION, OCTOBER 24, 2026
 
+MERGED INFERENCE UPDATE
+Main advanced to 362a548 during this pass and was merged into codex/bootstrap.
+It includes live G6/NPU selection, verified G6 import metadata, a cached inference
+engine and additional AI APIs. Build and emulator receipts identify exact tested
+artifacts: 70 JVM tests passed, zero lint errors and 19 emulator checks passed.
+INTEGRATION-READY.txt separates the earlier a45b7aa snapshot review from
+resolved items and remaining integration work. Historical device work below is
+preserved; statements that no ai/dependency code changed refer to that earlier pass.
+
 DELIVERED DURING THE EVENT
 This is the lead/user device workstream on codex/bootstrap, based on 7736052.
 No UI, ai/, public state/action types, dependencies or manifest were changed.
@@ -22,7 +31,7 @@ Unchanged outings do not cause repeated disk rewrites. No model work blocks GPS.
 after initialization; expired fixes become unknown. Changing Find/retrace clears
 notices from the previous guidance mode.
 
-VERIFICATION
+BASELINE VERIFICATION AT 5875671 (CURRENT MERGE RECEIPT ABOVE)
 ./gradlew --offline :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
 BUILD SUCCESSFUL: 36 JVM tests, 0 failures/errors/skips; lint 0 errors, 22 warnings.
 Warnings are existing dependency/tool update and style/compatibility suggestions.
@@ -49,9 +58,9 @@ are under ignored local-data/gps-integration/. Simulated inputs exercise real
 Android APIs, not physical position/orientation accuracy or model inference.
 The added checks prove an opted-in pickup remains quiet at capture, arms after
 departure, posts an actual Android notification on return with the screen asleep,
-and does not repost on further arrival fixes. The installed APK checksum was
-checked after the run and matches build-receipt.json. No app code changed for
-this additional acceptance pass.
+and does not repost on further arrival fixes. The tested APK was installed immediately before this run and its local hash
+matches build-receipt.json. The emulator was explicitly targeted; no physical
+phone install took place.
 
 Early harness failures were retained locally: coordinate quantization, ls column
 formatting and Android's location-disabled modal. The first camera Save also
@@ -89,8 +98,10 @@ B. Baseline installed in phone app-private storage: pending. Downloads is verifi
 C. Baseline proven offline on phone: pending.
 G6 NPU candidate: model downloaded and hash verified on this Mac. The matching
 2.3.0 dispatch AAR is now downloaded and publisher-SHA256 verified here too.
-Teammate benchmark execution is reported above; our integrated live app remains
-GPU-configured and awaits physical verification. See TENSOR-G6-HANDOFF.txt.
+Teammate benchmark execution is reported above; the merged live app now selects
+G6/NPU when present, else generic/GPU, and awaits physical verification. Relaunch
+after changing the imported model because the cached service keeps its selection.
+See TENSOR-G6-HANDOFF.txt.
 
 NEXT THREE ACTIONS
 1. Get the Pixel back; install the current APK, complete baseline model import,

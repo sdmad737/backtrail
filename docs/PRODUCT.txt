@@ -30,7 +30,9 @@ bounded JSON with allowed IDs. User reviews the source photo and chooses Find.
 No fabricated coordinates, model-driven progress or automatic claim of recognition.
 Invalid/late/unavailable results remain visible. Original photos and GPS survive
 model failures. No distillation, fine-tuning or extra embedding model selected.
-Two-image automated comparison is explicitly unavailable in this baseline.
+Two-image comparison and richer assistant APIs exist on the inference service but
+are not wired to normal product screens yet. The live app now prefers the pinned
+G6/NPU artifact when present, otherwise the pinned generic/GPU artifact.
 
 DETERMINISTIC RESPONSIBILITIES
 GPS service, segment boundaries, true bearing geometry, quality gates, ordered
@@ -58,7 +60,9 @@ A physical Pixel trial is the next gate, not a property proven by compilation.
 
 EVIDENCE
 PREPARATION-STATUS.md records the completed preparation. MODEL-READINESS.md and
-model-assets.json record exact asset integrity and actual host inference. No
-physical offline inference is claimed. Event-time install/transfer and integration
-results are in DEVICE-INTEGRATION.txt. Organizer requirements and sources are in
+model-assets.json record exact asset integrity and actual host inference.
+INFERENCE-LOG.md records the inference teammate's Pixel/NPU benchmark results;
+these are separate from integrated live-app physical acceptance, still pending.
+Event-time install/transfer and integration results are in DEVICE-INTEGRATION.txt.
+Organizer requirements and sources are in
 EVENT-RULES-CHECK.md. Advance preparation is recorded before the event.

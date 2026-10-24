@@ -10,9 +10,10 @@ against Google's Content-Length and .aar.sha256. See tensor-runtime-receipt.json
 It includes ARM64 dispatch/compiler libraries and manifest declarations for
 libedgetpu_util.so and libedgetpu_litert.so. The candidate merged manifest includes
 both. The SDK tarball is no longer a blocker for this precompiled-model path.
-The integration branch still needs explicit live G6 model/backend selection:
-the teammate's benchmark config does not change TravisViewModel's GPU default.
-See INTEGRATION-READY.txt for remaining work and evidence boundaries.
+The later main commit 362a548 includes live G6/NPU selection and the exact G6
+import pin; it has been merged into our checkout. Relaunch after changing models
+because the cached service keeps its original selection. Normal-app physical
+acceptance remains. See INTEGRATION-READY.txt for work and evidence boundaries.
 
 DECISION
 Read the supplied 10-page Tensor SDK Agent Skills guide completely, including

@@ -26,16 +26,15 @@
     "Closing ended-outing guidance stops recording service",
     "Process relaunch preserves route and original photo metadata"
   ],
-  "outing_id": "812f328a-5b97-433b-9217-c1413f13e1ba",
+  "outing_id": "fe72addb-f44d-4aff-9b8c-7af9599616f9",
   "pickup_notification": {
-    "id": 1724909756,
-    "updated_at_ms": 1792877849833,
+    "id": 1465561104,
+    "updated_at_ms": 1792878269323,
     "title": "Pickup nearby \u00b7 Saved place"
   },
   "passed": true,
-  "finished_at_utc": "2026-10-24T21:38:04.268428+00:00",
-  "apk_sha256": "d4e43ecb1c23c988b99af953dcf84d339a8f59291799db71f603b4ce80bcdefe",
-  "apk_sha256_verified_on_emulator_after_run": true,
-  "apk_installed_immediately_before_run": false,
-  "source_commit": "58756719a90b6ec2c11864c3226ee36e27b7db49"
+  "finished_at_utc": "2026-10-24T21:45:08.297685+00:00",
+  "apk_sha256": "9294769158d4381497dcb7c0ff70523cf9bfd9f1433cd7d8f48519e0fe56f052",
+  "apk_installed_immediately_before_run": true,
+  "source_commit": "5305f3fbd7296782d0fe4f4930e51118bad014f7"
 }
