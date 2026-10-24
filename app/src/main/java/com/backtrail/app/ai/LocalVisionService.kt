@@ -88,6 +88,7 @@ class LocalVisionService(
                     ready.createConversation(
                         ConversationConfig(samplerConfig = GREEDY, enableResponseFormat = true),
                     ).use { conversation ->
+                        var completed = false
                         try {
                             val generateStart = System.nanoTime()
                             val result = StringBuilder()
@@ -101,10 +102,13 @@ class LocalVisionService(
                                 if (result.length > 8_192) throw InvalidOutput()
                             }
                             generateMs = InferenceTrace.elapsedMsSince(generateStart)
+                            completed = true
                             result.toString()
                         } finally {
                             // Cancelling collection alone does not cancel native inference in 0.18.0.
-                            conversation.cancelProcess()
+                            // Only cancel work that stopped early: cancelling a finished conversation
+                            // is suspected of breaking the next request on a reused engine.
+                            if (!completed) conversation.cancelProcess()
                         }
                     }
                 }

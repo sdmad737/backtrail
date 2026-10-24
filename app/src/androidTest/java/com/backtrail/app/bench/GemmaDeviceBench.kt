@@ -45,7 +45,7 @@ class GemmaDeviceBench {
     private fun photos() = (photosDir.listFiles { f -> f.extension.lowercase() in setOf("jpg", "jpeg", "png") } ?: emptyArray()).sortedBy { it.name }
 
     @Test
-    fun describe() = runBlocking {
+    fun describe(): Unit = runBlocking {
         val model = File(modelsDir, arg("model", "gemma-4-E2B-it.litertlm"))
         val backend = InferenceBackend.valueOf(arg("backend", "GPU"))
         val vision = InferenceBackend.valueOf(arg("vision", backend.name))
@@ -109,7 +109,7 @@ class GemmaDeviceBench {
     }
 
     @Test
-    fun embed() = runBlocking {
+    fun embed(): Unit = runBlocking {
         val model = File(modelsDir, arg("model", "embeddinggemma-2-740m_Google_Tensor_G6.litertlm"))
         val backend = InferenceBackend.valueOf(arg("backend", "TENSOR"))
         val vision = InferenceBackend.valueOf(arg("vision", backend.name))
