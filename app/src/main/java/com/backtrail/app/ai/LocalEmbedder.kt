@@ -23,7 +23,8 @@ import kotlinx.coroutines.withContext
 class LocalEmbedder(
     private val model: File,
     private val cache: File,
-    private val backend: InferenceBackend = InferenceBackend.TENSOR,
+    // TENSOR is rejected by the 0.18.0 embedding engine ("Unsupported encoder backend: 5"); NPU works.
+    private val backend: InferenceBackend = InferenceBackend.NPU,
     private val visionBackend: InferenceBackend = backend,
     private val nativeLibraryDir: String? = null,
     private val dimensions: Int? = DIMENSIONS,
