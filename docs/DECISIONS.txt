@@ -151,3 +151,13 @@ app header, home state, and launcher icon. `:app:assembleDebug`,
 `:app:testDebugUnitTest` (79 tests), and `:app:lintDebug` passed. The integrated APK
 was installed and launched on Pixel 11 Pro after preserving/restoring its existing
 private app data and all four local model files. Agent app-flow smoke test pending.
+
+2026-10-24 / codex/production-handoff / User authorized publishing working changes
+to main for backend collaboration. Combined origin/main 423dbfc, native integration
+a4eeda3, and device handoff fe09daa in an isolated worktree. Resolved product-status
+documentation to retain both current screen wiring and NPU/GPU selection details.
+Fresh --offline assembleDebug, testDebugUnitTest, lintDebug and
+assembleDebugAndroidTest passed: 80 JVM tests, no failures/errors/skips; lint zero
+errors, 14 warnings. Explore state and JavaScript syntax checks passed. APK has no
+INTERNET permission. No emulator/phone execution or instrumentation run in this
+publication pass. BACKEND-HANDOFF.md records setup, ownership and remaining work.

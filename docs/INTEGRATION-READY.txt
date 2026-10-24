@@ -1,3 +1,7 @@
+HISTORICAL SNAPSHOT: see BACKEND-HANDOFF.md for combined-source validation.
+The assistant APIs described below as unwired now have native screen callers.
+Lifecycle and physical acceptance limitations remain as noted in that handoff.
+
 TRAVIS — INTEGRATION QUEUE, OCTOBER 24, 2026, APPROXIMATELY 14:40 PDT
 
 LIVE UPDATE DURING THIS PASS
