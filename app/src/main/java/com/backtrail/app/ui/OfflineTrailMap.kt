@@ -43,6 +43,9 @@ private fun world(lat:Double,lon:Double,z:Int):Pair<Double,Double> {
         }
     }
     val points=state.outing.points
+    LaunchedEffect(state.outing.id, points.isEmpty()) {
+        if (points.isNotEmpty() && zoom == 15) zoom = 17
+    }
     val focus = if (state.mode == GuidanceMode.FIND_LANDMARK) state.target else state.fix
     val lat = focus?.latitude ?: if (points.isNotEmpty()) (points.minOf { it.latitude } + points.maxOf { it.latitude }) / 2 else 37.566
     val lon = focus?.longitude ?: if (points.isNotEmpty()) (points.minOf { it.longitude } + points.maxOf { it.longitude }) / 2 else -122.369
