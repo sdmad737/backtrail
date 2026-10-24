@@ -1,195 +1,252 @@
-# Travis AI handoff for UI and integration
+# Travis AI handoff
 
-For the people wiring screens in `TravisViewModel.kt` and `ui/`. Source of truth for numbers:
-`docs/INFERENCE-LOG.md` (Pixel 11 Pro, airplane mode). Anything not written there is marked
-"not measured".
+For the teammates building the AR, UI and UX around the AI. This doc covers **what each
+AI feature does, how to call it, what the screen must do with each result, and what is
+left to build.** It contains no visual-design advice.
 
-**Status words.** "Verified on Pixel" = ran on the phone and is in the log. "Compiles only" =
-code exists, never run on the phone, so expect surprises.
+All numbers come from `docs/INFERENCE-LOG.md`. They were measured on the Pixel 11 Pro in
+airplane mode, with Gemma 4 E2B and EmbeddingGemma 2 running on the Tensor G6 NPU.
 
-## 1. Feature table
+---
 
-All functions are on `LocalVisionService` and return `Flow<InferenceState<T>>`
-(Loading, then one Success or Failure). Time is generation time on the NPU (Tensor G6 build),
-warm engine, from the log.
+## 1. Status at a glance
 
-| Feature | Call | Inputs | Success returns | NPU time | Status |
-|---|---|---|---|---|---|
-| Describe a saved photo | `describe(ctx, ImageRef)` | `RequestContext`, the photo | `CheckpointDescription(label, fixedFeatures)` | 6.6-8.7 s on real photos; 7.7 s warm, 9.4 s cold (+1.5 s load) | Verified on Pixel |
-| "Is this the same spot?" | `compare(ctx, reference, current)` | saved photo, live photo | `VisionAssessment(verdict, matchingFeatures, conflictingFeatures)` | 7.9-10.8 s on real photos (v2 prompt); 3.1-6.9 s on the synthetic set | Verified on Pixel (different-place pairs only; no real same-spot pair yet) |
-| "Take me to the place where..." | `resolveDestination(ctx, query, List<Checkpoint>)` | text query, at most 12 checkpoints, at most 500 chars | `DestinationProposal`: `Target(id)`, `AskClarification`, `NoRecordedMatch` | not measured | Compiles only (called from `ask()` in the ViewModel) |
-| Ask about my trip | `askAboutTrip(ctx, Question, memories)` | `Question.Text` or `.Audio`, at most 4 `Memory` | `TripAnswer(answer, sourceIds, grounded)` | not measured | Compiles only |
-| Ask about a photo just taken | `askAboutPhoto(ctx, ImageRef, Question)` | photo, `Question` | `PhotoAnswer(answer, confidence HIGH/MEDIUM/LOW, safetyRefusal)` | not measured | Compiles only |
-| Reminder from a note | `parseReminder(ctx, Question)` | typed or spoken note | `ReminderIntent(remindOnReturn, task)` | not measured | Compiles only |
-| Rank spots for a question | `TripMemoryIndex.rank(query, memories, withinHours?, limit=3)` | text query, all memories | `List<Ranked(memory, score)>`, best first | not measured end to end (one query embed is 13-16 ms; indexing a photo is 228 ms each, once) | Embedder verified on Pixel; `TripMemoryIndex` compiles only |
-| Embedder primitives | `LocalEmbedder.embedQuery / embedDocument / embedImage` | text or JPEG bytes | 256-dim `FloatArray` | text query 13-16 ms, document 13-18 ms, one photo 228 ms (NPU, G6 file); load 1.1 s | Verified on Pixel |
-| Camera "lining up" meter | `AlignmentMeter.update(similarity)` | cosine of live frame vs saved photo | `Level` SEARCHING / CLOSE / ALIGNED | not measured | Compiles only. Thresholds (0.55 / 0.70) are placeholders, not calibrated |
-| Safety screen | `SafetyTopics.isSafetyQuestion(text)` | text | Boolean | instant | Unit logic, not run on the phone |
+| Feature | Call | Time on Pixel (NPU) | Status | On a screen yet? |
+|---|---|---|---|---|
+| Describe a saved photo | `LocalVisionService.describe` | 6.6–8.9 s | Verified on Pixel | Yes, runs after Save photo |
+| Find a saved place ("take me back to…") | `LocalVisionService.resolveDestination` | not measured | Built (teammate's prompt, on the shared engine) | Yes, the Ask box |
+| Same spot? (live photo vs saved photo) | `LocalVisionService.compare` | ~8.5 s | Verified on Pixel: 0 of 25 false matches, found 1 of 3 real matches | **No** |
+| Ask about my trip (last X hours optional) | `TripMemoryIndex.rank`, then `LocalVisionService.askAboutTrip` | rank 25–30 ms, answer 7.9–9.4 s | Verified on Pixel | **No** |
+| Ask about a photo ("what tree is this?") | `LocalVisionService.askAboutPhoto` | 8.8–10.2 s | Verified on Pixel | **No** |
+| Safety refusal (eat, drink, touch, dangerous) | built into `askAboutPhoto` | instant for typed questions | Verified on Pixel | **No** |
+| Reminder from a note | `LocalVisionService.parseReminder` | 4.6–5.9 s | Verified on Pixel (3 of 3 correct) | **No** |
+| Voice questions | `Question.Audio(wav)` into any of the above | ~8.6 s | Verified on Pixel with a generated WAV | **No** (no mic recording yet) |
+| Am I going the right way? | `RightWayCheck.check` | instant, no model | Unit-tested (8 tests), **not run on a walk** | **No** |
+| Lining-up meter while aiming the camera | `LocalEmbedder.embedImage` + `AlignmentMeter.update` | ~0.3 s per frame | Embedder verified; meter thresholds **not calibrated** | **No** |
 
-Notes on the table: `askAboutPhoto` already short-circuits a typed safety question into a
-Success with `safetyRefusal = true` before the model runs, so a refusal arrives as a
-Success, not a Failure. `SpotRetriever` and its thresholds (floor 0.30) are not calibrated: do not use its
-`NoMatch`.
+"Verified on Pixel" means a benchmark test ran the real model on the phone. None of the new
+features has been tapped through in the app's own screens yet.
 
-## 2. UI states to design, per feature
+---
 
-Every feature needs four states: Loading, Success, "not sure", Failure. Loading is
-`InferenceState.Loading`. Failure is `InferenceState.Failure(kind, message)`; the `message`
-is already user-safe copy and can be shown as is. Expect 7-11 s for vision calls, so a plain
-spinner is not enough: show a labelled, cancellable state (`TravisAction.CancelInference`
-exists) and say it is on the phone.
+## 2. Setup (do this first)
 
-**Describe (after Save photo).**
-- Loading: "Reading your photo on this phone..." (photo is already saved; never block the save).
-- Success: label and feature chips, editable. The label is only applied when the user left the
-  note blank (ViewModel already does this). Mark as "Gemma 4 - local result".
-- Not sure: label "Unclear view" with no features. Show "Travis couldn't pick out landmarks.
-  Add your own note."
-- Failure: "Photo preserved." plus the message. No retry loop; offer one "Try again".
-- Watch: some features are malformed fragments ("Foreground, extending into the middle
-  ground"). Do not render them as headline text; keep them in a collapsed list.
+1. Pull `main`.
+2. Build: `JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew :app:assembleDebug`.
+3. Models: the test Pixel already has all four in the app's `no_backup/models/`. For another
+   phone, use the in-app model import (it accepts either Gemma file and checks the size and
+   hash), or copy the files the way `docs/INFERENCE-LOG.md` → "Reproduce" shows.
+   - `gemma-4-E2B-it_Google_Tensor_G6.litertlm`: Gemma on the NPU. Preferred.
+   - `gemma-4-E2B-it.litertlm`: Gemma on the GPU. Used automatically when the G6 file is absent.
+   - `embeddinggemma-2-740m_Google_Tensor_G6.litertlm`: EmbeddingGemma on the NPU.
+4. The app picks its model through `ModelStore.preferred`: the G6 file on the NPU, otherwise
+   the generic file on the GPU. `TravisViewModel` already does this.
+5. Installing a debug build signed on a different laptop fails with "signatures do not
+   match". Uninstall first; that deletes the app's models, so copy them again afterwards.
 
-**Compare (same spot?).**
-- Loading: "Comparing with your saved photo..."
-- Success, `SUPPORTS_MATCH`: "This looks like the same spot." Show the matching reasons. User
-  taps Confirm.
-- Success, `INSUFFICIENT_EVIDENCE` or `DIFFERENT_PLACE`: "Not sure this is the same spot."
-  Show no reasons at all (rule below). Offer "Take another photo" and "It is the spot" (the
-  user can still override).
-- Failure: message plus retry.
+---
 
-**Find a place (`resolveDestination`).**
-- Loading: "Searching your saved places..."
-- `Target`: show the saved photo large with title; "Is this the place?" Confirm / Not it.
-- `AskClarification`: "A few places could fit. Add a detail." Show the candidates' photos.
-- `NoRecordedMatch`: "I don't see that in your saved places." Not a fact about the world.
-- Failure: message.
+## 3. Rules every AI screen must follow
 
-**Ask about my trip.**
-- Loading: "Looking through your saved places..."
-- Success `grounded = true`: answer text plus the photos of `sourceIds`, each tappable.
-- Success `grounded = false`: show the answer ("I don't see that in your saved places") in a
-  muted style with no photos. This is the "not sure" state.
-- Failure: message. If memories are empty the service itself returns UNAVAILABLE "No saved
-  places match yet"; better to hide the ask box until one place exists.
+1. **Show the user's own saved photo next to every AI suggestion:** a destination, the
+   sources of a trip answer, the reference photo in a compare. The photo is the evidence.
+2. **The user confirms.** No AI result changes route progress, saves a reminder or marks a
+   spot by itself. Only the user's tap does, through `TravisAction.Confirm` or an explicit Add.
+3. **Undo is available after every confirmation** (`TravisAction.Undo`).
+4. **"Not sure" is a normal outcome, not an error.** Each feature below lists its not-sure
+   state, and each one needs a next step for the user.
+5. **Never present AI output as location fact.** Gemma never says "you are here" or "turn
+   left". Location and direction come from GPS and the recorded trail (`RightWayCheck`,
+   `TrailMath`).
+6. **Disable every AI button while a request is running.** The engine runs one request at
+   a time, and a second call fails immediately with "Another local inference is still running
+   on this phone."
+7. **Every AI wait needs a Cancel** (`TravisAction.CancelInference`), because vision calls
+   take 5–10 s.
+8. **Show a Failure's `message` as-is.** It's already written for the user.
 
-**Ask about a photo.**
-- Loading: "Looking at your photo..."
-- Success: answer plus a confidence label. `LOW` should read "A guess"; `HIGH` still reads as
-  "Travis thinks", never as certainty.
-- `safetyRefusal = true`: show `SafetyTopics.REFUSAL` as a calm, neutral card (no red, no
-  warning icon, no retry button). Text: "Travis can't tell from a photo whether something is
-  safe to eat, drink, touch or approach. Don't rely on a photo for that."
-- Failure: message.
+---
 
-**Reminder from a note.**
-- Success with `remindOnReturn = true`: a confirmation row "Remind me on the way back:
-  `<task>`" with Add / Dismiss. Never schedule it silently.
-- `remindOnReturn = false` or Failure: save the note as written, show nothing alarming.
+## 4. Features: how to call them and what to do with each result
 
-### UX rules (all features)
+Every `LocalVisionService` call returns `Flow<InferenceState<T>>`: first `Loading`, then
+exactly one `Success(value)` or `Failure(kind, message)`. Use the RequestContext and
+RequestGate pattern that `describe()` and `ask()` in `TravisViewModel` already use (see
+section 6).
 
-1. Show the user's own saved photo next to every AI suggestion (destination, trip answer
-   sources, compare reference). The photo is the evidence; the model text is commentary.
-2. Show compare reasons (`matchingFeatures`, `conflictingFeatures`) only for
-   `SUPPORTS_MATCH`. On non-matches the model invented "matching" features (buildings, road)
-   and conflicts that were not there (INFERENCE-LOG, compare entries).
-3. Never present AI output as location fact. Use "looks like", "your saved photo", "Travis
-   thinks". Location and direction come from GPS and the recorded route, not from Gemma.
-4. The user confirms. Model results are proposals; route progress changes only on the user's
-   tap (`TravisAction.Confirm`). A Success never advances anything by itself.
-5. Undo is always visible after a confirmation (`TravisAction.Undo`).
-6. Safety refusals are information, not errors: calm card, no alarm styling.
-7. Label model output "Gemma 4 - local result" and keep Explore-demo samples labelled
-   "Sample", as the ViewModel already does.
+### 4.1 Describe a saved photo (already wired)
+- **Call:** `describe(ctx, ImageRef(memory.id, photoPath, capturedAt))`
+- **Success:** `CheckpointDescription(label, fixedFeatures)`. The ViewModel saves the
+  features into `memory.description` and uses the label as the title when the user's note is
+  blank.
+- **Not sure:** label `"Unclear view"` with an empty feature list. Ask the user to add their
+  own note.
+- **Failure:** the photo is already saved. Keep it and offer one retry.
+- **Known issue:** some features are sentence fragments ("Foreground, extending into the middle
+  ground"). Don't use a feature as the spot's title.
 
-## 3. Wiring notes
+### 4.2 Find a saved place (already wired, the Ask box)
+- **Call:** `resolveDestination(ctx, query, checkpoints)`: at most 12 checkpoints and 500
+  characters.
+- **Success:**
+  - `Target(id)`: show that memory's photo and ask "Is this the place?" with Confirm and Not it.
+  - `AskClarification`: several places fit. Show the candidates and ask for a detail.
+  - `NoRecordedMatch`: "I don't see that in your saved places."
+- **Next step:** with more than 12 memories, call `TripMemoryIndex.rank(query, memories, limit = 12)`
+  first and pass those, instead of only the latest 12 as the ViewModel does now.
 
-- **One `LocalVisionService` for the whole app** (the ViewModel already holds one). The
-  engine loads once (cold load 1.5 s on NPU) and stays loaded; do not create a second.
-  Same for `LocalEmbedder` and `TripMemoryIndex`: one instance each.
-- **Requests are serialized.** If one is running, a second call returns
-  `Failure(UNAVAILABLE, "Another local inference is still running on this phone.")`
-  immediately; it does not queue. So disable every AI button while `state.busy` is true, and
-  do not fire describe-after-save and an ask in the same moment.
-- **RequestContext + RequestGate**, as `describe()` and `ask()` do today: build a
-  `RequestContext(session, newRequestId, outingId, outing.revision, checkpointId)`, call
-  `gate.begin(ctx)`, then in `collect` ignore results unless `gate.accepts(result.context)`
-  and the outing id and revision still match, and use `gate.consume(ctx)` on the final result
-  so it applies once. Call `invalidate()` on any navigation or mode change. Copy this shape
-  for every new call; do not apply a result directly.
-- **Lifecycle.** Call `inference.close()` (and `embedder.close()`) in `onCleared()`. Today
-  `onCleared()` only closes the camera. `close()` does not block: an in-flight request frees
-  the engine when it ends.
-- **Timeout.** Each request is bounded at 120 s, then Failure `TIMEOUT`. `FailureKind`:
-  `INVALID_RESULT`, `TIMEOUT`, `CANCELLED`, `UNAVAILABLE`, `ERROR`. Show the message; treat
-  `INVALID_RESULT` as "try again", `UNAVAILABLE` as "model missing or busy".
-- **Trip questions: rank first, max 4 spots.** Call `TripMemoryIndex.rank(query, memories,
-  limit = 4)` and pass `ranked.map { it.memory }` to `askAboutTrip`. More than 4
-  (`MAX_TRIP_SPOTS`) returns `INVALID_RESULT`. For spoken questions there is no text to rank
-  by; transcribe is not available, so either rank by recency (`withinHours`) or ask for a
-  typed query. Call `TripMemoryIndex.index(memories)` after a save so the first question is
-  warm.
-- **Question input.** `Question.Text(text)`: non-blank, at most 500 chars.
-  `Question.Audio(wav)`: 16 kHz mono WAV bytes, 1 to 1,000,000 bytes (about 30 s). Gemma takes
-  the audio directly. The safety screen only sees text, so spoken questions rely on the
-  post-answer screen (`SafetyTopics.isSafetyVerdict`), which also yields a refusal Success.
-- **Integration changes needed (integration owner only).**
-  1. The ViewModel builds `LocalVisionService(models.file, app.cacheDir)`, which is the generic
-     Gemma file on GPU. The measured NPU configuration is the Tensor G6 build with
-     `backend = InferenceBackend.NPU` and `nativeLibraryDir = applicationInfo.nativeLibraryDir`.
-     `ModelStore` pins the generic file's size and SHA-256, so the G6 file (3,313,938,293 B) is
-     not accepted by import. GPU is the working fallback (describe about 8.6-11.7 s).
-  2. `LocalEmbedder` defaults to `TENSOR`, which the embedder rejects. Pass `NPU` explicitly
-     (GPU as fallback), and pass `nativeLibraryDir`.
-  3. `askAboutTrip`, `askAboutPhoto`, `parseReminder`, `TripMemoryIndex` and `AlignmentMeter`
-     are not called from any screen yet.
+### 4.3 Same spot? (camera at a junction)
+- **Call:** `compare(ctx, reference = expected spot's saved photo, current = a fresh photo)`
+- **Compare only against the spot the recorded route expects next.** That spot is
+  `outing.retraceIndex` → the nearest memory. Never compare against every saved spot: on
+  look-alike spots the model can't tell them apart.
+- **Success:**
+  - `SUPPORTS_MATCH`: "Looks like the same spot." Show `matchingFeatures` as the reasons and
+    a Confirm button.
+  - `INSUFFICIENT_EVIDENCE` or `DIFFERENT_PLACE`: "Not sure this is the same spot." **Show no
+    feature reasons** (on non-matches the model lists features that aren't there). Offer: take
+    another photo, follow the trail line, or "This is the spot" (user override).
+- **Measured:** 0 of 25 wrong "same spot", but only 1 of 3 real matches found. Expect "not
+  sure" often; the UX must make that state useful.
 
-## 4. Known limits (from the log)
+### 4.4 Ask about my trip
+- **Step 1:** `TripMemoryIndex.rank(questionText, outing.memories, withinHours = h or null, limit = 4)`.
+  `withinHours` limits the search to the last *h* hours, e.g. `0.5` for the last 30 minutes.
+- **Step 2:** `askAboutTrip(ctx, Question.Text(questionText), ranked.map { it.memory })`. At
+  most 4 memories (`MAX_TRIP_SPOTS`).
+- **Success:** `TripAnswer(answer, sourceIds, grounded)`
+  - `grounded = true`: show `answer` plus the photos of `sourceIds` (real memory ids), each
+    opening that memory.
+  - `grounded = false`: show `answer` (for example "I don't see that in your saved places")
+    and **no photos as evidence**. This is the not-sure state.
+- **Index ahead of time:** call `TripMemoryIndex.index(outing.memories)` after each Save photo,
+  so the first question doesn't wait for embedding.
+- **Measured answers:**
+  - "Where did I leave my water bottle?" → the right spot.
+  - "Where is the swimming pool?" → "I don't see that in your saved places."
 
-- **Embedding scores cannot decide "no match".** On the demo trip every score, including the
-  two unanswerable queries, sat at 0.66-0.78 (NPU: 0.69-0.71 for unanswerable). Use
-  `TripMemoryIndex.rank` only to narrow candidates; "no match" must come from Gemma
-  (`grounded = false`, `NoRecordedMatch`), never from a score threshold. A margin of 0.002
-  separated first and second for "back to where I parked", too small to act on.
-- **Compare v2 prompt is conservative.** On 6 real different-place pairs v2 gave 6 correct,
-  0 false "same spot" (v1 gave 2 false matches on adjacent spots). The cost: the true
-  synthetic pair dropped from `SUPPORTS_MATCH` to `INSUFFICIENT_EVIDENCE`. Expect "not sure"
-  often; the miss rate on real same-spot pairs is not measured yet. Design "not sure" as a
-  normal outcome with an easy "take another photo".
-- **Reasons are unreliable on non-matches**; see UX rule 2.
-- **Photo embeddings are not calibrated.** Different-spot cosines were 0.836-0.903, highest
-  for the same path seen from opposite directions. No same-spot pairs measured, so the
-  `AlignmentMeter` levels and any "embeddings agree" gate are not ready.
-- **Describe sometimes emits fragment features** (for example "Foreground, extending into the
-  middle ground") and is generic on some photos. The G6 build did read a shop sign; the
-  generic GPU build did not.
-- **Latency.** Vision calls take about 7-11 s on NPU. Not measured: destination, trip
-  question, photo question, reminder, and end-to-end rank-then-ask.
-- **Not measured at all:** battery and thermals, behaviour under repeated back-to-back calls
-  beyond the logged runs, and accuracy of any feature on photos outside the one garden route
-  and three sample images.
+### 4.5 Ask about a photo
+- **Call:** `askAboutPhoto(ctx, ImageRef(...), Question.Text("What kind of tree is this?"))`
+- **Success:** `PhotoAnswer(answer, confidence, safetyRefusal)`
+  - `confidence` is `HIGH`, `MEDIUM` or `LOW`. Label `LOW` as a guess. Don't present any
+    level as certain.
+  - `safetyRefusal = true`: show the `answer` text, which is the fixed refusal: "Travis can't
+    tell from a photo whether something is safe to eat, drink, touch or approach. Don't rely
+    on a photo for that." Don't offer a retry.
+- Typed safety questions are refused before the model runs. Spoken ones are caught after the
+  model answers.
 
-## "Hey Travis, am I going the right way?" — `RightWayCheck.check(Input)`
+### 4.6 Reminder from a note
+- **Call:** `parseReminder(ctx, Question.Text(noteText))` when the user saves a note at a spot.
+- **Success:** `ReminderIntent(remindOnReturn, task)`
+  - `remindOnReturn = true`: ask "Remind me on the way back: <task>?" with Add and Dismiss.
+    On Add, set that memory's `pickup` to `PickupPhase.WAITING_TO_LEAVE`, the same as the
+    existing pickup checkbox. **Never add it silently.**
+  - `remindOnReturn = false`: save the note as written.
+- **Route reminder-style speech here, not to `askAboutTrip`.** Asked as a trip question,
+  "Remind me to close the gate on the way back" gives an awkward answer.
 
-Pure code, no model call (instant). Answers YES / NO / NOT_SURE with a one-line `summary`
-and `reasons`, each tagged GPS, COMPASS, CAMERA or STEPS so the UI can separate measured
-facts from what the camera saw. Status: unit-tested (8 tests), not yet run in the app.
+### 4.7 Voice
+- Any `Question` can be `Question.Audio(wavBytes)`: 16 kHz, mono, 16-bit WAV, up to about 30 s.
+  Gemma listens to it directly; there's no separate speech-to-text.
+- **Not built:** microphone recording. Record with `AudioRecord` at 16 kHz mono and wrap the
+  bytes in a WAV header. That needs the `RECORD_AUDIO` permission, which isn't in the
+  manifest yet.
+- **For trip questions by voice:** you can't rank by text. Use `withinHours` or the most
+  recent 4 memories as the pool.
+- **Choosing the feature:** decide from the button the user pressed (Ask about trip / Ask
+  about this photo / Add note), not by guessing from the audio.
 
-- Weak GPS → NOT_SURE ("GPS is weak here… compare with your saved photos").
-- More than max(25 m, 2× accuracy) from the recorded trail → NO, with the distance.
-- Direction: GPS walking direction if you moved > 8 m in the last ~30 s, else the compass
-  if reliable. Within 45° of the next trail point → YES; 120°+ away → NO; between → NOT_SURE.
-- Camera (optional): pass `LocalVisionService.compare(liveFrame, expectedSpotPhoto)`'s verdict.
-  A match adds a reason; DIFFERENT_PLACE downgrades YES to NOT_SURE; the camera alone never
-  makes YES.
-- Steps (optional): informational only. Needs a step-counter sensor + ACTIVITY_RECOGNITION
-  permission, which the app does not request yet.
+### 4.8 Am I going the right way?
+- **Call:** `RightWayCheck.check(Input(...))`. It's pure code, so it's instant and never calls
+  a model.
+  - `trail = outing.points`
+  - `targetIndex = outing.retraceIndex`
+  - `targetName = nearestMemory?.title`
+  - `recentFixes`: the last 30 s of `LiveSensors.fix` values, oldest first. Keep a ring buffer
+    in the ViewModel.
+  - `fixQuality`: the quality the ViewModel already computes.
+  - `compassHeading = LiveSensors.heading.value`
+  - `compassReliable = LiveSensors.headingReliable.value`
+  - Optional `visual`: the verdict of a `compare` between a live photo and `nearestMemory`'s photo.
+  - Optional `stepsSinceLastSpot`: needs a step-counter sensor and the `ACTIVITY_RECOGNITION`
+    permission. Not built.
+- **Result:** `answer` YES / NO / NOT_SURE, a one-sentence `summary`, and `reasons`, each
+  tagged GPS, COMPASS, CAMERA or STEPS.
+  - Show the `summary`.
+  - List the reasons with their source, so the user can tell measured facts from what the
+    camera saw.
+  - Don't let any model rewrite the yes/no answer.
+- **Rules it applies:**
+  - Weak GPS → NOT_SURE.
+  - Off the recorded trail by more than max(25 m, 2× GPS accuracy) → NO.
+  - Heading within 45° of the next trail point → YES. 120° or more away → NO.
+  - A camera match only supports YES. A camera mismatch downgrades YES to NOT_SURE.
 
-Wiring in `TravisViewModel.refresh()` (RETRACE mode): `trail = outing.points`,
-`targetIndex = outing.retraceIndex`, `targetName = nearestMemory?.title`; keep a 30-second
-ring buffer of `LiveSensors.fix` values for `recentFixes`; `compassHeading =
-LiveSensors.heading.value`, `compassReliable = LiveSensors.headingReliable.value`; on the
-"Am I going the right way?" button (or voice), optionally grab one CameraX frame and run
-`compare` against `nearestMemory.photoPath` for `visual`. Never let the language model
-rewrite the yes/no answer; it may only be read aloud.
+### 4.9 Lining-up meter (optional, AR camera)
+- Every ~0.5 s while the user aims at the expected spot:
+  1. `LocalEmbedder.embedImage(frameJpeg)`, about 0.3 s.
+  2. Cosine against that spot's saved-photo vector (`SpotRetriever.cosine`).
+  3. `AlignmentMeter.update(score)` → SEARCHING / CLOSE / ALIGNED.
+- **Thresholds aren't calibrated.** Same-spot photos scored 0.91–0.94, but different spots
+  reached 0.93. Use the meter only as a hint to keep aiming, then run `compare`. Never use it
+  as a match.
+- EmbeddingGemma and Gemma both run on the NPU. Don't run the meter while a Gemma request is
+  in flight.
+
+---
+
+## 5. What's left to build, in priority order
+
+1. **Same-spot check in the retrace flow (4.3):** a camera button at the expected spot,
+   then `compare`, then Confirm or the not-sure options.
+2. **Trip questions (4.4):** a text box over the current outing, plus indexing after each save.
+3. **"Am I going the right way?" (4.8):** a button in retrace/AR mode and the fix ring buffer.
+4. **Reminder from a note (4.6):** call it when a note is saved, with the Add/Dismiss prompt.
+5. **Photo questions (4.5)** from the camera screen.
+6. **Microphone recording (4.7):** the `RECORD_AUDIO` permission and 16 kHz WAV capture,
+   routed by the button pressed.
+7. Optional: **lining-up meter (4.9)** and **step counter** for 4.8.
+
+Before the demo, tap through each wired feature once on the Pixel in airplane mode, and note
+anything that behaves differently from this doc.
+
+---
+
+## 6. Wiring pattern (copy for every new call)
+
+```kotlin
+invalidate()                                   // cancels anything running
+val request = context(memoryOrPurposeId)       // RequestContext(session, newId, outing.id, outing.revision, …)
+gate.begin(request)
+inferenceJob = viewModelScope.launch {
+    inference.askAboutTrip(request, Question.Text(q), pool).collect { result ->
+        if (!gate.accepts(result.context) || mutable.value.outing.revision != request.tripRevision) return@collect
+        when (result) {
+            is InferenceState.Loading -> mutable.update { it.copy(busy = true) }
+            is InferenceState.Success -> if (gate.consume(request)) { /* show result */ }
+            is InferenceState.Failure -> { gate.consume(request); /* show result.message */ }
+        }
+    }
+}
+```
+- Use one `LocalVisionService` for the whole app, which `TravisViewModel` already has, plus one
+  `LocalEmbedder` and one `TripMemoryIndex` when you add them. Close each one in `onCleared()`.
+- Every request times out after 120 s and fails with `TIMEOUT`. `FailureKind` values:
+  `INVALID_RESULT` (offer a retry), `UNAVAILABLE` (model missing, or busy), `TIMEOUT`,
+  `CANCELLED`, `ERROR`.
+- Gemma and EmbeddingGemma together use about 1.6 GB of app memory on the Pixel.
+
+---
+
+## 7. Known limits
+
+- **Same-spot check:** cautious on look-alike places (found 1 of 3 real matches). It's safe
+  (0 of 25 wrong) but not sharp. That's why it compares only against the expected next spot.
+- **Embedding scores alone can't say "no match":** made-up places scored as high as real
+  ones. Leave the no-match decision to Gemma (`grounded = false`, `NoRecordedMatch`).
+- **Tree species answers are hedged guesses:** "possibly a pine or fir". Show them as guesses.
+- **Small test set:** all accuracy numbers come from 8 photos at one garden plus a few
+  sample images.
+- **Not exercised in the app:** NPU loading in the app's own screens (only the benchmark ran
+  it), and `RightWayCheck` on a real walk.
