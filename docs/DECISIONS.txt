@@ -139,3 +139,15 @@ The prompts prioritize physical Pixel proof and distinguish it from host/emulato
 results. Only the lead installs the integrated build; teammates coordinate phone
 testing slots. No teammates were contacted/invited or code implementation changed
 during this onboarding update. The user explicitly chose this role split.
+
+2026-10-24 / codex/travis-ai-ui-integration / Rebased onto production main at
+f65bead; the cloned UI branch was already an ancestor and needed no replay. Wired
+local Gemma trip/photo questions, safety refusal, cautious expected-next-spot
+comparison, note reminder proposals, editable descriptions, clarification/retry
+states, and deterministic RightWayCheck into the existing UI. Trip Q uses the four
+most recent places because the product excludes a second embedding model; the UI
+states that semantic ranking did not run. Used the user's supplied logo for the
+app header, home state, and launcher icon. `:app:assembleDebug`,
+`:app:testDebugUnitTest` (79 tests), and `:app:lintDebug` passed. The integrated APK
+was installed and launched on Pixel 11 Pro after preserving/restoring its existing
+private app data and all four local model files. Agent app-flow smoke test pending.
