@@ -50,6 +50,10 @@
     "offlineSpeech": {
       "engineOnStart": true,
       "engineOnDone": true
+    },
+    "normalAssistantUi": {
+      "liveAnswerRendered": true,
+      "originalPhotoSourceCards": 4
     }
   },
   "emulator": {
@@ -57,12 +61,18 @@
     "largerText": 1.3,
     "keyboard": true,
     "nearArrowRetained": true,
-    "explicitWaypointAdvance": true
+    "explicitWaypointAdvance": true,
+    "manualCollectionAndRecognition": {
+      "collectedStateVisible": true,
+      "recognizedOnlyAfterExplicitTap": true,
+      "fixture": "labelled Explore; no real item collection claimed"
+    }
   },
   "remainingPhysicalChecks": [
     "Walk around a bend through several ordered waypoints",
     "Speak a new question and judge transcript/answer and audible output",
     "Measure heading alignment and sustained battery use"
   ],
-  "privateEvidenceRoot": "local-data/final-pass/"
+  "privateEvidenceRoot": "local-data/final-pass/",
+  "installedApkSha256Matched": true
 }

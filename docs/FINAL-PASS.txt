@@ -30,10 +30,13 @@ VERIFIED
 173 JVM tests pass, no failures/errors/skips. Build and lint pass (0errors,
 27warnings). Two emulator interaction tests pass: typed conversation/source route,
 AR itinerary, near-target arrow retained, explicit waypoint advancement. Portrait,
-keyboard, weakGPS and130% text inspected. Prior map gesture functionality retained.
+keyboard, weakGPS and130% text inspected. Manual emulator checks also confirmed
+collection changes its visible state and recognition appears only after an explicit
+near-place tap; these use labelled Explore data. Prior map gestures are retained.
 Physical Pixel airplane mode on, Wi-Fi off: three live Gemma conversation turns
 with citations to the actual saved walk, and an original saved-photo question passed.
-Outing metadata was byte-identical before/after the inference test. Text requests
+The normal Pixel Ask Travis UI also rendered a live answer and four original-photo
+source cards. Outing metadata was byte-identical before/after the inference test. Text requests
 were10.856s,5.651s,10.785s; original image question10.036s in that test, not a latency
 or accuracy guarantee. No fresh camera capture was used by that image test.
 Existing private audio transcribed successfully (1.451s initialization,1.827s
