@@ -1,0 +1,58 @@
+TRAVIS — WRONG-WAY GUIDANCE / PHOTO-FIRST PASS — OCTOBER 24, 2026
+
+WHAT CHANGED
+The reported short walk reproduced a real defect: a roughly2m GPS wiggle became
+a bend/target despite roughly12m reported uncertainty. The new target policy
+rejects that noise, follows sustained bends and uses local ordered route matching.
+Three distinct fresh fixes acquire position. Passed intermediate waypoints advance
+automatically without marking photos recognized, items collected or final arrival.
+The route search stays local; crossings cannot jump to an arbitrary nearby section.
+Weak/stale GPS, ambiguous matches, gaps and uncertain close directions pause arrows.
+Numeric rotation-vector heading uncertainty over25degrees also suppresses guidance.
+
+UI: full-screen map/camera; Map, Camera, Travis and Journeys bottom tabs; compact
+current-journey status; explicit New versus Resume and editable journey names.
+Capture: large shutter -> original-photo review -> optional note/reminder -> Save.
+Retake/Cancel discard only the unsaved draft. Saving retains the original even if
+the ViewModel is cleared while atomic metadata IO completes. Notes stay verbatim;
+concise titles and local Gemma visual descriptions are editable. Explicit title
+edits survive subsequent descriptions. Legacy generic journey names get dates.
+
+GEMMA AND AR
+Gemma describes saved photos, answers route-aware follow-up questions and compares
+the current camera image with a saved landmark when requested. Geometry and sensors
+drive the arrow and route progress. A visual model match never supplies coordinates,
+steers the route or declares arrival. There is no continuous video-inference loop.
+Camera direction is approximate, not a world-anchored AR object or visual SLAM.
+
+VERIFICATION
+195 JVM tests pass; lint0errors/27warnings. Offline debug app and test APK build.
+Actual ViewModel/OutingStore regression passes on emulator with injected synthetic
+100m route: intermediate progress, west-facing guidance after passing a point,
+weak-GPS suppression, unchanged recognition/pickup and explicit final confirmation.
+Five emulator UI tests pass: full-screen tabs, journey naming/rename/new-versus-resume,
+real CameraX JPEG capture/review/retake/save, route clarity and chat continuation.
+Portrait, landscape,130% text and keyboard layouts were inspected. These checks
+are emulator evidence, not a physical walk or a measured accuracy improvement.
+See navigation-accuracy-receipt.json for final build/device observations.
+
+LIMITS AND NEXT WALK
+The observed short path was about28m with roughly11–13m reported GPS uncertainty.
+Software cannot resolve a precise close bearing from that evidence. The new UI
+may pause the arrow near a place and request original-photo recognition. It must
+not show an automatic arrival checkmark or claim metre-level positioning.
+Repeat a clear-sky walk with a bend and two separated landmarks. Return via the
+recorded path; verify the arrow follows ahead, intermediate progress advances,
+the destination stays explicit and an item collects only after the user's tap.
+Physical compass alignment, final field behavior and battery life remain unmeasured
+in this pass. Existing offline models/maps are unchanged; native iOS is not built.
+
+LAUNCH
+source .tooling/env.sh
+./gradlew --offline -PtravisSideBySide=true :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+adb -s 65280DLKX006C8 install -r app/build/outputs/apk/debug/app-debug.apk
+adb -s 65280DLKX006C8 shell am start -n com.backtrail.app.integration/com.backtrail.app.MainActivity
+Open Travis Integration -> Journeys -> choose the recorded walk -> Camera or Map.
+Normal startup is live; Explore alone uses labelled replay/sample answers.
+Private backups/screenshots remain ignored under local-data/navigation-accuracy/
+and local-data/final-demo/. No personal routes/photos or model weights are committed.

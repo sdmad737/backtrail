@@ -53,13 +53,20 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
     private val voice=LocalVoice(app)
     private var voiceJob:Job?=null
     private var confirmationPending=false
+    private var journeyTransition=false
+    private var photoDraft:Memory?=null
+    private var photoDraftOutingId:String?=null
+    private var photoSaveInFlight=false
+    private var captureOrigin=TravisSurface.MAP
+    private val routeFollower=RouteFollower()
+    private var navigationAdvancePending=false
     private var speech:LocalSpeech?=null
     private val recentFixes=mutableListOf<TrailPoint>()
     init {
         viewModelScope.launch { store.outings.collect { items -> liveOuting=items.find { it.id==currentId } ?: Outing();refresh() } }
         viewModelScope.launch { combine(LiveSensors.fix,LiveSensors.failure) { _,_->Unit }.collect { refresh() } }
         viewModelScope.launch { combine(LiveSensors.heading,LiveSensors.headingReliable) { heading,reliable->heading to reliable }.collect { (heading,reliable)->
-            if(!mutable.value.replay)mutable.update { it.copy(heading=heading,headingReliable=reliable) }
+            if(!mutable.value.replay)mutable.update { it.copy(heading=heading,headingReliable=reliable,headingAccuracyDegrees=LiveSensors.headingAccuracyDegrees.value,headingStatus=LiveSensors.headingStatus.value) }
         } }
         viewModelScope.launch { combine(LiveSensors.mapHeading,LiveSensors.mapHeadingReliable) { heading,reliable->heading to reliable }.collect { (heading,reliable)->
             if(!mutable.value.replay)mutable.update { it.copy(mapHeading=heading,mapHeadingReliable=reliable) }
@@ -68,7 +75,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         viewModelScope.launch { while(isActive) {
             delay(1000)
             val state=mutable.value
-            if(mutable.subscriptionCount.value>0 && !state.replay && TrailMath.quality(state.fix,System.currentTimeMillis())!=state.fixQuality)refresh()
+            if(mutable.subscriptionCount.value>0 && !state.replay && (TrailMath.quality(state.fix,System.currentTimeMillis())!=state.fixQuality || (state.directionUsable && state.fix?.let { System.currentTimeMillis()-it.time>5_000 }==true)))refresh()
         } }
         refreshPermissions()
     }
@@ -94,13 +101,37 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         val target=when(mode) { GuidanceMode.RETRACE->index?.let { outing.points.getOrNull(it) };GuidanceMode.FIND_LANDMARK->destination?.point;else->null }
         val nextPhoto=if(mode==GuidanceMode.RETRACE) outing.memories.firstOrNull { it.routeIndex==index } else destination
         val goal=if(guide.memoryId!=null)guide.goalIndex else 0
+        val targetChanged=old.outing.id!=outing.id || old.mode!=mode || old.routeTargetIndex!=index || old.selectedMemoryId!=guide.memoryId
         val usable=quality==FixQuality.USABLE
         val itinerary=ReturnRoute.itinerary(outing)
-        val remaining=if(mode==GuidanceMode.RETRACE && usable)ReturnRoute.remaining(outing,fix)else null
+        val navigation=if(mode==GuidanceMode.RETRACE && !old.replay)routeFollower.update(outing,fix,System.currentTimeMillis())else null
+        if(mode!=GuidanceMode.RETRACE)routeFollower.reset()
+        val directDistance=if(usable && fix!=null && target!=null)TrailMath.distance(fix,target)else null
+        val directUncertain=directDistance!=null && fix!=null && target!=null && directDistance<=fix.accuracy+target.accuracy
+        val navMessage=when(navigation?.status) {
+            RouteFollower.Status.ACQUIRING->"Matching your position to this section of trail…"
+            RouteFollower.Status.FOLLOWING->"Following your recorded trail · progress updates as you walk"
+            RouteFollower.Status.WEAK_GPS->"GPS needs a fresh fix within ±15 m. Move into open sky."
+            RouteFollower.Status.POSITION_UNCERTAIN->"This distance is smaller than GPS uncertainty. Follow the map and original photo."
+            RouteFollower.Status.NEAR_DESTINATION->"GPS uncertainty overlaps this place. Use the original photo to recognize it."
+            RouteFollower.Status.OFF_ROUTE->"Your position is away from this recorded section. Check the map before continuing."
+            RouteFollower.Status.AMBIGUOUS->"Several nearby trail sections could match. Check the map; the arrow is paused."
+            RouteFollower.Status.GAP->"The recorded route ends at a gap. No connecting path is inferred."
+            else->if(mode==GuidanceMode.FIND_LANDMARK && fix?.let { System.currentTimeMillis()-it.time>5_000 }==true)"Waiting for a fresh GPS update."else if(mode==GuidanceMode.FIND_LANDMARK && directUncertain)"GPS cannot resolve a direction this close. Compare the original photo."else ""
+        }
+        val remaining=if(mode==GuidanceMode.RETRACE && usable)navigation?.remainingMeters?:ReturnRoute.remaining(outing,fix)else null
+        val directionUsable=when {
+            old.replay->usable && target!=null
+            mode==GuidanceMode.RETRACE->navigation?.bearing!=null
+            mode==GuidanceMode.FIND_LANDMARK->usable && !directUncertain && fix!=null && System.currentTimeMillis()-fix.time in 0..5_000 && fix.accuracy<=15 && target!=null
+            else->false
+        }
         mutable.value=old.copy(outing=outing,assistantMessages=if(old.outing.id==outing.id)old.assistantMessages else emptyList(),recognizedMemoryId=old.recognizedMemoryId?.takeIf { it==guide.memoryId },savedOutings=store.outings.value,fix=fix,fixQuality=quality,
             mode=mode,selectedMemoryId=guide.memoryId,
             heading=if(old.replay) replayHeading else LiveSensors.heading.value,
             headingReliable=if(old.replay)issue!="weak_gps" else LiveSensors.headingReliable.value,
+            headingAccuracyDegrees=if(old.replay)3.0 else LiveSensors.headingAccuracyDegrees.value,
+            headingStatus=if(old.replay)"Sample heading" else LiveSensors.headingStatus.value,
             mapHeading=if(old.replay)replayHeading else LiveSensors.mapHeading.value,
             mapHeadingReliable=if(old.replay)issue!="weak_gps" else LiveSensors.mapHeadingReliable.value,
             target=target,targetTitle=if(mode==GuidanceMode.RETRACE) nextPhoto?.title?:"Next recorded waypoint" else destination?.title?:"Choose a saved place",
@@ -117,14 +148,21 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 RouteStep(step.index,memory?.title?:if(step.index==goal) "Recorded start" else "Waypoint ${ordinal+1}",memory!=null,step.distanceFromPreviousMeters)
             }?:emptyList(),
             routeStepNumber=itinerary?.let { it.currentStepIndex+1 }?:0,
-            routeStepCount=itinerary?.steps?.size?:0,routeProgress=itinerary?.progress?:0f,
-            guidanceStatus=when { mode==GuidanceMode.FIND_LANDMARK->"Direct bearing · a connecting path is not inferred";mode==GuidanceMode.RETRACE && remaining==null && usable->"Recorded segment only · a gap blocks the earlier route";mode==GuidanceMode.RETRACE->"Follow the next recorded point · confirm before advancing";else->"" },
-            bearing=if(usable && fix!=null && target!=null)TrailMath.bearing(fix,target)else null,
-            distanceMeters=if(usable && fix!=null && target!=null)TrailMath.distance(fix,target)else null,
+            routeStepCount=itinerary?.steps?.size?:0,routeProgress=navigation?.progress?:if(!targetChanged && mode==GuidanceMode.RETRACE)old.routeProgress else itinerary?.progress?:0f,
+            directionUsable=directionUsable,navigationMessage=navMessage,
+            comparisonVerdict=if(targetChanged)null else old.comparisonVerdict,
+            comparisonReasons=if(targetChanged)emptyList() else old.comparisonReasons,
+            rightWayResult=if(targetChanged)null else old.rightWayResult,
+            guidanceStatus=when { mode==GuidanceMode.FIND_LANDMARK->"Direct bearing · a connecting path is not inferred";mode==GuidanceMode.RETRACE && remaining==null && usable->"Recorded segment only · a gap blocks the earlier route";mode==GuidanceMode.RETRACE->"Follow the recorded trail. Intermediate points update automatically; confirm your destination yourself.";else->"" },
+            bearing=if(!old.replay && mode==GuidanceMode.RETRACE)navigation?.bearing else if(directionUsable && fix!=null && target!=null)TrailMath.bearing(fix,target)else null,
+            distanceMeters=directDistance,
             remainingMeters=remaining,
             canConfirm=if(old.replay)usable && fix!=null && target!=null && TrailMath.distance(fix,target)<=12 else TrailMath.canConfirm(fix,target,System.currentTimeMillis()),
             sensorStatus=if(old.replay)"" else LiveSensors.failure.value,
             mapAvailable=issue!="missing_maps" && fix?.let { it.latitude in 37.549..37.585 && it.longitude in -122.390..-122.345 }==true)
+        if(navigation?.passedTargetIndex!=null && navigation.nextTargetIndex!=null)
+            advanceMeasuredNavigation(outing,navigation.passedTargetIndex,navigation.nextTargetIndex)
+
     }
     fun announce(text:String) { mutable.update { it.copy(notice=text) } }
     private fun change(onSaved:(()->Unit)?=null, block:(Outing)->Outing) {
@@ -135,19 +173,9 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
     private fun invalidate() { voice.stop();voiceJob?.cancel();voiceJob=null;gate.invalidate();inferenceJob?.cancel();mutable.update { it.copy(busy=false,voiceRecording=false,voiceProcessing=false,voiceStatus="",describingMemoryId=null,reminderMessageMemoryId=null,rightWayResult=null,comparisonVerdict=null,comparisonReasons=emptyList(),pendingReminder=null) };session=UUID.randomUUID().toString() }
     fun action(action:TravisAction) {
         when(action) {
-            TravisAction.Start -> {
-                if(mutable.value.replay) { change { it.copy(phase=OutingPhase.RECORDING) };return }
-                if(!mutable.value.locationAllowed) { announce("Allow precise location, then start your outing.");return }
-                invalidate()
-                viewModelScope.launch {
-                    try {
-                        val existing=liveOuting
-                        val outing=if(existing.phase in listOf(OutingPhase.PAUSED,OutingPhase.RECORDING)) existing.copy(phase=OutingPhase.RECORDING,segment=existing.segment+1,guidance=SavedGuidance()) else Outing(UUID.randomUUID().toString(),"Today's outing",System.currentTimeMillis(),OutingPhase.RECORDING)
-                        currentId=outing.id;preferences.edit().putString("active",outing.id).apply();store.save(outing);RecordingService.start(getApplication(),outing.id)
-                        mutable.update { it.copy(mode=GuidanceMode.NONE,selectedMemoryId=null,notice="Recording starts when a fresh GPS fix arrives.") };refresh()
-                    } catch(_:Exception) { announce("Could not start recording. Check location permission.") }
-                }
-            }
+            TravisAction.Start -> beginJourney(false)
+            is TravisAction.StartNewJourney -> beginJourney(true,action.name)
+            is TravisAction.RenameOuting -> renameOuting(action.id,action.name)
             TravisAction.Pause -> change { it.copy(phase=OutingPhase.PAUSED,segment=it.segment+1) }
             TravisAction.End -> { invalidate();change { it.copy(phase=OutingPhase.ENDED,endedAt=System.currentTimeMillis(),guidance=SavedGuidance()) };if(!mutable.value.replay) RecordingService.stop(getApplication());announce("Outing saved on this phone.") }
             TravisAction.HeadBack -> {
@@ -209,10 +237,14 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 refresh()
             }
             TravisAction.Capture -> {
-                if(mutable.value.outing.id.isBlank()) { announce("Start an outing before saving a place.");return }
-                mutable.update { it.copy(surface=TravisSurface.AR,captureMode=true) }
+                if(mutable.value.outing.id.isBlank()) { announce("Start a journey before saving a place.");return }
+                if(mutable.value.captureMode)return
+                invalidate();captureOrigin=mutable.value.surface
+                mutable.update { it.copy(surface=TravisSurface.AR,captureMode=true,capturedPhotoPath="",notice="") }
             }
-            TravisAction.CancelCapture -> mutable.update { it.copy(captureMode=false) }
+            TravisAction.TakePhoto -> takePhotoDraft()
+            TravisAction.RetakePhoto -> discardPhotoDraft(false)
+            TravisAction.CancelCapture -> discardPhotoDraft(true)
             is TravisAction.SavePhoto -> savePhoto(action.note,action.pickup)
             is TravisAction.SwitchSurface -> {
                 mutable.update { it.copy(surface=action.surface,captureMode=false) }
@@ -306,6 +338,62 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         if(!mutable.value.locationAllowed) { announce("Allow precise location to update guidance.");return }
         try { RecordingService.start(getApplication(),outingId) }catch(_:Exception) { announce("Location could not start. Check permission.") }
     }
+    private fun advanceMeasuredNavigation(expected:Outing,passed:Int,next:Int) {
+        if(navigationAdvancePending || next>=passed || mutable.value.replay)return
+        navigationAdvancePending=true
+        val navigationSession=session
+        viewModelScope.launch {
+            try {
+                store.mutate(expected.id) { current ->
+                    requireNotNull(current)
+                    if(currentId!=expected.id || session!=navigationSession || current.guidance.mode!=GuidanceMode.RETRACE || current.guidance!=expected.guidance || ReturnRoute.targetIndex(current)!=passed || next !in current.points.indices || next<(current.guidance.goalIndex?:0) || passed<=(current.guidance.goalIndex?:0))current
+                    else if(current.guidance.memoryId!=null)current.copy(guidance=current.guidance.copy(returnIndex=next))
+                    else current.copy(retraceIndex=next)
+                }
+            } catch(_:Exception) { announce("Could not save navigation progress. Check the recorded route on the map.") }
+            finally { navigationAdvancePending=false }
+        }
+    }
+
+    private fun defaultJourneyName(now:Long)=java.text.SimpleDateFormat("MMM d · h:mm a",java.util.Locale.getDefault()).format(java.util.Date(now)).let { "Journey · $it" }
+    private fun beginJourney(forceNew:Boolean,name:String="") {
+        if(journeyTransition)return
+        if(mutable.value.replay) { if(forceNew)announce("Exit Explore to start a real journey.")else change { it.copy(phase=OutingPhase.RECORDING) };return }
+        if(!mutable.value.locationAllowed) { announce("Allow precise location, then start your journey.");return }
+        if(name.length>80) { announce("Keep the journey name under 80 characters.");return }
+        invalidate();journeyTransition=true
+        viewModelScope.launch {
+            try {
+                store.awaitLoaded()
+                val existing=store.outings.value.find { it.id==currentId }?:Outing()
+                val resume=!forceNew && existing.phase in listOf(OutingPhase.PAUSED,OutingPhase.RECORDING)
+                if(forceNew && existing.id.isNotBlank() && existing.phase in listOf(OutingPhase.PAUSED,OutingPhase.RECORDING)) {
+                    RecordingService.stop(getApplication())
+                    store.mutate(existing.id) { current -> requireNotNull(current).copy(phase=OutingPhase.ENDED,endedAt=System.currentTimeMillis(),guidance=SavedGuidance()) }
+                }
+                val now=System.currentTimeMillis()
+                val outing=if(resume) {
+                    store.mutate(existing.id) { current -> requireNotNull(current).copy(phase=OutingPhase.RECORDING,segment=current.segment+1,guidance=SavedGuidance()) }
+                    store.outings.value.first { it.id==existing.id }
+                } else Outing(UUID.randomUUID().toString(),name.trim().ifBlank { defaultJourneyName(now) },now,OutingPhase.RECORDING).also { store.save(it) }
+                currentId=outing.id;preferences.edit().putString("active",outing.id).apply();liveOuting=outing
+                RecordingService.start(getApplication(),outing.id)
+                mutable.update { it.copy(mode=GuidanceMode.NONE,selectedMemoryId=null,recognizedMemoryId=null,
+                    notice=if(resume)"Resumed ${outing.name}. Waiting for a fresh GPS fix."else"New journey started: ${outing.name}. Waiting for a fresh GPS fix.") };refresh()
+            } catch(_:Exception) { announce("Could not start the journey. Existing journeys remain saved.") }
+            finally { journeyTransition=false }
+        }
+    }
+    private fun renameOuting(id:String,name:String) {
+        val clean=name.trim()
+        if(clean.isBlank() || clean.length>80) { announce("Use a journey name from 1 to 80 characters.");return }
+        if(mutable.value.replay) { announce("Explore is a sample. Rename your real journeys in live mode.");return }
+        viewModelScope.launch {
+            try { store.mutate(id) { requireNotNull(it).copy(name=clean) };announce("Journey renamed to $clean.") }
+            catch(_:Exception) { announce("Could not save that name. Try again.") }
+        }
+    }
+
     private fun confirmTarget() {
         if(confirmationPending)return
         val snapshot=mutable.value
@@ -404,37 +492,63 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             if(mutable.value.mode!=GuidanceMode.NONE)startGuidanceLocation(outing.id)
         }
     }
-    private fun savePhoto(note:String,pickup:Boolean) {
-        if(note.length>2000) { announce("Keep notes under 2,000 characters.");return }
-        if(mutable.value.captureBusy) return
-        val state=mutable.value;val id=UUID.randomUUID().toString();val time=System.currentTimeMillis()
-        val measured=if(state.fixQuality==FixQuality.USABLE)state.fix else null
+    private fun discardPhotoDraft(close:Boolean) {
+        if(mutable.value.captureBusy)return
+        photoDraft?.photoPath?.takeUnless { it.startsWith("asset:") }?.let { File(it).delete() }
+        photoDraft=null;photoDraftOutingId=null
+        mutable.update { it.copy(capturedPhotoPath="",captureMode=if(close)false else it.captureMode,surface=if(close)captureOrigin else it.surface,notice="") }
+    }
+    private fun takePhotoDraft() {
+        val state=mutable.value
+        if(!state.captureMode || state.captureBusy || photoDraft!=null)return
         if(state.replay) {
-            val memory=Memory(id,"Saved place",note,"asset:demo/stone-bridge.jpg",time,measured,state.outing.points.lastIndex,"Sample description · saved landmark","Sample answer",if(pickup)PickupPhase.WAITING_TO_LEAVE else PickupPhase.NONE)
-            change { it.copy(memories=it.memories+memory) };mutable.update { it.copy(captureMode=false,selectedMemoryId=id,notice="Sample photo saved to this replay only.") };return
+            photoDraft=Memory(UUID.randomUUID().toString(),"Saved place",photoPath="asset:demo/stone-bridge.jpg",capturedAt=System.currentTimeMillis(),point=state.fix,routeIndex=state.outing.points.lastIndex)
+            photoDraftOutingId=state.outing.id
+            mutable.update { it.copy(capturedPhotoPath=photoDraft!!.photoPath) };return
         }
-        if(!state.cameraAllowed) { announce("Allow camera access to save a new photo.");return }
-        val file=File(store.mediaDirectory,"$id.jpg");mutable.update { it.copy(captureBusy=true) }
-        val outingId=state.outing.id
-        val captureSession=session
-        var location=PhotoLocation(time,null,null)
+        if(!state.cameraAllowed) { announce("Allow camera access to take a photo.");return }
+        val id=UUID.randomUUID().toString();val file=File(store.mediaDirectory,"$id.jpg")
+        val captureSession=session;val outingId=state.outing.id
+        var location=PhotoLocation(System.currentTimeMillis(),null,null)
+        mutable.update { it.copy(captureBusy=true,notice="") }
         camera.takePhoto(file,onCapture={
             val live=mutable.value
-            val sameOuting=live.outing.id==outingId && !live.replay
-            location=PhotoLocation.atDispatch(if(sameOuting)live.outing else state.outing,
-                if(sameOuting)live.fix else null,System.currentTimeMillis())
-        }) { success ->
-            viewModelScope.launch {
-                mutable.update { it.copy(captureBusy=false) }
-                if(!success) { announce("Photo could not be saved. Your outing is unchanged.");return@launch }
-                val memory=Memory(id,note.lineSequence().firstOrNull()?.take(40)?.ifBlank { "Saved place" }?:"Saved place",note,file.absolutePath,location.capturedAt,location.point,location.routeIndex,pickup=if(pickup)PickupPhase.WAITING_TO_LEAVE else PickupPhase.NONE)
-                try { store.mutate(outingId) { (it?:state.outing).let { old->old.copy(memories=old.memories+memory,revision=old.revision+1) } } }
-                catch(_:Exception) { announce("Photo exists locally, but its metadata could not be saved.");return@launch }
-                if(session==captureSession && currentId==outingId && !mutable.value.replay && mutable.value.captureMode) {
-                    mutable.update { it.copy(captureMode=false,notice=if(location.point==null)"Photo saved · location unknown" else "Photo and measured location saved") }
-                    describe(memory,outingId)
-                }
-            }
+            location=PhotoLocation.atDispatch(live.outing,if(live.outing.id==outingId)live.fix else null,System.currentTimeMillis())
+        }) { success -> viewModelScope.launch {
+            mutable.update { it.copy(captureBusy=false) }
+            if(!success) { file.delete();announce("The camera could not take this photo. Try again.");return@launch }
+            if(session!=captureSession || mutable.value.outing.id!=outingId || !mutable.value.captureMode) { file.delete();return@launch }
+            photoDraft=Memory(id,"Saved place",photoPath=file.absolutePath,capturedAt=location.capturedAt,point=location.point,routeIndex=location.routeIndex)
+            photoDraftOutingId=outingId
+            mutable.update { it.copy(capturedPhotoPath=file.absolutePath,notice=if(location.point==null)"Photo taken · location was unavailable"else "") }
+        } }
+    }
+    private fun savePhoto(note:String,pickup:Boolean) {
+        if(note.length>2000) { announce("Keep notes under 2,000 characters.");return }
+        if(mutable.value.captureBusy)return
+        val draft=photoDraft?:run { announce("Take a photo first.");return }
+        val owner=photoDraftOutingId?:return
+        if(owner!=mutable.value.outing.id) { announce("This photo belongs to a different journey. Take it again.");return }
+        val memory=draft.copy(title=PlaceNaming.initial(note),note=note,pickup=if(pickup)PickupPhase.WAITING_TO_LEAVE else PickupPhase.NONE)
+        if(mutable.value.replay) {
+            change { it.copy(memories=it.memories+memory.copy(description="Sample description · saved landmark",indexing="Sample answer"),revision=it.revision+1) }
+            photoDraft=null;photoDraftOutingId=null
+            mutable.update { it.copy(captureMode=false,capturedPhotoPath="",surface=captureOrigin,notice="Sample place saved to Explore only.") };return
+        }
+        photoSaveInFlight=true
+        mutable.update { it.copy(captureBusy=true) }
+        viewModelScope.launch {
+            try {
+                store.mutate(owner) { requireNotNull(it).let { outing -> outing.copy(memories=outing.memories+memory,revision=outing.revision+1) } }
+                photoDraft=null;photoDraftOutingId=null
+                photoSaveInFlight=false
+                mutable.update { it.copy(captureBusy=false,captureMode=false,capturedPhotoPath="",surface=captureOrigin,notice="${memory.title} saved. Your original photo and note stay on this phone.") }
+                describe(memory,owner)
+            } catch(cancelled:CancellationException) {
+                // Atomic IO may have committed before cancellation returns to Main.
+                // Retain the original rather than delete a possibly saved photo.
+                throw cancelled
+            } catch(_:Exception) { photoSaveInFlight=false;mutable.update { it.copy(captureBusy=false) };announce("Could not save this place. Your photo is ready to retry.") }
         }
     }
     private fun context(checkpoint:String)=RequestContext(session,UUID.randomUUID().toString(),mutable.value.outing.id,mutable.value.outing.revision,checkpoint)
@@ -443,7 +557,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         invalidate();val committed=store.outings.value.find { it.id==outingId } ?: return
         val request=RequestContext(session,UUID.randomUUID().toString(),outingId,committed.revision,memory.id);gate.begin(request)
         inferenceJob=viewModelScope.launch {
-            inference().describe(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt)).collect { result->
+            inference().describe(request,ImageRef(memory.id,memory.photoPath,memory.capturedAt),memory.note).collect { result->
                 if(!gate.accepts(result.context) || currentId!=outingId || store.outings.value.find { it.id==outingId }?.revision!=request.tripRevision || mutable.value.replay) { if(gate.accepts(result.context)) { gate.invalidate();mutable.update { it.copy(busy=false,describingMemoryId=null) } };return@collect }
                 when(result) {
                     is InferenceState.Loading -> mutable.update { it.copy(busy=true,inferenceMessage="Reading your photo on this phone…",retryDescriptionId=null,describingMemoryId=memory.id) }
@@ -473,7 +587,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             }
         }
     }
-    override fun onCleared() { voice.stop();voiceJob?.cancel();speech?.close();camera.close();ownedInference?.close();ownedInference=null;super.onCleared() }
+    override fun onCleared() { if(!photoSaveInFlight)photoDraft?.photoPath?.takeUnless { it.startsWith("asset:") }?.let { File(it).delete() };voice.stop();voiceJob?.cancel();speech?.close();camera.close();ownedInference?.close();ownedInference=null;super.onCleared() }
     private fun ask(query:String) {
         if(query.isBlank()) return
         invalidate();val snapshot=mutable.value;mutable.update { it.copy(assistantMode=AssistantMode.FIND_PLACE,answer="",answerStatus=AssistantAnswerStatus.NONE,resultIds=emptyList(),answerGrounded=null,answerConfidence=null,safetyRefusal=false,inferenceMessage="") }
@@ -645,7 +759,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         invalidate()
         val cleanTitle=title.trim().take(80);val cleanDescription=description.trim().take(1000)
         if(cleanTitle.isBlank()) { announce("Add a short place name.");return }
-        change { outing->outing.copy(revision=outing.revision+1,memories=outing.memories.map { if(it.id==id)it.copy(title=cleanTitle,note=note?.take(2000)?:it.note,description=cleanDescription,indexing=if(cleanDescription!=it.description)"Edited by you"else it.indexing)else it }) }
+        change { outing->outing.copy(revision=outing.revision+1,memories=outing.memories.map { if(it.id==id)it.copy(title=cleanTitle,titleEdited=true,note=note?.take(2000)?:it.note,description=cleanDescription,indexing=if(cleanDescription!=it.description)"Edited by you"else it.indexing)else it }) }
     }
 
     private fun compareCurrentPhoto(memoryId:String) {
@@ -666,7 +780,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         camera.takePhoto(currentFile) { captured ->
             if(session!=captureSession) { currentFile.delete();return@takePhoto }
             inferenceJob=viewModelScope.launch {
-                if(session!=captureSession || currentId!=outingId || mutable.value.mode!=compareMode || mutable.value.routeTargetIndex!=expectedIndex || (compareMode==GuidanceMode.FIND_LANDMARK && mutable.value.selectedMemoryId!=memoryId)) { currentFile.delete();return@launch }
+                if(session!=captureSession || currentId!=outingId || mutable.value.mode!=compareMode || mutable.value.routeTargetIndex!=expectedIndex || (compareMode==GuidanceMode.FIND_LANDMARK && mutable.value.selectedMemoryId!=memoryId)) { currentFile.delete();if(session==captureSession)mutable.update { it.copy(busy=false,inferenceMessage="Route progress changed. Compare the next landmark when ready.") };return@launch }
                 if(!captured) { currentFile.delete();mutable.update { it.copy(busy=false,inferenceMessage="Couldn't take a comparison photo. The saved place is unchanged.") };return@launch }
                 val committed=store.outings.value.find { it.id==outingId }
                 if(committed==null || committed.revision!=revision) { currentFile.delete();mutable.update { it.copy(busy=false,inferenceMessage="Saved places changed. Compare again with the current photo.") };return@launch }

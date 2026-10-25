@@ -16,6 +16,7 @@ import kotlinx.serialization.Serializable
     val description: String = "", val indexing: String = "Not interpreted",
     val pickup: PickupPhase = PickupPhase.NONE,
     val arrival: ArrivalPhase = ArrivalPhase.NONE, val pickupTask: String = "",
+    val titleEdited: Boolean = false,
 )
 @Serializable data class SavedGuidance(
     val mode: GuidanceMode = GuidanceMode.NONE, val memoryId: String? = null,
@@ -47,6 +48,8 @@ data class TravisUiState(
     val fix: TrailPoint? = null, val fixQuality: FixQuality = FixQuality.UNAVAILABLE,
     val heading: Double? = null, val headingReliable: Boolean = false,
     val mapHeading: Double? = null, val mapHeadingReliable: Boolean = false,
+    val headingAccuracyDegrees: Double? = null, val headingStatus: String = "",
+    val directionUsable: Boolean = false, val navigationMessage: String = "",
     val surface: TravisSurface = TravisSurface.MAP, val mode: GuidanceMode = GuidanceMode.NONE,
     val selectedMemoryId: String? = null, val target: TrailPoint? = null,
     val targetTitle: String = "Choose a saved place", val targetPhoto: String = "",
@@ -83,10 +86,12 @@ data class TravisUiState(
     val notice: String = "", val sensorStatus: String = "", val mapAvailable: Boolean = false,
     val cameraAllowed: Boolean = false, val locationAllowed: Boolean = false,
     val notificationsAllowed: Boolean = false, val captureMode: Boolean = false,
-    val captureBusy: Boolean = false,
+    val captureBusy: Boolean = false, val capturedPhotoPath: String = "",
 )
 sealed interface TravisAction {
     data object Start : TravisAction
+    data class StartNewJourney(val name: String = "") : TravisAction
+    data class RenameOuting(val id: String, val name: String) : TravisAction
     data object Pause : TravisAction
     data object End : TravisAction
     data object HeadBack : TravisAction
@@ -98,6 +103,8 @@ sealed interface TravisAction {
     data object ExitExplore : TravisAction
     data object ReplayNext : TravisAction
     data object Capture : TravisAction
+    data object TakePhoto : TravisAction
+    data object RetakePhoto : TravisAction
     data object CancelCapture : TravisAction
     data object ImportModel : TravisAction
     data object CancelInference : TravisAction

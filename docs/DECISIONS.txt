@@ -1,3 +1,11 @@
+NAVIGATION FIELD FAILURE PASS — OCTOBER 24, 2026
+User reports arrow targets points behind/past or wrong route sections. Root owns
+contracts/ViewModel/entry/shareddocs/install. Isolated accuracy-route owns trip
+geometry/progress helpers and trip tests; accuracy-sensors owns device GPS/orientation
+quality adapters and tests (coordinate shared fields with root); accuracy-ui owns
+UI audit now, then screen-fit/bottom-navigation/declutter once route fix lands.
+Root owns saved-place title inference integration. Preserve latest Pixel records.
+
 POST-WALK FINAL PASS — OCTOBER 24, 2026
 User reported confusing route-vs-direct guidance, premature arrival cues, ineffective
 confirmation controls, obstructed AR and underused assistant context. Preserve all

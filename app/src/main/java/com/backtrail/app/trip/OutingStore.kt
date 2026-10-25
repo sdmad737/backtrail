@@ -3,6 +3,7 @@ package com.backtrail.app.trip
 import android.content.Context
 import android.util.AtomicFile
 import com.backtrail.app.contracts.*
+import com.backtrail.app.ai.PlaceNaming
 import java.io.File
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +29,14 @@ class OutingStore private constructor(context: Context) {
                 if(file.baseFile.exists()) {
                     mutable.value = json.decodeFromString<List<Outing>>(file.openRead().bufferedReader().use { it.readText() }).map {
                         // A terminated process does not imply an active OS tracking service.
-                        if(it.phase==OutingPhase.RECORDING) it.copy(phase=OutingPhase.PAUSED,segment=it.segment+1) else it
+                        val old=it
+                        val memories=old.memories.map { memory ->
+                            if(!memory.titleEdited && memory.title==memory.note.lineSequence().firstOrNull()?.take(40) && memory.note.isNotBlank())
+                                memory.copy(title=PlaceNaming.initial(memory.note)) else memory
+                        }
+                        val renamed=old.copy(memories=memories,revision=old.revision+if(memories!=old.memories)1 else 0,
+                            name=if(old.name=="Today's outing") "Journey · "+java.text.SimpleDateFormat("MMM d · h:mm a",java.util.Locale.getDefault()).format(java.util.Date(old.startedAt)) else old.name)
+                        if(renamed.phase==OutingPhase.RECORDING) renamed.copy(phase=OutingPhase.PAUSED,segment=renamed.segment+1) else renamed
                     }
                 }
             } catch(_:Exception) { loadError.value="Saved outings could not be read. Original files were preserved." }

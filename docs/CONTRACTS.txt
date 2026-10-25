@@ -1,6 +1,9 @@
 POST-WALK UPDATE — OCTOBER 24, 2026
 SavedGuidance.firstIndex persists the first return target so itinerary numbering
-remains stable as confirmations advance. Confirmed progress is distinct from GPS
+remains stable as progress advances. NAVIGATION-ACCURACY.txt supersedes the old
+manual intermediate-waypoint policy: repeated fresh local route matches advance
+intermediate navigation points automatically. Final destination confirmation,
+recognition and pickup remain explicit. Confirmed progress is distinct from GPS
 proximity. Return-route confirmation uses current accuracy <=15m, saved accuracy
 <=25m, distance <=12m, and distance + max(current,saved uncertainty) <=25m.
 Eligibility never displays an automatic arrival checkmark. Explicit confirmation
@@ -12,6 +15,7 @@ assistant closes, activity backgrounds, or its session/journey context changes.
 LocalVoice uses foreground PCM16 mono16kHz (20s maximum) without persistent audio.
 LocalSpeech selects only already installed offline voices. No extra model assets.
 FINAL-PASS.txt records current hardware/UI checks and remaining physical validation.
+NAVIGATION-ACCURACY.txt records the later wrong-way-arrow and photo-first UI pass.
 
 TRAVIS — IMPLEMENTED CONTRACTS
 
@@ -36,6 +40,10 @@ A provider-generation check prevents a pre-outage fix reappearing after recovery
 saves a photo with unknown location; no cached or invented coordinate is attached.
 Memory stores original photo, exact note, optional saved fix/route index,
 Gemma description/provenance and opt-in pickup state. Files never go in UI bitmaps.
+titleEdited protects user titles from subsequent model description changes.
+Capture creates an unsaved original first; Retake/Cancel discard that draft.
+Save commits its capture-time position and exact optional note before local Gemma
+description. Pending atomic saves retain originals if their ViewModel is cleared.
 
 ADAPTERS
 TravisViewModel: action composition, immutable screen state, request gate, session
@@ -75,13 +83,19 @@ the home retraceIndex and suspends any active memory return separately. Memory
 returns keep their own next/goal/start indices. Reaching a memory retains its
 confirmed progress; explicit continuation starts from there toward home. Undo is
 bound to outing/destination/goal/start and cannot mutate a cursor while finding.
-Deleting a memory clears both active and suspended references to that destination. Bearing and straight-line
-distance require a recent fix with <=25m reported accuracy. Heading also needs
-reliable orientation. A direction to a place is not a traversable route instruction.
-Retrace follows previous indices, about25m per target; crossings cannot jump to
-nearest earlier geometry. Segment gaps are not connected. Only an explicit
-near-target confirmation advances one target; undo restores the previous target.
-Remaining distance is approximate recorded length plus current-to-target distance.
+Deleting a memory clears both active and suspended references to that destination.
+Direction requires a fix no older than5s with <=15m reported accuracy; recorded
+geometry must have <=25m accuracy. Heading rejects reported uncertainty over25°.
+Unknown numeric heading uncertainty remains unknown; it never becomes precise.
+RouteFollower matches a bounded local portion of the ordered polyline using three
+distinct fixes. Its look-ahead respects sustained corners; short GPS wiggles are
+not treated as turns. Uncertain, ambiguous, off-route or gap states suppress the
+arrow. Near a destination, overlapping GPS uncertainty requires the original photo.
+Measured progress may advance intermediate points through a session/cursor/goal
+checked atomic write. It never recognizes, collects or completes the destination.
+Final confirmation is explicit. Segment gaps have no invented connector. Remaining
+distance/progress are approximate measured position along the recorded route.
+Direct Find is labelled separately and does not claim a traversable connection.
 A retrace waypoint without a matching saved photo is labelled as a waypoint.
 
 REMINDERS

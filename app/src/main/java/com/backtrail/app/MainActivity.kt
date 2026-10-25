@@ -48,7 +48,7 @@ class MainActivity:ComponentActivity() {
                 when {
                     action==TravisAction.StartVoice && checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=android.content.pm.PackageManager.PERMISSION_GRANTED -> microphone.launch(Manifest.permission.RECORD_AUDIO)
                     action==TravisAction.ImportModel -> importer.launch(arrayOf("*/*"))
-                    action==TravisAction.RequestPermissions || (action==TravisAction.Start && !state.locationAllowed && !state.replay) || (action==TravisAction.Capture && !state.cameraAllowed && !state.replay) -> {
+                    action==TravisAction.RequestPermissions || ((action==TravisAction.Start || action is TravisAction.StartNewJourney) && !state.locationAllowed && !state.replay) || (action==TravisAction.Capture && !state.cameraAllowed && !state.replay) -> {
                         pending=if(action==TravisAction.RequestPermissions)null else action
                         permissions.launch(buildList { add(Manifest.permission.ACCESS_FINE_LOCATION);add(Manifest.permission.ACCESS_COARSE_LOCATION);add(Manifest.permission.CAMERA);if(Build.VERSION.SDK_INT>=33)add(Manifest.permission.POST_NOTIFICATIONS) }.toTypedArray())
                     }
