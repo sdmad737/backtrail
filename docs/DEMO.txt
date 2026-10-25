@@ -12,15 +12,20 @@ Search, original photos, map, AR and notifications refer to the same saved IDs.
 Cancelled/replaced model requests cannot overwrite newer records or create
 competing engines. The first integration follows all teammate commits on main.
 The latest interaction pass adds continuous anchored pinch/pan, double-tap zoom,
-offline Terrain/Aerial, numbered place previews, a scale bar and recenter.
+offline Hybrid/Terrain/Aerial, numbered place previews, a scale bar and recenter.
+Hybrid combines imagery and labels. Aerial uses higher-detail1024px exports at
+close zoom. Map now includes a measured position cone and approximate true compass
+bearing; display rotation is handled separately from the rear-camera AR bearing.
 Maximum zoom20 allows4x closer viewing than the earlier zoom18 limit.
 AR has a dimensional direction instrument and adjustable original-photo overlay.
 It is approximate sensor guidance, not a world anchor or automatic recognition.
 The logo's exterior is transparent and wordmark spacing is corrected.
 
 BATTERY AND FEEDBACK
-Camera and heading run only in the visible live AR view; capture uses CameraX
-while its sheet is visible. Map rendering caches at most64 decoded tiles.
+Camera runs only in the visible live AR view; capture uses CameraX while its
+sheet is visible. One heading listener runs in visible Map/AR with a fresh GPS
+fix and stops behind sheets, capture, replay or background. The decoded tile
+cache is capped at24MiB; only visible tiles are retained for drawing.
 Gemma runs on request, never every frame. GPS recording is independent.
 Optional approach haptics require fresh fixes with <=15m reported accuracy,
 three observations, meaningful closing beyond uncertainty, and a10-second
@@ -63,7 +68,7 @@ C. Offline inside Travis: TEXT RETRIEVAL VERIFIED. Airplane mode on, Wi-Fi off,
    with networking denied, including chronology, ambiguity and no-match cases.
 
 VERIFICATION
-- Final offline assembleDebug,138 JVM tests and lint: passed, zero test failures
+- Final offline assembleDebug,144 JVM tests and lint: passed, zero test failures
   and lint errors. Warnings and exact APK hash are recorded in the build receipt.
 - Android emulator:21 integration checks passed. These cover GPS/pause gaps,
   screen-locked simulated fixes, actual CameraX virtual-camera JPEG, persistence,
@@ -91,13 +96,18 @@ automatic matching. The same distinction applies to the browser showcase:
 
 OFFLINE MAPS
 Bundled USGS terrain121 tiles/2785869bytes and aerial115 tiles/3685572bytes.
+Hybrid121 tiles/4190072bytes; high-detail aerial81 tiles/26729769bytes.
+All438 rasters are complete; exact local SHA256 values are in their manifests.
 Bounds: west-122.390, south37.549, east-122.345, north37.585 (venue surroundings).
-Both packs' full bytes/hashes and APK copies were checked. The provider serves
-cached detail through zoom16 here; closer zoom magnifies it. Outside coverage,
+All four packs' full bytes/hashes and APK copies are checked in the build receipt. Cached terrain/hybrid detail reaches zoom16. New aerial exports are1024pixels
+per zoom16 tile, equivalent to zoom18 sampling; source resolution and dates vary.
+A representative venue raster is0.6m imagery from2022, not a live picture.
+Closer zoom magnifies the available detail. Outside coverage,
 the recorded trace remains visible. No live download, glyph or sprite dependency.
 Provider metadata/attribution and local digests are in each map manifest; USGS
 does not publish independent per-tile checksums. Build-time preparation only:
-  python3 scripts/prepare_maps.py --layer aerial
+  python3 scripts/prepare_maps.py --layer hybrid
+  python3 scripts/prepare_maps.py --layer aerial-detail
 
 TWO-MINUTE DEMO AFTER THE WALK
 0:00 Show disconnected phone and live readiness. Open the real recorded outing.
@@ -117,3 +127,24 @@ NEXT THREE ACTIONS
    the screen for part of it, then test return -> Map/AR -> recognition -> pickup.
 3. Reopen the outing, rehearse the two-minute sequence and record a backup using
    actual evidence. Record orientation, reminder/haptic and battery observations.
+
+MAP AND COMPASS FOLLOW-UP
+The map remains north up. Its blue cone follows the top of the display when
+held flat, and the rear-facing direction if that edge points nearly vertically.
+The compass readout is approximate true bearing. Flat/portrait/landscape math
+has focused tests; magnetic calibration and physical alignment need a real turn
+outside. Without a fresh usable fix or reliable sensor, the cone disappears and
+Compass Unavailable is shown. Resume outing to request live GPS.
+Full current test menu and remaining gates: TEST-NOW.txt.
+
+FINAL MAP QA
+The final APK rendered Hybrid, Terrain and detailed Aerial in the emulator;
+close Aerial views showed distinct roofs, pools and driveways without visible
+seams in the inspected view. Real injected pinch remained smooth. Replay heading
+changed the compass/cone and weak GPS suppressed it. Portrait is the rehearsed
+demo layout; in short landscape views, the bottom dock can obscure some map
+controls. Landscape compass math is tested separately from this layout limit.
+The compass currently requires a fresh usable GPS fix for true-north correction:
+Recording paused + Waiting for a measured location therefore shows Unavailable.
+Resume outing and wait for a fix outside; physical compass alignment remains a
+human acceptance check. No fresh physical image-inference result is claimed.

@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.filterNotNull
 
 class MainActivity:ComponentActivity() {
     private lateinit var heading:CameraHeading
-    private var cameraVisible=false
+    private var headingVisible=false
     private val incomingDestination=MutableStateFlow<NotificationDestination?>(null)
     override fun onCreate(savedInstanceState:Bundle?) {
         super.onCreate(savedInstanceState);enableEdgeToEdge();heading=CameraHeading(this)
@@ -52,8 +52,8 @@ class MainActivity:ComponentActivity() {
             }
             LaunchedEffect(Unit) { if(savedInstanceState==null && intent.getBooleanExtra("explore",false)) model.action(TravisAction.Explore);intent.removeExtra("explore") }
             TravisScreen(state,act,camera={ modifier->NativeCamera(model.camera,modifier) { model.announce(it) } },map={ modifier->OfflineTrailMap(state,modifier,onMemorySelected={ id->model.action(TravisAction.SelectMemory(id)) }) },
-                onCameraActiveChanged={ visible ->
-                    cameraVisible=visible
+                onHeadingActiveChanged={ visible ->
+                    headingVisible=visible
                     if(visible && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))heading.start()else heading.stop()
                 })
         }
@@ -68,6 +68,6 @@ class MainActivity:ComponentActivity() {
         intent.removeExtra(TravisNotifications.EXTRA_MEMORY_ID)
         intent.removeExtra(TravisNotifications.EXTRA_REMINDER_KIND)
     }
-    override fun onResume() { super.onResume();if(::heading.isInitialized && cameraVisible)heading.start() }
+    override fun onResume() { super.onResume();if(::heading.isInitialized && headingVisible)heading.start() }
     override fun onPause() { if(::heading.isInitialized)heading.stop();super.onPause() }
 }

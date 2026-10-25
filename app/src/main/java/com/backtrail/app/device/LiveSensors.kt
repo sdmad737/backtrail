@@ -5,6 +5,7 @@ import android.hardware.*
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.view.WindowManager
 import com.backtrail.app.contracts.FixQuality
 import com.backtrail.app.contracts.TrailPoint
 import com.backtrail.app.trip.TrailMath
@@ -16,25 +17,35 @@ object LiveSensors {
     val fix=MutableStateFlow<TrailPoint?>(null)
     val heading=MutableStateFlow<Double?>(null)
     val headingReliable=MutableStateFlow(false)
+    val mapHeading=MutableStateFlow<Double?>(null)
+    val mapHeadingReliable=MutableStateFlow(false)
     val failure=MutableStateFlow("")
 }
 
-/** Rear camera looks along device -Z, not the top (+Y) used by a flat compass. */
+/** One listener supplies independent rear-camera (-Z) and current display-top bearings. */
 class CameraHeading(context: Context) : SensorEventListener {
     private val manager=context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val sensor=manager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+    @Suppress("DEPRECATION") // WindowManager.defaultDisplay also works on the supported API 28.
+    private val display=(context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
     private val filter=CameraBearingFilter()
+    private val mapFilter=CameraBearingFilter()
     private val handler=Handler(Looper.getMainLooper())
     private val rotation=FloatArray(9)
     private var started=false
     private var declinationFixId:String?=null
     private var cachedDeclination=0.0
+    private var previousDisplayRotation:Int?=null
     private var accuracy=SensorManager.SENSOR_STATUS_UNRELIABLE
     private val expire=Runnable { invalidate() }
     private fun invalidate() {
         LiveSensors.heading.value=null
         LiveSensors.headingReliable.value=false
+        LiveSensors.mapHeading.value=null
+        LiveSensors.mapHeadingReliable.value=false
         filter.reset()
+        mapFilter.reset()
+        previousDisplayRotation=null
     }
     fun start() {
         if(started)return
@@ -42,7 +53,7 @@ class CameraHeading(context: Context) : SensorEventListener {
         started=sensor!=null && manager.registerListener(this,sensor,SensorManager.SENSOR_DELAY_UI)
     }
     fun stop() {
-        if(!started)return
+        if(!started) { invalidate();return }
         started=false
         manager.unregisterListener(this);handler.removeCallbacks(expire)
         declinationFixId=null
@@ -67,9 +78,29 @@ class CameraHeading(context: Context) : SensorEventListener {
             cachedDeclination=GeomagneticField(fix.latitude.toFloat(),fix.longitude.toFloat(),0f,System.currentTimeMillis()).declination.toDouble()
             declinationFixId=fix.id
         }
+        val elapsed=event.timestamp/1_000_000
         val raw=CameraBearing.fromRotation(rotation,cachedDeclination)
-        if(raw==null) { invalidate(); return }
-        LiveSensors.heading.value=filter.accept(raw,event.timestamp/1_000_000)
-        LiveSensors.headingReliable.value=true
+        if(raw==null) {
+            filter.reset()
+            LiveSensors.heading.value=null
+            LiveSensors.headingReliable.value=false
+        } else {
+            LiveSensors.heading.value=filter.accept(raw,elapsed)
+            LiveSensors.headingReliable.value=true
+        }
+        val displayRotation=display.rotation
+        if(previousDisplayRotation!=displayRotation) {
+            mapFilter.reset()
+            previousDisplayRotation=displayRotation
+        }
+        val mapRaw=CameraBearing.mapFromRotation(rotation,cachedDeclination,displayRotation)
+        if(mapRaw==null) {
+            mapFilter.reset()
+            LiveSensors.mapHeading.value=null
+            LiveSensors.mapHeadingReliable.value=false
+        } else {
+            LiveSensors.mapHeading.value=mapFilter.accept(mapRaw,elapsed)
+            LiveSensors.mapHeadingReliable.value=true
+        }
     }
 }

@@ -39,6 +39,7 @@ data class TravisUiState(
     val outing: Outing = Outing(), val savedOutings: List<Outing> = emptyList(),
     val fix: TrailPoint? = null, val fixQuality: FixQuality = FixQuality.UNAVAILABLE,
     val heading: Double? = null, val headingReliable: Boolean = false,
+    val mapHeading: Double? = null, val mapHeadingReliable: Boolean = false,
     val surface: TravisSurface = TravisSurface.MAP, val mode: GuidanceMode = GuidanceMode.NONE,
     val selectedMemoryId: String? = null, val target: TrailPoint? = null,
     val targetTitle: String = "Choose a saved place", val targetPhoto: String = "",

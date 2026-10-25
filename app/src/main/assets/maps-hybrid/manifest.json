@@ -1,0 +1,1005 @@
+{
+  "region": "Hillsborough event area",
+  "bounds": {
+    "west": -122.39,
+    "south": 37.549,
+    "east": -122.345,
+    "north": 37.585
+  },
+  "zooms": [
+    12,
+    13,
+    14,
+    15,
+    16
+  ],
+  "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer",
+  "layer": "hybrid",
+  "attribution": "USGS The National Map: Orthoimagery and US Topo. Data refreshed April, 2026.v1.2.",
+  "license": "USDA/USGS public-domain orthoimagery in the conterminous US; service permits exportTiles",
+  "license_source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer?f=pjson",
+  "metadata_source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer?f=pjson",
+  "metadata_bytes": 8114,
+  "metadata_sha256": "f0a4b3bdb66f4585c376dddf81a883073f423ca28956a1025333b7ade9bb9cbc",
+  "metadata": {
+    "currentVersion": 11.3,
+    "cimVersion": "3.3.0",
+    "serviceDescription": "USGS Imagery Topo is a tile cache base map of orthoimagery in The National Map and US Topo vector data visible to the 1:9,028 scale. Orthoimagery data are typically high resolution images that combine the visual attributes of an aerial photograph with the spatial accuracy and reliability of a planimetric map. USGS digital orthoimage resolution may vary from 6 inches to 1 meter. In the former resolution, every pixel in an orthoimage covers a six inch square of the earth's surface, while in the latter resolution, one meter square is represented by each pixel. Blue Marble: Next Generation source is displayed at small to medium scales. However, the majority of the imagery service source is from the National Agriculture Imagery Program (NAIP) for the conterminous United States. The data is 1-meter pixel resolution with leaf-on. Collection of NAIP imagery is administered by the U.S. Department of Agriculture's Farm Service Agency (FSA). In areas where NAIP data is not available, other imagery may be acquired through partnerships by the USGS. The National Map program is working on acquisition of high resolution orthoimagery (HRO) for Alaska. Most of the new Alaska imagery data will not be available in this service due to license restrictions. The National Map viewer allows free downloads of public domain, 1-meter resolution orthoimagery in JPEG 2000 (jp2) format for the conterminous United States.",
+    "mapName": "USGSImageryTopo",
+    "description": "USGS Imagery Topo is a tile cache base map of orthoimagery in The National Map and US Topo vector data visible to the 1:9,028 scale. Orthoimagery data are typically high resolution images that combine the visual attributes of an aerial photograph with the spatial accuracy and reliability of a planimetric map. USGS digital orthoimage resolution may vary from 6 inches to 1 meter. In the former resolution, every pixel in an orthoimage covers a six inch square of the earth's surface, while in the latter resolution, one meter square is represented by each pixel. Blue Marble: Next Generation source is displayed at small to medium scales. However, the majority of the imagery service source is from the National Agriculture Imagery Program (NAIP) for the conterminous United States. The data is 1-meter pixel resolution with leaf-on. Collection of NAIP imagery is administered by the U.S. Department of Agriculture's Farm Service Agency (FSA). In areas where NAIP data is not available, other imagery may be acquired through partnerships by the USGS. The National Map program is working on acquisition of high resolution orthoimagery (HRO) for Alaska. Most of the new Alaska imagery data will not be available in this service due to license restrictions. The National Map viewer allows free downloads of public domain, 1-meter resolution orthoimagery in JPEG 2000 (jp2) format for the conterminous United States.",
+    "copyrightText": "USGS The National Map: Orthoimagery and US Topo. Data refreshed April, 2026.v1.2.",
+    "supportsDynamicLayers": false,
+    "layers": [
+      {
+        "id": 0,
+        "name": "USGSImageryTopo",
+        "parentLayerId": -1,
+        "defaultVisibility": true,
+        "subLayerIds": null,
+        "minScale": 0,
+        "maxScale": 0,
+        "type": "Raster Layer",
+        "supportsDynamicLegends": true
+      }
+    ],
+    "tables": [],
+    "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857,
+      "xyTolerance": 0.001,
+      "zTolerance": 0.001,
+      "mTolerance": 0.001,
+      "falseX": -20037700,
+      "falseY": -30241100,
+      "xyUnits": 10000,
+      "falseZ": -100000,
+      "zUnits": 10000,
+      "falseM": -100000,
+      "mUnits": 10000
+    },
+    "singleFusedMapCache": true,
+    "tileInfo": {
+      "rows": 256,
+      "cols": 256,
+      "dpi": 96,
+      "format": "MIXED",
+      "compressionQuality": 85,
+      "origin": {
+        "x": -20037508.342787,
+        "y": 20037508.342787
+      },
+      "spatialReference": {
+        "wkid": 102100,
+        "latestWkid": 3857,
+        "xyTolerance": 0.001,
+        "zTolerance": 0.001,
+        "mTolerance": 0.001,
+        "falseX": -22041257.862691447,
+        "falseY": -33265329.408417318,
+        "xyUnits": 135384692.1750852,
+        "falseZ": -100000,
+        "zUnits": 10000,
+        "falseM": -100000,
+        "mUnits": 10000
+      },
+      "lods": [
+        {
+          "level": 0,
+          "resolution": 156543.03392800014,
+          "scale": 591657527.591555
+        },
+        {
+          "level": 1,
+          "resolution": 78271.51696399994,
+          "scale": 295828763.795777
+        },
+        {
+          "level": 2,
+          "resolution": 39135.75848200009,
+          "scale": 147914381.897889
+        },
+        {
+          "level": 3,
+          "resolution": 19567.87924099992,
+          "scale": 73957190.948944
+        },
+        {
+          "level": 4,
+          "resolution": 9783.93962049996,
+          "scale": 36978595.474472
+        },
+        {
+          "level": 5,
+          "resolution": 4891.96981024998,
+          "scale": 18489297.737236
+        },
+        {
+          "level": 6,
+          "resolution": 2445.98490512499,
+          "scale": 9244648.868618
+        },
+        {
+          "level": 7,
+          "resolution": 1222.992452562495,
+          "scale": 4622324.434309
+        },
+        {
+          "level": 8,
+          "resolution": 611.4962262813797,
+          "scale": 2311162.217155
+        },
+        {
+          "level": 9,
+          "resolution": 305.74811314055756,
+          "scale": 1155581.108577
+        },
+        {
+          "level": 10,
+          "resolution": 152.87405657041106,
+          "scale": 577790.554289
+        },
+        {
+          "level": 11,
+          "resolution": 76.43702828507324,
+          "scale": 288895.277144
+        },
+        {
+          "level": 12,
+          "resolution": 38.21851414253662,
+          "scale": 144447.638572
+        },
+        {
+          "level": 13,
+          "resolution": 19.10925707126831,
+          "scale": 72223.819286
+        },
+        {
+          "level": 14,
+          "resolution": 9.554628535634155,
+          "scale": 36111.909643
+        },
+        {
+          "level": 15,
+          "resolution": 4.77731426794937,
+          "scale": 18055.954822
+        },
+        {
+          "level": 16,
+          "resolution": 2.388657133974685,
+          "scale": 9027.977411
+        },
+        {
+          "level": 17,
+          "resolution": 1.1943285668550503,
+          "scale": 4513.988705
+        },
+        {
+          "level": 18,
+          "resolution": 0.5971642835598172,
+          "scale": 2256.994353
+        },
+        {
+          "level": 19,
+          "resolution": 0.29858214164761665,
+          "scale": 1128.497176
+        },
+        {
+          "level": 20,
+          "resolution": 0.14929107082380833,
+          "scale": 564.248588
+        },
+        {
+          "level": 21,
+          "resolution": 0.07464553541190416,
+          "scale": 282.124294
+        },
+        {
+          "level": 22,
+          "resolution": 0.03732276770595208,
+          "scale": 141.062147
+        },
+        {
+          "level": 23,
+          "resolution": 0.01866138385297604,
+          "scale": 70.5310735
+        }
+      ]
+    },
+    "storageInfo": {
+      "storageFormat": "esriMapCacheStorageModeCompactV2",
+      "packetSize": 128
+    },
+    "initialExtent": {
+      "xmin": -18663843.22619409,
+      "ymin": -649653.4727045344,
+      "xmax": -1404973.7356321644,
+      "ymax": 9196903.361366622,
+      "spatialReference": {
+        "cs": "pcs",
+        "wkid": 102100
+      }
+    },
+    "fullExtent": {
+      "xmin": -20037507.0738129,
+      "ymin": -30240971.943167165,
+      "xmax": 20037507.06155618,
+      "ymax": 30240972.179360494,
+      "spatialReference": {
+        "cs": "pcs",
+        "wkid": 102100
+      }
+    },
+    "datesInUnknownTimezone": false,
+    "minScale": 295828763.795777,
+    "maxScale": 9027.977411,
+    "units": "esriMeters",
+    "supportedImageFormatTypes": "PNG32,PNG24,PNG,JPG,DIB,TIFF,EMF,PS,PDF,GIF,SVG,SVGZ,BMP",
+    "documentInfo": {
+      "Title": "Map",
+      "Author": "",
+      "Comments": "",
+      "Subject": "",
+      "Category": "",
+      "Version": "3.3.0",
+      "AntialiasingMode": "Fast",
+      "TextAntialiasingMode": "Force",
+      "Keywords": "ngda,base map,elevation,shaded relief,contour,hydrography,water,governmental unit,boundary,administrative,geographic name,land cover,structure,transportation,road,railroad,trail,airport,runway,NAIP,Ortho,Imagery"
+    },
+    "supportsQueryDomains": true,
+    "capabilities": "Map,Query,Data",
+    "supportedQueryFormats": "JSON, geoJSON, PBF",
+    "exportTilesAllowed": true,
+    "maxExportTilesCount": 100000,
+    "referenceScale": 0.0,
+    "supportsDatumTransformation": true,
+    "archivingInfo": {
+      "supportsHistoricMoment": false
+    },
+    "supportsClipping": true,
+    "supportsSpatialFilter": true,
+    "supportsTimeRelation": true,
+    "supportsQueryDataElements": true,
+    "mapUnits": {
+      "uwkid": 9001
+    },
+    "maxRecordCount": 1000,
+    "maxImageHeight": 4096,
+    "maxImageWidth": 4096,
+    "supportedExtensions": "WMSServer"
+  },
+  "prepared_at": "2026-10-24T23:52:36.544957+00:00",
+  "complete": true,
+  "request_kind": "cached tile",
+  "tile_pixels": 256,
+  "cached_max_zoom": 16,
+  "detail_note": "Cached source tiles through zoom 16; closer zoom magnifies source detail.",
+  "hash_note": "Locally calculated full SHA-256; USGS does not publish independent tile digests.",
+  "files": [
+    {
+      "path": "12/655/1585.png",
+      "bytes": 26575,
+      "sha256": "4aa41fd7b7a1796d3405f1813ffb8abb0f5d345639720eb17fa5c34c747c3f37",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/12/1585/655"
+    },
+    {
+      "path": "12/655/1586.png",
+      "bytes": 30614,
+      "sha256": "c6d252974fff1eb1848556548f5873a27a28a3e246fad4ebb429f234c90d4725",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/12/1586/655"
+    },
+    {
+      "path": "13/1310/3171.png",
+      "bytes": 27961,
+      "sha256": "43ce7e44b24682025d36a635d39c35873ab3202d5af5f0da9e4313f6d9cb470c",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/13/3171/1310"
+    },
+    {
+      "path": "13/1310/3172.png",
+      "bytes": 26751,
+      "sha256": "443e5e4007daa4555e0d59399130d6b0d085ee732f1c7a11882555ab4e2eded1",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/13/3172/1310"
+    },
+    {
+      "path": "13/1311/3171.png",
+      "bytes": 23497,
+      "sha256": "b8eab3265bb162d7f17adf86118cce863c92eae5e31edfe8ee13c1fdb4dc5252",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/13/3171/1311"
+    },
+    {
+      "path": "13/1311/3172.png",
+      "bytes": 29512,
+      "sha256": "0440fe79280a41ab092d90a291d368713458f025cdbfd037a17d4bc5cb62f0fa",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/13/3172/1311"
+    },
+    {
+      "path": "14/2621/6343.png",
+      "bytes": 38504,
+      "sha256": "3767638afacc4e535244fe72d5821d58f2cd72466217aab37e49589c327ecc34",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/14/6343/2621"
+    },
+    {
+      "path": "14/2621/6344.png",
+      "bytes": 32753,
+      "sha256": "892cc7450aaacc2bbdbdef8ac80546399c5e3461fef1ac9dcdf72088c3070a8a",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/14/6344/2621"
+    },
+    {
+      "path": "14/2621/6345.png",
+      "bytes": 27336,
+      "sha256": "48b0ad35723159ac6d05655a97d0d12e9ff3b4d933195fdbed907df60051dae1",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/14/6345/2621"
+    },
+    {
+      "path": "14/2622/6343.png",
+      "bytes": 38369,
+      "sha256": "0d67bb478c32ca61cbfa5ae52394e58890845ebea8afb507097e562c58ad5e5d",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/14/6343/2622"
+    },
+    {
+      "path": "14/2622/6344.png",
+      "bytes": 38177,
+      "sha256": "15177128e36d0c7c622df33a505f9f0d3833acb36602c45b17996874b15dbbac",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/14/6344/2622"
+    },
+    {
+      "path": "14/2622/6345.png",
+      "bytes": 35166,
+      "sha256": "6140b976289aeaa425a670f5382f487d4a3d2f8b24eb458f65531232264ddeed",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/14/6345/2622"
+    },
+    {
+      "path": "14/2623/6343.png",
+      "bytes": 30429,
+      "sha256": "890e12b811e735fa20d5a8225685997aaccc20a41a9c954c1b995de5c20e67f9",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/14/6343/2623"
+    },
+    {
+      "path": "14/2623/6344.png",
+      "bytes": 38127,
+      "sha256": "a8a06770851fcac221281b401fa237a06cddb953ac44504d8ef8c6f1a6db715d",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/14/6344/2623"
+    },
+    {
+      "path": "14/2623/6345.png",
+      "bytes": 38003,
+      "sha256": "1b1a1dc7961b3202f139f97a7c481fdca0a51d536e3f9abc60ebc5256ba70677",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/14/6345/2623"
+    },
+    {
+      "path": "15/5243/12687.png",
+      "bytes": 37779,
+      "sha256": "ea324c3bae0cf6aa56f30d201b3ceeff74ac6df35d49d57b261263de614ea7df",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12687/5243"
+    },
+    {
+      "path": "15/5243/12688.png",
+      "bytes": 38097,
+      "sha256": "78156235d7019b51e603f42214c1b9193c3cc362a78b52cb7091961f7603551f",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12688/5243"
+    },
+    {
+      "path": "15/5243/12689.png",
+      "bytes": 32471,
+      "sha256": "eb4644d706d6a70436a75e6dd3a6ed8ae5711eb40d0fde50fef99a9d5d606c4b",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12689/5243"
+    },
+    {
+      "path": "15/5243/12690.png",
+      "bytes": 27181,
+      "sha256": "bfee01f2bde1cdbc1ab1073ca01b6cf011516d12f1150403a0038ea5b26664d4",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12690/5243"
+    },
+    {
+      "path": "15/5243/12691.png",
+      "bytes": 24332,
+      "sha256": "874f8dc6f1f479409edce0962397974b5c0ffede496bae7508d349bce2d73311",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12691/5243"
+    },
+    {
+      "path": "15/5244/12687.png",
+      "bytes": 37509,
+      "sha256": "28915451be20c26a77363a5ff2781eb04f9f1bd4fe66d404614ff063c0b5b786",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12687/5244"
+    },
+    {
+      "path": "15/5244/12688.png",
+      "bytes": 36826,
+      "sha256": "10a9c09fa4d5f79892f729cce68c0e24e2a38e520ba0a619ee8a7ce5ae6a4f2c",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12688/5244"
+    },
+    {
+      "path": "15/5244/12689.png",
+      "bytes": 34832,
+      "sha256": "c2490cc58acbac2789b065dce310650c27a804e26d29c32b3acdec346962afd0",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12689/5244"
+    },
+    {
+      "path": "15/5244/12690.png",
+      "bytes": 32493,
+      "sha256": "12248ae1e1d62175cfc485678baedb20bd045c29e2266f295c68d15ee9661d44",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12690/5244"
+    },
+    {
+      "path": "15/5244/12691.png",
+      "bytes": 26601,
+      "sha256": "3d25654fc7ab92f8f83daded61cad336f3cf05ed3d3ec0ffe21a2babb4528271",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12691/5244"
+    },
+    {
+      "path": "15/5245/12687.png",
+      "bytes": 40148,
+      "sha256": "24ee9cd27996ec567d25ed041a0a29992fda63074183e69cb97d3544acb77846",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12687/5245"
+    },
+    {
+      "path": "15/5245/12688.png",
+      "bytes": 36068,
+      "sha256": "c09e81aa2aa95f336270de792c820bee9ff3bc51d00b8efeb878ca46eeee6de2",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12688/5245"
+    },
+    {
+      "path": "15/5245/12689.png",
+      "bytes": 34445,
+      "sha256": "884e39a5f3a43386d78798df2058fdaea0fc9117575ab1699be0c112e514e0cf",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12689/5245"
+    },
+    {
+      "path": "15/5245/12690.png",
+      "bytes": 36242,
+      "sha256": "07a1f1695f4b528b6232f514b4406b58b79806178fc15149cc8450e9603a552e",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12690/5245"
+    },
+    {
+      "path": "15/5245/12691.png",
+      "bytes": 34837,
+      "sha256": "713bb754ac1c66545e314426e94a0ebec4c45c1cfc323179d3eecdee77c9ab08",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12691/5245"
+    },
+    {
+      "path": "15/5246/12687.png",
+      "bytes": 38737,
+      "sha256": "a46c13c745d7042d3a14a7c6a5bcaa7f693ae890d99230f28f81162b345078f4",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12687/5246"
+    },
+    {
+      "path": "15/5246/12688.png",
+      "bytes": 37152,
+      "sha256": "5fe90e55a3b33425fe36328b2773689f67334c3cccd159910b73c4bc90ceafad",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12688/5246"
+    },
+    {
+      "path": "15/5246/12689.png",
+      "bytes": 37450,
+      "sha256": "1e7e724201b72918581691797e81d6c3f9dba7e175e8eef4e871b69bb1d6a677",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12689/5246"
+    },
+    {
+      "path": "15/5246/12690.png",
+      "bytes": 36977,
+      "sha256": "b71c4d39d74df5f43da7fc51434aae6209c5bd5f4081c27c80d66dec6e554fbe",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12690/5246"
+    },
+    {
+      "path": "15/5246/12691.png",
+      "bytes": 36694,
+      "sha256": "b86c3baf0cf544765c96f5cf7966b5042bed7c8223fde25c5ece474bea3767b5",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12691/5246"
+    },
+    {
+      "path": "15/5247/12687.png",
+      "bytes": 35022,
+      "sha256": "5514b4277ee6b6eb203e4dca8aa27db24764e25b5b518e93295cdaae468132b3",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12687/5247"
+    },
+    {
+      "path": "15/5247/12688.png",
+      "bytes": 37980,
+      "sha256": "36b4063937a82790456ac84d015901dff833b4c95dd21004cb8f9f4c207c1a30",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12688/5247"
+    },
+    {
+      "path": "15/5247/12689.png",
+      "bytes": 37694,
+      "sha256": "8152e5c35ceb247f1313653a8e16ce0b9c774210a531275b6dfa4ecf1607e5b4",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12689/5247"
+    },
+    {
+      "path": "15/5247/12690.png",
+      "bytes": 35702,
+      "sha256": "9e33e977e8765ffe2b320e3569716cf2188276106b9b4de65d01c43ee8c285d8",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12690/5247"
+    },
+    {
+      "path": "15/5247/12691.png",
+      "bytes": 35610,
+      "sha256": "de9a6af75edd67be5df7076a914985d18940ab6211cbca9ef19f0e99c99ae58e",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/15/12691/5247"
+    },
+    {
+      "path": "16/10487/25374.png",
+      "bytes": 36643,
+      "sha256": "8c3ff8b87b88b8cae16a30f7d135e2391129b823240d7a9eb8ab6ff84fc38c2a",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25374/10487"
+    },
+    {
+      "path": "16/10487/25375.png",
+      "bytes": 37721,
+      "sha256": "594e9083a0be5465a05d18cb39f4bc5b84ba5b528e67f3a7d4e4c6db715960f8",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25375/10487"
+    },
+    {
+      "path": "16/10487/25376.png",
+      "bytes": 37002,
+      "sha256": "98dea079fe8e2f576f87ccd2d82b94897156c3c3a5900bc20da21a9d347e231d",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25376/10487"
+    },
+    {
+      "path": "16/10487/25377.png",
+      "bytes": 36627,
+      "sha256": "2d979310bcbf097b4f631361793aef6c51e3127a25b3b366aa4c5470ae07e7cb",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25377/10487"
+    },
+    {
+      "path": "16/10487/25378.png",
+      "bytes": 35520,
+      "sha256": "398fd1e1312aadd1bbbb4f0e1d47b325329a1b221483ba248197a9f1e90a8278",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25378/10487"
+    },
+    {
+      "path": "16/10487/25379.png",
+      "bytes": 27994,
+      "sha256": "7dbe979ebdfaf852d49da701ee83ce36b9a978e501140bb55ed7ab05b692dfd5",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25379/10487"
+    },
+    {
+      "path": "16/10487/25380.png",
+      "bytes": 29814,
+      "sha256": "5720854d63ccd556de9c45d869f769b518bca2becd3d19fa8ac711db5617557f",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25380/10487"
+    },
+    {
+      "path": "16/10487/25381.png",
+      "bytes": 23898,
+      "sha256": "dc88002cec10d52185f9af41d6fb1563b6aeb645d87880f781dbabb32f70b440",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25381/10487"
+    },
+    {
+      "path": "16/10487/25382.png",
+      "bytes": 27292,
+      "sha256": "c1cbb4cce2dda44df6dae566289332b7f2b56c8587ea2e35fd0bde01e1e80f82",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25382/10487"
+    },
+    {
+      "path": "16/10488/25374.png",
+      "bytes": 35236,
+      "sha256": "c9971823eb69d06af407d3fcc35ac05440e3b5566699d3a40b51e72eaf250795",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25374/10488"
+    },
+    {
+      "path": "16/10488/25375.png",
+      "bytes": 34481,
+      "sha256": "54f4c7d746a301f386e2e1890bfd1330b5e4f2416eb25ca4a4b3ed37bcd760d0",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25375/10488"
+    },
+    {
+      "path": "16/10488/25376.png",
+      "bytes": 36422,
+      "sha256": "fa01f972de6066d99d629aec66483b5200a9df719f05015fc0793d1858f2cf3b",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25376/10488"
+    },
+    {
+      "path": "16/10488/25377.png",
+      "bytes": 36728,
+      "sha256": "3a61696a73142e8c7775f42782e0ad747d843fef65ade964b52e553dfbb0e642",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25377/10488"
+    },
+    {
+      "path": "16/10488/25378.png",
+      "bytes": 35456,
+      "sha256": "bdc8257491044951cdf5f94a79920bacc622ab4b13da34dfa7e654d073e52a82",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25378/10488"
+    },
+    {
+      "path": "16/10488/25379.png",
+      "bytes": 35413,
+      "sha256": "b8982cde7cbd2b87f6607036a09ebf890b541baca21b387dc679cffbdf0c5b1f",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25379/10488"
+    },
+    {
+      "path": "16/10488/25380.png",
+      "bytes": 30862,
+      "sha256": "260fd58c9341dad56427f493202d9829cb8c12049d5be252d8912ea0d8b90b5c",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25380/10488"
+    },
+    {
+      "path": "16/10488/25381.png",
+      "bytes": 29096,
+      "sha256": "c5d0a84447f88dd4e2519a02371db939169adaa6f364fb38f0c0f930e1b240ff",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25381/10488"
+    },
+    {
+      "path": "16/10488/25382.png",
+      "bytes": 25835,
+      "sha256": "9f3351007a38b7727a94a2f315f2a1180de58244804531186b5288386342fade",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25382/10488"
+    },
+    {
+      "path": "16/10489/25374.png",
+      "bytes": 37237,
+      "sha256": "5fdeec88aeb9eab5d3da43761bbc3322956f883b393d9833767fd538ec98c0a0",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25374/10489"
+    },
+    {
+      "path": "16/10489/25375.png",
+      "bytes": 38029,
+      "sha256": "23a1917d16c94605573317a85af51fd030a32a05a14d791bc4c426f6e66c0ccc",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25375/10489"
+    },
+    {
+      "path": "16/10489/25376.png",
+      "bytes": 36539,
+      "sha256": "7a7ec82199cd8a86a76f01cb42327c1e4abc036a9f07ca5e4d2e818d9668ab62",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25376/10489"
+    },
+    {
+      "path": "16/10489/25377.png",
+      "bytes": 34332,
+      "sha256": "fad2a264c9cee5c2ffed22d5eec9e24c7dcdc4f3bc9371bc49c248e3ca451bcc",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25377/10489"
+    },
+    {
+      "path": "16/10489/25378.png",
+      "bytes": 34139,
+      "sha256": "50f0609f52dd26965e9a45f2cff2fc212845d70b8bd8f82b0f55a69f00eecee7",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25378/10489"
+    },
+    {
+      "path": "16/10489/25379.png",
+      "bytes": 34734,
+      "sha256": "fddf5fe570cf1d89991288ec563e7dd3b85fcffaf935111e367f6c31c80b61a7",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25379/10489"
+    },
+    {
+      "path": "16/10489/25380.png",
+      "bytes": 35788,
+      "sha256": "58840136d596d6444e3305b0e564be9af1ad252d77ace5044594a7011a0f7e96",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25380/10489"
+    },
+    {
+      "path": "16/10489/25381.png",
+      "bytes": 32618,
+      "sha256": "4dea49bf45ee9c13f7836990efc983b13d4e195e6be11da1a9ad9eae389675ad",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25381/10489"
+    },
+    {
+      "path": "16/10489/25382.png",
+      "bytes": 26520,
+      "sha256": "581b8451dda41252a5de2da65b55050bd81c6733e05172c2cf03c7f6b30975dc",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25382/10489"
+    },
+    {
+      "path": "16/10490/25374.png",
+      "bytes": 38134,
+      "sha256": "72ef407bc75146e160224d5b969b08d133ce859aa6f76e29f1ee875471536987",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25374/10490"
+    },
+    {
+      "path": "16/10490/25375.png",
+      "bytes": 38672,
+      "sha256": "088dff610c54a9d9025c0f6878b44ccbec9fe37407e7d288b23d689100938809",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25375/10490"
+    },
+    {
+      "path": "16/10490/25376.png",
+      "bytes": 34762,
+      "sha256": "368b04debf453897f3ad7075cc12389ce50fd2b5ce7bea69490d070e9c262933",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25376/10490"
+    },
+    {
+      "path": "16/10490/25377.png",
+      "bytes": 33840,
+      "sha256": "0afd4a2983b2442ed574c096081dacdc14d99ce521673e195525114ffdaebf8a",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25377/10490"
+    },
+    {
+      "path": "16/10490/25378.png",
+      "bytes": 33626,
+      "sha256": "3ab780b2ffc4b80cc83bd02e7be9cdf3e6ef304e479fdd9a5b8f0bef61192636",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25378/10490"
+    },
+    {
+      "path": "16/10490/25379.png",
+      "bytes": 35162,
+      "sha256": "346ef6ae78886b6168726fa5003206827caa757d69f62ce695e3738710140e0c",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25379/10490"
+    },
+    {
+      "path": "16/10490/25380.png",
+      "bytes": 35040,
+      "sha256": "79701302619e34ec7b2b1fde40477c0b228371d8c9987bf9a36ef4d318ff3452",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25380/10490"
+    },
+    {
+      "path": "16/10490/25381.png",
+      "bytes": 36731,
+      "sha256": "798a0f5bac3fbc56f3e106eb97d0bc621fbb977e8b1311da1fa22bba8532c5fd",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25381/10490"
+    },
+    {
+      "path": "16/10490/25382.png",
+      "bytes": 34398,
+      "sha256": "60162feb8c6d3a7a17294a4e7616157ca4e9fabadc5c51c8497fd9e6c99ae74a",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25382/10490"
+    },
+    {
+      "path": "16/10491/25374.png",
+      "bytes": 38417,
+      "sha256": "2704afcba024e985d6559694b28ceba01b6e00c5016bf5785cf147ef019c34ac",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25374/10491"
+    },
+    {
+      "path": "16/10491/25375.png",
+      "bytes": 38373,
+      "sha256": "1a75bdde6ca803ed44406caf5b60649bb43c3303817ca53e720d1e09880815e3",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25375/10491"
+    },
+    {
+      "path": "16/10491/25376.png",
+      "bytes": 35721,
+      "sha256": "6ded750ebd9ef9b07b65764c5b5be86d6d5b41932a989db73a715195db59d175",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25376/10491"
+    },
+    {
+      "path": "16/10491/25377.png",
+      "bytes": 34298,
+      "sha256": "d986f106ba8464c43bbcf73218c29eef4ebf1066689d296f53e6178722bd4393",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25377/10491"
+    },
+    {
+      "path": "16/10491/25378.png",
+      "bytes": 32233,
+      "sha256": "26e7b8ccd689e6f3dff3d0dee87672f1900066ce633202353320629ce4aa055c",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25378/10491"
+    },
+    {
+      "path": "16/10491/25379.png",
+      "bytes": 35472,
+      "sha256": "d2088711b7886e7ba24407e5c8ccf413a29b0da685bc27df4fa4ea88a1c07fbc",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25379/10491"
+    },
+    {
+      "path": "16/10491/25380.png",
+      "bytes": 35569,
+      "sha256": "10486e9f4c879ec5e761b49aa9acf652f81085fc08e75ce3630f9637ad29ee6a",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25380/10491"
+    },
+    {
+      "path": "16/10491/25381.png",
+      "bytes": 35632,
+      "sha256": "86775e3ef4c91beccf8fb1779252b1f2b0b4699a9c6c8c8e23cc5d07009f27c9",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25381/10491"
+    },
+    {
+      "path": "16/10491/25382.png",
+      "bytes": 36003,
+      "sha256": "c1b87910e87ee882534389830b7c29dc194ba9e087ba5b8d90d471ff34496346",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25382/10491"
+    },
+    {
+      "path": "16/10492/25374.png",
+      "bytes": 37220,
+      "sha256": "efe0f098bc00e561c7ebf2934511b957d8a6e4302ba8b564da2d0d1d52817f10",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25374/10492"
+    },
+    {
+      "path": "16/10492/25375.png",
+      "bytes": 39054,
+      "sha256": "2c39f58ee5b7104627778bad1b75c38e69f2ce9983874fa472655fac446ffc23",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25375/10492"
+    },
+    {
+      "path": "16/10492/25376.png",
+      "bytes": 36810,
+      "sha256": "bf51a8b2b5e78f9fc72c966b005ad1b015ec7e9c100855561aa15fc89e46f20b",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25376/10492"
+    },
+    {
+      "path": "16/10492/25377.png",
+      "bytes": 30354,
+      "sha256": "bd829a06896e4da95cdbb82ff27e5685f3999d630eedc48ed1d00cc08560a9b6",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25377/10492"
+    },
+    {
+      "path": "16/10492/25378.png",
+      "bytes": 31793,
+      "sha256": "6a2c176b851c3017f389c5778f5f8715a0ee6418e43d04262af9593d9f015731",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25378/10492"
+    },
+    {
+      "path": "16/10492/25379.png",
+      "bytes": 35854,
+      "sha256": "f4d062f115455aaa8d70e92bb5157d7c0fed843f7237a049dc2e411c8cb42ebf",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25379/10492"
+    },
+    {
+      "path": "16/10492/25380.png",
+      "bytes": 35202,
+      "sha256": "0efc02c0aecd15befcd2388833e4e6dce0f1f50d702910f80461f28b96fc1118",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25380/10492"
+    },
+    {
+      "path": "16/10492/25381.png",
+      "bytes": 35660,
+      "sha256": "19e486a8b8d052a0a10dca85cf0f672db240d77c0787d2367bd67683ed092062",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25381/10492"
+    },
+    {
+      "path": "16/10492/25382.png",
+      "bytes": 37251,
+      "sha256": "b316242083d5923a52a525a17e5e7739db8e9f71b65b18c663afade9745f2925",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25382/10492"
+    },
+    {
+      "path": "16/10493/25374.png",
+      "bytes": 35446,
+      "sha256": "d6d9d25298452bdf4c3623875d7990fae668d830b4275725e433eb8a85fce61e",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25374/10493"
+    },
+    {
+      "path": "16/10493/25375.png",
+      "bytes": 38862,
+      "sha256": "d5458163ed139682563d831924661788b0531d5eb8455be7f44ab2437b72c5f8",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25375/10493"
+    },
+    {
+      "path": "16/10493/25376.png",
+      "bytes": 37984,
+      "sha256": "0a914d20ea23071c926fcff2b758841c68d5271ed761c4c9b417d213dcc05fe1",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25376/10493"
+    },
+    {
+      "path": "16/10493/25377.png",
+      "bytes": 33726,
+      "sha256": "de3b012f8fe7834846124bb4c3212854fd96c30a7ab8c30adf7202f582e0ddd9",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25377/10493"
+    },
+    {
+      "path": "16/10493/25378.png",
+      "bytes": 36790,
+      "sha256": "b8c0c18da90422493e73ccb601f9a1b455332d0fece0b991abc69b4d6b7dd9a1",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25378/10493"
+    },
+    {
+      "path": "16/10493/25379.png",
+      "bytes": 36829,
+      "sha256": "75e05a6bc89720ddb17fe8462ddf3be6f011f1bb0ab201fd3bde39f7ccb52f16",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25379/10493"
+    },
+    {
+      "path": "16/10493/25380.png",
+      "bytes": 36915,
+      "sha256": "4ab55d5590273bcc536c030417979843642198b509508e4a2f5234b1e6ae3aba",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25380/10493"
+    },
+    {
+      "path": "16/10493/25381.png",
+      "bytes": 36128,
+      "sha256": "49f76b362f16d5216487a917655b9ef0f066c8ca246f63cd39fd4d1f165f0c87",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25381/10493"
+    },
+    {
+      "path": "16/10493/25382.png",
+      "bytes": 35255,
+      "sha256": "6c4bc66b3beea4ea7ba94d09a4522e4a53f4d296450255edb6e458211e923814",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25382/10493"
+    },
+    {
+      "path": "16/10494/25374.png",
+      "bytes": 33741,
+      "sha256": "867735fa546e65ffa7537cf3f3a8b1b74b9a65aaf70f1485e189cdfeb069e5b7",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25374/10494"
+    },
+    {
+      "path": "16/10494/25375.png",
+      "bytes": 37017,
+      "sha256": "d68f897d6408d5d128ded8a3b44b3f39a5edf104b40cd97704d8811b7d6c6857",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25375/10494"
+    },
+    {
+      "path": "16/10494/25376.png",
+      "bytes": 36842,
+      "sha256": "b9937bc98b751638cbdc3ef0b088dc6888c55b8df57947da87865f38be42be39",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25376/10494"
+    },
+    {
+      "path": "16/10494/25377.png",
+      "bytes": 37233,
+      "sha256": "0f44731e9739451ab6eb3784ff67e696164f98eb50ca2896dc431b2517a3f3b3",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25377/10494"
+    },
+    {
+      "path": "16/10494/25378.png",
+      "bytes": 36764,
+      "sha256": "0858457b7b0ade00f36e2ac5e1e595d41aef3006c2391467f2596010a99d9ad5",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25378/10494"
+    },
+    {
+      "path": "16/10494/25379.png",
+      "bytes": 35952,
+      "sha256": "0ebe96859ff2681f746d66c5a863d1eac40caa4be5d49e264e70f29c4bbf8fa9",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25379/10494"
+    },
+    {
+      "path": "16/10494/25380.png",
+      "bytes": 34908,
+      "sha256": "2004658a4f61807dd51da3cc3df0fea7c3a4f4e786c5dc2324f4a17d4dfb601d",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25380/10494"
+    },
+    {
+      "path": "16/10494/25381.png",
+      "bytes": 34831,
+      "sha256": "8ce7b9bed71cfcf8108b439a7135bfd7dc681f9789cb49d78e1ed1514b3026e1",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25381/10494"
+    },
+    {
+      "path": "16/10494/25382.png",
+      "bytes": 35810,
+      "sha256": "fe66853f9ec3cc29512c7327482523af6ae7e016949331c80806303fa23332b6",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25382/10494"
+    },
+    {
+      "path": "16/10495/25374.png",
+      "bytes": 31345,
+      "sha256": "6eea493e105c28e02e4958c3dec85a2e6e898578891d1450073e1ff42975d113",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25374/10495"
+    },
+    {
+      "path": "16/10495/25375.png",
+      "bytes": 32109,
+      "sha256": "40cd2c8c7b0961a76b7ea515c4da4b0f49d37595d0abfd0343797eb457158a67",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25375/10495"
+    },
+    {
+      "path": "16/10495/25376.png",
+      "bytes": 36039,
+      "sha256": "7d283f78900c908be6a7c4f24e91ad766dfda7469178d9428b04ffda8c35a129",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25376/10495"
+    },
+    {
+      "path": "16/10495/25377.png",
+      "bytes": 37032,
+      "sha256": "8044bcc0ce00ee18164e4a9a2dc70a99d768cebf8fe22315ec56d5e5cb83f66f",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25377/10495"
+    },
+    {
+      "path": "16/10495/25378.png",
+      "bytes": 36898,
+      "sha256": "9a63400103a649b565f66f85f635f2e5b7a3d960756339707f89cdbce22029e3",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25378/10495"
+    },
+    {
+      "path": "16/10495/25379.png",
+      "bytes": 36229,
+      "sha256": "14729b5ed9748c7351e514069037bef2863edbefb61e33dda29b3f51165a7f0c",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25379/10495"
+    },
+    {
+      "path": "16/10495/25380.png",
+      "bytes": 35439,
+      "sha256": "0aa5c9e4e2005560d1ef91ef75e83ca10e9cae70e68b191c1e156ae177f05a50",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25380/10495"
+    },
+    {
+      "path": "16/10495/25381.png",
+      "bytes": 34572,
+      "sha256": "5f8907299d4f6c0301099c4fcb10100beb4745a82e7a9f53393700620c0342fb",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25381/10495"
+    },
+    {
+      "path": "16/10495/25382.png",
+      "bytes": 35466,
+      "sha256": "acac81e7bc8dbacb7099727792debe2fbb417063d77c5f30d844abc30db73d42",
+      "source": "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/16/25382/10495"
+    }
+  ]
+}

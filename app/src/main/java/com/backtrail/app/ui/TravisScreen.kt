@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.draw.rotate
 
 internal val TravisGreen = Color(0xFF173F35)
 internal val TravisOrange = Color(0xFFE87742)
@@ -60,7 +61,7 @@ fun TravisScreen(
     onAction: (TravisAction) -> Unit,
     camera: @Composable (Modifier) -> Unit,
     map: @Composable (Modifier) -> Unit = { TravisMap(state, it) },
-    onCameraActiveChanged: (Boolean) -> Unit = {},
+    onHeadingActiveChanged: (Boolean) -> Unit = {},
 ) {
     val dark = isSystemInDarkTheme()
     val palette = if (dark) darkColorScheme(
@@ -87,8 +88,9 @@ fun TravisScreen(
         LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { visible=true }
         LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { visible=false }
         val liveCameraVisible=visible && !state.replay && state.cameraAllowed && state.surface==TravisSurface.AR && !state.captureMode && sheet==null
-        LaunchedEffect(liveCameraVisible) { onCameraActiveChanged(liveCameraVisible) }
-        DisposableEffect(Unit) { onDispose { onCameraActiveChanged(false) } }
+        val liveHeadingVisible=visible && !state.replay && !state.captureMode && sheet==null && state.fixQuality==FixQuality.USABLE && (state.surface==TravisSurface.MAP || liveCameraVisible)
+        LaunchedEffect(liveHeadingVisible) { onHeadingActiveChanged(liveHeadingVisible) }
+        DisposableEffect(Unit) { onDispose { onHeadingActiveChanged(false) } }
         val approach=remember { ApproachFeedback() }
         LaunchedEffect(state.outing.id,state.fix?.time,state.fixQuality,state.target?.id,state.mode,approachHaptics,visible,sheet,state.captureMode,state.replay) {
             val enabled=approachHaptics && visible && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && sheet==null && !state.captureMode && !state.replay && state.mode!=GuidanceMode.NONE && state.fixQuality==FixQuality.USABLE
@@ -157,10 +159,15 @@ fun TravisScreen(
                                 }
                             }
                             if (state.surface == TravisSurface.MAP) {
-                                Surface(shape = CircleShape, color = palette.surface, shadowElevation = 2.dp, modifier = Modifier.semantics { contentDescription = "Map is north up" }) {
-                                    Column(Modifier.size(48.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                                        Text("N", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                        TravisGlyph("north", Modifier.size(18.dp), TravisOrange)
+                                val heading = state.mapHeading.takeIf { state.mapHeadingReliable && state.fixQuality == FixQuality.USABLE }
+                                Surface(shape = RoundedCornerShape(16.dp), color = palette.surface, shadowElevation = 2.dp,
+                                    modifier = Modifier.semantics { contentDescription = if (heading == null) "Map is north up. Compass unavailable; use a fresh GPS fix and move away from magnetic interference." else "Map is north up. Approximate facing direction ${heading.toInt()} degrees." }) {
+                                    Column(Modifier.widthIn(min = 67.dp).padding(horizontal = 8.dp, vertical = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(if (heading == null) "COMPASS" else "NORTH UP", fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                            if (heading != null) TravisGlyph("north", Modifier.size(17.dp).rotate(heading.toFloat()), TravisBlue)
+                                            Text(if (heading == null) "Unavailable" else "≈${heading.toInt()}°", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (heading == null) palette.onSurfaceVariant else TravisBlue)
+                                        }
                                     }
                                 }
                             }
@@ -628,7 +635,7 @@ private fun PrepareSheet(state: TravisUiState, act: (TravisAction) -> Unit, appr
         }
         Switch(checked=approachHaptics,onCheckedChange=onApproachHaptics,modifier=Modifier.semantics { contentDescription="Approach haptics" })
     }
-    Text("Camera and direction sensors pause outside the live view. Gemma runs only when requested; route recording continues with the screen locked.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
+    Text("Camera pauses outside AR or capture. The compass pauses when the app is hidden. Gemma runs only when requested; active route recording continues with the screen locked.",style=MaterialTheme.typography.bodySmall,color=MaterialTheme.colorScheme.onSurfaceVariant)
     PrimaryAction("Allow device permissions", "settings", Modifier.fillMaxWidth()) { act(TravisAction.RequestPermissions) }
     OutlinedButton(onClick = { act(TravisAction.ImportModel) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(if (state.modelReady) "Replace local Gemma model" else "Import local Gemma model") }
     Text("Approximate camera guidance uses your location and camera orientation. It does not place a surveyed route on the ground.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
