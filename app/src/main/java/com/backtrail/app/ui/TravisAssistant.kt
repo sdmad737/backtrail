@@ -36,6 +36,10 @@ internal fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: 
     val keyboard = LocalSoftwareKeyboardController.current
     val historyScroll = rememberScrollState()
     val palette = MaterialTheme.colorScheme
+    val latestAct by rememberUpdatedState(act)
+    DisposableEffect(Unit) {
+        onDispose { latestAct(TravisAction.CancelVoice); latestAct(TravisAction.StopSpeaking) }
+    }
     val canSend = query.isNotBlank() && !state.voiceRecording && !state.voiceProcessing && !state.busy && (state.modelReady || state.replay) && (!photoMode || selectedPhotoId.isNotBlank())
     fun send() {
         if (!canSend) return
@@ -59,6 +63,12 @@ internal fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: 
             TextButton(onClick = close) { Text("Done") }
         }
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(historyScroll).padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            if (state.notice.isNotBlank()) Surface(color = palette.secondaryContainer, shape = RoundedCornerShape(14.dp)) {
+                Row(Modifier.padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(state.notice, Modifier.weight(1f).padding(vertical = 10.dp), style = MaterialTheme.typography.bodySmall)
+                    TextButton(onClick = { act(TravisAction.DismissNotice) }) { Text("OK") }
+                }
+            }
             Surface(color = palette.surfaceContainer, shape = RoundedCornerShape(14.dp)) {
                 Text(if (state.mode == GuidanceMode.RETRACE) "Following your trail to ${state.destinationTitle}. Next: ${state.routeSteps.firstOrNull { it.index == state.routeTargetIndex }?.title ?: state.targetTitle.removePrefix("Next ")}." else "${state.outing.memories.size} saved places · your recorded journey and notes", Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
             }
@@ -133,7 +143,7 @@ internal fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: 
                 if (state.voiceRecording || state.voiceProcessing) TextButton(onClick = { act(TravisAction.CancelVoice) }) { Text("Cancel") }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilledTonalButton(onClick = { act(if (state.voiceRecording) TravisAction.StopVoice else TravisAction.StartVoice) }, enabled = !state.voiceProcessing && (!state.busy || state.voiceRecording) && (state.modelReady || state.replay), modifier = Modifier.heightIn(min = 54.dp), contentPadding = PaddingValues(horizontal = 12.dp), shape = RoundedCornerShape(20.dp)) {
+                FilledTonalButton(onClick = { act(if (state.voiceRecording) TravisAction.StopVoice else TravisAction.StartVoice) }, enabled = !state.voiceProcessing && (!state.busy || state.voiceRecording) && state.modelReady && !state.replay, modifier = Modifier.heightIn(min = 54.dp), contentPadding = PaddingValues(horizontal = 12.dp), shape = RoundedCornerShape(20.dp)) {
                     Text(if (state.voiceRecording) "Finish" else "Voice", style = MaterialTheme.typography.labelMedium)
                 }
                 OutlinedTextField(value = query, onValueChange = { query = it.take(500) }, modifier = Modifier.weight(1f), placeholder = { Text(if (photoMode) "Ask about this photo…" else "Ask about your journey…") }, shape = RoundedCornerShape(24.dp), minLines = 1, maxLines = 3, enabled = !state.busy && !state.voiceRecording && !state.voiceProcessing, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send), keyboardActions = KeyboardActions(onSend = { send() }))
