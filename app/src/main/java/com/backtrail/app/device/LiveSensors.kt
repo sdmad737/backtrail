@@ -17,6 +17,8 @@ object LiveSensors {
     val fix=MutableStateFlow<TrailPoint?>(null)
     val heading=MutableStateFlow<Double?>(null)
     val headingReliable=MutableStateFlow(false)
+    val headingAccuracyDegrees=MutableStateFlow<Double?>(null)
+    val headingStatus=MutableStateFlow("Waiting for compass")
     val mapHeading=MutableStateFlow<Double?>(null)
     val mapHeadingReliable=MutableStateFlow(false)
     val failure=MutableStateFlow("")
@@ -37,8 +39,10 @@ class CameraHeading(context: Context) : SensorEventListener {
     private var cachedDeclination=0.0
     private var previousDisplayRotation:Int?=null
     private var accuracy=SensorManager.SENSOR_STATUS_UNRELIABLE
-    private val expire=Runnable { invalidate() }
-    private fun invalidate() {
+    private val expire=Runnable { invalidate("Compass reading is stale") }
+    private fun invalidate(reason:String="Waiting for compass") {
+        LiveSensors.headingAccuracyDegrees.value=null
+        LiveSensors.headingStatus.value=reason
         LiveSensors.heading.value=null
         LiveSensors.headingReliable.value=false
         LiveSensors.mapHeading.value=null
@@ -51,6 +55,7 @@ class CameraHeading(context: Context) : SensorEventListener {
         if(started)return
         invalidate()
         started=sensor!=null && manager.registerListener(this,sensor,SensorManager.SENSOR_DELAY_UI)
+        if(!started)LiveSensors.headingStatus.value="Compass sensor is unavailable"
     }
     fun stop() {
         if(!started) { invalidate();return }
@@ -62,7 +67,7 @@ class CameraHeading(context: Context) : SensorEventListener {
     override fun onAccuracyChanged(sensor:Sensor?, value:Int) {
         if(!started)return
         accuracy=value
-        if(value<SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM) invalidate()
+        if(value<SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM) invalidate("Move away from magnetic interference")
     }
     override fun onSensorChanged(event:SensorEvent) {
         if(!started)return
@@ -70,9 +75,18 @@ class CameraHeading(context: Context) : SensorEventListener {
         handler.removeCallbacks(expire)
         handler.postDelayed(expire,1_500)
         val fix=LiveSensors.fix.value
-        if(accuracy<SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM || TrailMath.quality(fix,System.currentTimeMillis())!=FixQuality.USABLE || SystemClock.elapsedRealtime()-event.timestamp/1_000_000 !in 0..1_500) {
-            invalidate(); return
+        val measurement=HeadingQuality.assess(event.values,accuracy,event.timestamp/1_000_000,SystemClock.elapsedRealtime())
+        if(!measurement.usable) {
+            invalidate(measurement.reason)
+            LiveSensors.headingAccuracyDegrees.value=measurement.accuracyDegrees
+            return
         }
+        if(TrailMath.quality(fix,System.currentTimeMillis())!=FixQuality.USABLE) {
+            invalidate("Waiting for a fresh GPS fix")
+            return
+        }
+        LiveSensors.headingAccuracyDegrees.value=measurement.accuracyDegrees
+        LiveSensors.headingStatus.value=measurement.reason
         SensorManager.getRotationMatrixFromVector(rotation,event.values)
         if(declinationFixId!=fix!!.id) {
             cachedDeclination=GeomagneticField(fix.latitude.toFloat(),fix.longitude.toFloat(),0f,System.currentTimeMillis()).declination.toDouble()
@@ -84,6 +98,7 @@ class CameraHeading(context: Context) : SensorEventListener {
             filter.reset()
             LiveSensors.heading.value=null
             LiveSensors.headingReliable.value=false
+            LiveSensors.headingStatus.value="Point the camera toward the horizon"
         } else {
             LiveSensors.heading.value=filter.accept(raw,elapsed)
             LiveSensors.headingReliable.value=true
