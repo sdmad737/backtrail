@@ -158,6 +158,11 @@ fun TravisScreen(
                                 }
                             }
                         }
+                        if(state.surface==TravisSurface.AR && !state.replay) FilledTonalIconButton(
+                            onClick = { act(TravisAction.ToggleTorch) }, enabled = state.torchAvailable && !state.torchChanging,
+                            modifier = Modifier.size(48.dp).semantics { contentDescription = if(!state.torchAvailable) "Flashlight unavailable" else if(state.torchOn) "Turn flashlight off" else "Turn flashlight on" },
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = if(state.torchOn) TravisOrange else palette.secondaryContainer),
+                        ) { TravisGlyph("flashlight",Modifier.size(22.dp),if(state.torchOn)Color.White else palette.primary) }
                         FilledTonalIconButton(onClick = { sheet = TravisSheet.PREPARE }, modifier = Modifier.size(48.dp).semantics { contentDescription = "Prepare and settings" }) { TravisGlyph("settings", Modifier.size(22.dp), palette.primary) }
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -280,12 +285,14 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
             val directMemory = outing.memories.firstOrNull { it.id == state.destinationMemoryId }
                 ?: outing.memories.firstOrNull { it.routeIndex == (state.returnRouteStartIndex ?: state.routeTargetIndex) && it.point != null }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = !isRoute, onClick = { directMemory?.let { act(TravisAction.SelectMemory(it.id)) } },
+                FilterChip(selected = !isRoute, onClick = { if(isRoute)directMemory?.let { act(TravisAction.SelectMemory(it.id)) } },
                     enabled = !isRoute || directMemory?.point != null, label = { Text("Direct to place") }, modifier = Modifier.weight(1f).heightIn(min = 48.dp))
                 FilterChip(selected = isRoute, onClick = {
+                    if(!isRoute) {
                     if (state.canReturnAlongRoute && state.selectedMemoryId != null) act(TravisAction.TakeMeBack(state.selectedMemoryId))
                     else act(TravisAction.ResumeRetrace)
                     act(TravisAction.SwitchSurface(state.surface))
+                    }
                 }, enabled = isRoute || state.canReturnAlongRoute || state.canResumeRetrace,
                     label = { Text("Follow trail") }, modifier = Modifier.weight(1f).heightIn(min = 48.dp))
             }

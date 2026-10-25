@@ -279,6 +279,7 @@ internal fun TravisGlyph(kind: String, modifier: Modifier, color: Color) {
             "trail" -> { path(.08f to .82f, .37f to .18f, .56f to .58f, .73f to .32f, .94f to .82f); path(.35f to .83f, .5f to .65f, .66f to .83f) }
             "map" -> { path(.1f to .2f, .36f to .1f, .64f to .24f, .9f to .12f, .9f to .8f, .64f to .91f, .36f to .77f, .1f to .9f, close = true); line(.36f to .1f, .36f to .77f); line(.64f to .24f, .64f to .91f) }
             "ar" -> { path(.1f to .32f, .1f to .1f, .32f to .1f); path(.68f to .1f, .9f to .1f, .9f to .32f); path(.9f to .68f, .9f to .9f, .68f to .9f); path(.32f to .9f, .1f to .9f, .1f to .68f); drawCircle(color, .15f * w, style = Stroke(stroke)) }
+            "flashlight" -> { path(.25f to .28f,.75f to .28f,.62f to .49f,.62f to .9f,.38f to .9f,.38f to .49f,close=true);line(.5f to .03f,.5f to .14f);line(.19f to .09f,.25f to .17f);line(.81f to .09f,.75f to .17f);line(.48f to .58f,.52f to .58f) }
             "camera" -> { path(.08f to .3f, .29f to .3f, .37f to .17f, .63f to .17f, .71f to .3f, .92f to .3f, .92f to .83f, .08f to .83f, close = true); drawCircle(color, .18f * w, Offset(.5f * w, .55f * h), style = Stroke(stroke)) }
             "settings" -> { line(.13f to .25f, .87f to .25f); line(.13f to .75f, .87f to .75f); drawCircle(color, .13f * w, Offset(.35f * w, .25f * h)); drawCircle(color, .13f * w, Offset(.66f * w, .75f * h)) }
             "north" -> path(.5f to .08f, .85f to .9f, .5f to .7f, .15f to .9f, close = true, fill = true)

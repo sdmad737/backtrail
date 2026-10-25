@@ -63,6 +63,10 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
     private var speech:LocalSpeech?=null
     private val recentFixes=mutableListOf<TrailPoint>()
     init {
+        viewModelScope.launch { camera.torch.collect { torch ->
+            mutable.update { it.copy(torchAvailable=torch.available,torchOn=torch.enabled,torchChanging=torch.changing) }
+        } }
+
         viewModelScope.launch { store.outings.collect { items -> liveOuting=items.find { it.id==currentId } ?: Outing();refresh() } }
         viewModelScope.launch { combine(LiveSensors.fix,LiveSensors.failure) { _,_->Unit }.collect { refresh() } }
         viewModelScope.launch { combine(LiveSensors.heading,LiveSensors.headingReliable) { heading,reliable->heading to reliable }.collect { (heading,reliable)->
@@ -252,6 +256,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 mutable.update { it.copy(surface=TravisSurface.AR,captureMode=true,capturedPhotoPath="",notice="") }
             }
             TravisAction.TakePhoto -> takePhotoDraft()
+            TravisAction.ToggleTorch -> if(!mutable.value.replay)camera.toggleTorch(::announce)
             TravisAction.RetakePhoto -> discardPhotoDraft(false)
             TravisAction.CancelCapture -> discardPhotoDraft(true)
             is TravisAction.SavePhoto -> savePhoto(action.note,action.pickup)
@@ -259,6 +264,9 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 mutable.update { it.copy(surface=action.surface,captureMode=false) }
             }
             is TravisAction.SelectMemory -> {
+                if(mutable.value.mode==GuidanceMode.FIND_LANDMARK && mutable.value.selectedMemoryId==action.id) {
+                    mutable.update { it.copy(surface=TravisSurface.AR,captureMode=false) };startGuidanceLocation(mutable.value.outing.id);return
+                }
                 invalidate();val memory=mutable.value.outing.memories.find { it.id==action.id }?:return
                 change { ReturnRoute.suspendForFind(it,memory.id) }
                 mutable.update { it.copy(surface=TravisSurface.AR,captureMode=false,notice="",recognizedMemoryId=null) }
@@ -296,7 +304,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
                 if(memory==null) announce("This saved place is no longer available.")
                 else if(memory.pickup==PickupPhase.NONE) announce("There is no pickup reminder at this place.")
                 else if(memory.pickup==PickupPhase.COLLECTED) announce("Already collected · ${memory.title}")
-                else { val ownerId=mutable.value.outing.id;invalidate();change(onSaved={if(mutable.value.outing.id==ownerId)announce("Collected · ${memory.title}. Your pickup reminder is complete.")}) { outing ->
+                else { val ownerId=mutable.value.outing.id;invalidate();change(onSaved={if(!mutable.value.replay)TravisNotifications.cancelPickup(getApplication(),memory.id);if(mutable.value.outing.id==ownerId)announce("Collected · ${memory.title}. Your pickup reminder is complete.")}) { outing ->
                     outing.copy(memories=outing.memories.map { if(it.id==action.id)it.copy(pickup=PickupPhase.COLLECTED)else it })
                 } }
             }
@@ -478,6 +486,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
 
     private fun takeMeBack(memoryId:String) {
         val outing=mutable.value.outing
+        if(outing.guidance.mode==GuidanceMode.RETRACE && outing.guidance.memoryId==memoryId) { startGuidanceLocation(outing.id);return }
         val plan=ReturnRoute.plan(outing,memoryId)
         if(plan==null) { announce("No continuous recorded return segment connects this place to your current progress. Find in AR offers a labelled direct bearing.");return }
         invalidate();undo.clear()
@@ -491,9 +500,8 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
     }
     private fun deleteMemory(id:String) {
         invalidate()
-        change { ReturnRoute.removeMemory(it,id) }
+        change(onSaved={if(!mutable.value.replay)TravisNotifications.cancelMemoryAlerts(getApplication(),id);announce("Saved place removed. Recorded route is preserved.")}) { ReturnRoute.removeMemory(it,id) }
         mutable.update { it.copy(resultIds=it.resultIds.filterNot { key->key==id },answer="",retryDescriptionId=null) }
-        announce("Saved place removed. Recorded route is preserved.")
     }
     private fun openOuting(id:String) {
         val selected=store.outings.value.find { it.id==id }?:return

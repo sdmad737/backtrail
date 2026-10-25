@@ -1,0 +1,30 @@
+TRAVIS — SMALL DEMO FIX PASS — OCTOBER 24, 2026
+
+Camera/AR now has a flashlight button. Availability and on/off state come from
+the bound CameraX camera. Leaving the camera requests torch-off before unbinding;
+unsupported cameras show a disabled control. No new permission, service or
+continuous inference was added. The preview/replay does not claim a real torch.
+
+Repeatedly selecting the current guidance mode preserves progress and landmark
+recognition. Collecting a pickup dismisses its notification after the save
+succeeds; deleting a place also cancels its pickup and arrival notifications.
+
+VERIFICATION
+214 JVM tests passed; APK and instrumentation APK built offline; lint: zero
+errors, 29 warnings. Nine baseline emulator smoke checks passed. Five focused
+checks passed on the new build, covering guidance, recognition retention,
+pickup notification cancellation, and camera flashlight control availability.
+Emulator tests do not prove a physical LED or outdoor positioning accuracy.
+
+Installed and launched on Pixel 65280DLKX006C8 as com.backtrail.app.integration.
+Saved outing metadata was byte-identical immediately before/after installation.
+The Pixel is locked, so physical flashlight on/off verification remains pending.
+Open Camera, tap the flashlight button, then return to Map to check auto-off.
+
+APK: app/build/outputs/apk/debug/app-debug.apk
+Bytes: 86981318
+SHA256: 4a211535e6d563eeed4db1a3b33c7b24cf90d0117786de6d28c1b922bf7ad8a6
+
+Build: source .tooling/env.sh
+./gradlew --offline -PtravisSideBySide=true :app:testDebugUnitTest \
+  :app:assembleDebug :app:assembleDebugAndroidTest :app:lintDebug

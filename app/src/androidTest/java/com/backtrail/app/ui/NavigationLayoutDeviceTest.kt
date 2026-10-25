@@ -125,4 +125,21 @@ class NavigationLayoutDeviceTest {
         tap("Done");await("Start journey")
     }
 
+    @Test fun flashlightControlBelongsToTheLiveCamera() {
+        automation.grantRuntimePermission(context.packageName,Manifest.permission.CAMERA)
+        launch(false);tap("Camera")
+        var control:AccessibilityNodeInfo?=null
+        repeat(60) {
+            control=nodes(automation.rootInActiveWindow).firstOrNull { it.contentDescription?.toString() in listOf("Turn flashlight on","Flashlight unavailable") }
+            if(control==null)SystemClock.sleep(100)
+        }
+        assertNotNull("Live camera exposes the torch control or unavailable state",control)
+        if(control!!.contentDescription.toString()=="Turn flashlight on") {
+            tap("Turn flashlight on");await("Turn flashlight off")
+            tap("Turn flashlight off");await("Turn flashlight on")
+        } else assertFalse(control!!.isEnabled)
+        tap("Map")
+        assertNull(find("Turn flashlight off"));assertNull(find("Turn flashlight on"));assertNull(find("Flashlight unavailable"))
+    }
+
 }

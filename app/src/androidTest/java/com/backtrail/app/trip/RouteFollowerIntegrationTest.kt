@@ -110,6 +110,19 @@ class RouteFollowerIntegrationTest {
             assertEquals(preserved,direct.outing.suspendedGuidance)
             assertTrue(direct.outing.memories.all { it.pickup==PickupPhase.ARMED })
             report.put("directBearingUsesSelectedPlaceAndPreservesTrail",true)
+            instrumentation.runOnMainSync { model.action(TravisAction.Confirm) }
+            val recognized=withTimeout(5_000) { model.state.first { it.recognizedMemoryId=="goal" } }
+            instrumentation.runOnMainSync { model.action(TravisAction.SelectMemory("goal")) }
+            delay(100)
+            assertEquals("Repeated direct selection preserves recognition","goal",model.state.value.recognizedMemoryId)
+            assertEquals(recognized.outing.guidance,model.state.value.outing.guidance)
+            if(Build.VERSION.SDK_INT>=33)instrumentation.uiAutomation.grantRuntimePermission(app.packageName,android.Manifest.permission.POST_NOTIFICATIONS)
+            assertTrue(com.backtrail.app.device.TravisNotifications.post(app,"goal".hashCode(),"Test pickup","Emulator fixture"))
+            instrumentation.runOnMainSync { model.action(TravisAction.Collect("goal")) }
+            withTimeout(5_000) { model.state.first { it.outing.memories.first { m->m.id=="goal" }.pickup==PickupPhase.COLLECTED } }
+            val notifications=app.getSystemService(android.app.NotificationManager::class.java)
+            withTimeout(5_000) { while(notifications.activeNotifications.any { it.id=="goal".hashCode() })delay(20) }
+            report.put("repeatDirectPreservesRecognition",true).put("collectionDismissesPickupNotification",true)
         } finally {
             instrumentation.runOnMainSync { models.clear();LiveSensors.fix.value=null;LiveSensors.heading.value=null;LiveSensors.headingReliable.value=false;LiveSensors.trackingRunning.value=false }
             if(oldActive==null)prefs.edit().remove("active").commit()else prefs.edit().putString("active",oldActive).commit()

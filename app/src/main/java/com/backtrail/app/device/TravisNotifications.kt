@@ -65,6 +65,13 @@ object TravisNotifications {
             false
         }
     }
+    fun cancelPickup(context: Context, memoryId:String) {
+        context.getSystemService(NotificationManager::class.java).cancel(memoryId.hashCode())
+    }
+    fun cancelMemoryAlerts(context: Context, memoryId:String) {
+        val manager=context.getSystemService(NotificationManager::class.java)
+        manager.cancel(memoryId.hashCode());manager.cancel(("arrival:"+memoryId).hashCode())
+    }
     fun cancelOuting(context: Context, outing: com.backtrail.app.contracts.Outing) {
         val manager=context.getSystemService(NotificationManager::class.java)
         outing.memories.forEach { memory -> manager.cancel(memory.id.hashCode());manager.cancel(("arrival:"+memory.id).hashCode()) }

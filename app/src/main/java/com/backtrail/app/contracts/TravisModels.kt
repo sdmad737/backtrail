@@ -87,6 +87,7 @@ data class TravisUiState(
     val rightWayResult: RightWayCheck.Result? = null,
     val comparisonVerdict: String? = null, val comparisonReasons: List<String> = emptyList(),
     val notice: String = "", val sensorStatus: String = "", val mapAvailable: Boolean = false,
+    val torchAvailable: Boolean = false, val torchOn: Boolean = false, val torchChanging: Boolean = false,
     val cameraAllowed: Boolean = false, val locationAllowed: Boolean = false,
     val notificationsAllowed: Boolean = false, val captureMode: Boolean = false,
     val captureBusy: Boolean = false, val capturedPhotoPath: String = "",
@@ -108,6 +109,7 @@ sealed interface TravisAction {
     data object ReplayNext : TravisAction
     data object Capture : TravisAction
     data object TakePhoto : TravisAction
+    data object ToggleTorch : TravisAction
     data object RetakePhoto : TravisAction
     data object CancelCapture : TravisAction
     data object ImportModel : TravisAction
