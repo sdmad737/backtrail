@@ -18,8 +18,10 @@ Emulator tests do not prove a physical LED or outdoor positioning accuracy.
 
 Installed and launched on Pixel 65280DLKX006C8 as com.backtrail.app.integration.
 Saved outing metadata was byte-identical immediately before/after installation.
-The Pixel is locked, so physical flashlight on/off verification remains pending.
-Open Camera, tap the flashlight button, then return to Map to check auto-off.
+Pixel CameraX reported torch ON after tapping the flashlight control, and the
+live camera/control screenshot was inspected. The phone locked before the
+explicit off/reopen check; camera service then reported no active clients and
+the integration camera disconnected. Manual button-off/reopen remains unchecked.
 
 APK: app/build/outputs/apk/debug/app-debug.apk
 Bytes: 86981318

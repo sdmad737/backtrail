@@ -2,6 +2,8 @@
 
 **Remember the way out. Find the way back.** Travis records an outing, saves photo landmarks and notes, retrieves those memories with local Gemma, and guides you toward them with synchronized map and camera views.
 
+[View the Travis pitch deck (PDF)](docs/presentation/Travis-Pitch.pdf).
+
 This repository contains one **native Android application** and a polished **interactive browser Explore demo** for iPhone/Android-sized screens. The native app now includes CameraX, GPS recording, persistent outings, offline raster maps, ordered retrace, approximate camera guidance and local reminders. Native iOS is not implemented.
 
 Use [the test menu](docs/TEST-NOW.txt) for what is testable and what remains unverified. Start with [the integrated demo guide](docs/DEMO.txt) for the installed Pixel build, exact launch commands, live versus replay evidence, and the two-minute demonstration. Use `main` as the shared baseline. Historical teammate measurements remain in [the backend handoff](docs/BACKEND-HANDOFF.md).
