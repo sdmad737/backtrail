@@ -1,0 +1,74 @@
+TRAVIS — POST-WALK INTEGRATION / OCTOBER 24, 2026
+
+READY TO TRY
+Open Travis Integration on the Pixel. Original app, photos, journeys and models
+are preserved. Updating pauses recording; explicitly Resume journey to record.
+Journeys now opens saved trips while the current journey is paused. Recording
+must be paused before switching; a new journey requires finishing the current one.
+
+CHANGED
+Ask Travis is a real on-device Gemma conversation with recent follow-up context,
+photo/notes and measured path order/distances/gaps. Source cards link to saved
+photos and explicit recorded-route guidance. Up to12 places/six recent message
+turns are included; context is bounded and never claims omitted places were read.
+Chat is session-only: switch journey/restart clears it; Clear chat is explicit.
+Voice -> Finish records up to20seconds in RAM, transcribes locally, then asks
+Travis. Read aloud uses the installed offline phone voice. Leaving the assistant,
+backgrounding or changing context cancels microphone/transcription; no audio file.
+
+Camera guidance has more visible camera area, a larger persistent compass arrow,
+compact translucent overlays, explicit destination + next waypoint and side progress.
+The main AR return action follows successive recorded points. A direct bearing is
+an explicitly separate fallback when no connected recorded route exists. No path
+is invented across a gap. Approximate direction is not world-anchored AR.
+GPS proximity no longer produces an automatic arrival checkmark. Confirmation
+requires bounded fresh GPS and a tap; stable waypoint numbers advance after saving.
+Collected/recognized actions show visible feedback. Collection is persisted.
+Recognition alone does not collect an item or automatically advance a route.
+
+VERIFIED
+173 JVM tests pass, no failures/errors/skips. Build and lint pass (0errors,
+27warnings). Two emulator interaction tests pass: typed conversation/source route,
+AR itinerary, near-target arrow retained, explicit waypoint advancement. Portrait,
+keyboard, weakGPS and130% text inspected. Prior map gesture functionality retained.
+Physical Pixel airplane mode on, Wi-Fi off: three live Gemma conversation turns
+with citations to the actual saved walk, and an original saved-photo question passed.
+Outing metadata was byte-identical before/after the inference test. Text requests
+were10.856s,5.651s,10.785s; original image question10.036s in that test, not a latency
+or accuracy guarantee. No fresh camera capture was used by that image test.
+Existing private audio transcribed successfully (1.451s initialization,1.827s
+inference). Actual microphone produced19,200bytes mono16kHzPCM16, discarded after
+validation. Installed offline TTS reported playback start and completion. Human
+judgment of a new spoken question and audible output still belongs to the walk test.
+
+LIVE / REPLAY
+Normal mode uses real camera/GPS/sensors, private saved photos and Gemma. Only
+Explore uses labelled sample movement, preview photos and sample answers. No
+cloud inference, runtime map downloads or INTERNET permission. GPS remains
+independent from model inference; audio is user-requested, never always listening.
+
+ASSETS
+Existing verified G6 unified model remains installed privately at
+/data/user/0/com.backtrail.app.integration/no_backup/models/gemma-4-E2B-it_Google_Tensor_G6.litertlm
+Mac model: models/gemma-4-E2B-it_Google_Tensor_G6.litertlm
+Bytes3,313,938,293; SHA256f86c7c19c736e9307267946edef58b0a45494a9127036d54d90dd6b7617c95b7.
+No additional speech/model download was required.438offline map rasters unchanged.
+Private evidence/backup paths are ignored under local-data/final-pass/. No personal
+photos, raw answers, routes, model weights or APKs were committed.
+
+LAUNCH / NEXT THREE ACTIONS
+1. Open Travis Integration -> Journeys -> the walk with4saved places; Ask Travis.
+2. Ask where a saved item was, then follow up about what came before that place.
+   Try Voice -> Finish, and Read aloud. Check the original cited photo.
+3. Find in AR via trail -> follow next waypoint around a bend -> confirm explicitly
+   -> observe stable progress -> collect only the actual requested item -> continue.
+A physical repeat walk is still required for heading alignment, field arrival
+behavior and sustained battery consumption. No measured battery claim or native
+world-tracked/iPhone implementation is made.
+
+BUILD
+source .tooling/env.sh
+./gradlew --offline -PtravisSideBySide=true :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+APK: app/build/outputs/apk/debug/app-debug.apk
+Full build/device receipts: final-pass-receipt.json. The teammate pitch deck changes
+were merged from origin/main without overwriting their work.

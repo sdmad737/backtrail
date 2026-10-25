@@ -1,3 +1,6 @@
+POST-WALK UPDATE: FINAL-PASS.txt and final-pass-receipt.json supersede older
+interface/assistant/voice/physical-inference status below. Open Travis Integration.
+
 TRAVIS — INTEGRATED DEMO, OCTOBER 24, 2026
 
 READY TO TRY

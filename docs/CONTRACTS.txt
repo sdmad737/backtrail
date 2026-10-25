@@ -1,3 +1,18 @@
+POST-WALK UPDATE — OCTOBER 24, 2026
+SavedGuidance.firstIndex persists the first return target so itinerary numbering
+remains stable as confirmations advance. Confirmed progress is distinct from GPS
+proximity. Return-route confirmation uses current accuracy <=15m, saved accuracy
+<=25m, distance <=12m, and distance + max(current,saved uncertainty) <=25m.
+Eligibility never displays an automatic arrival checkmark. Explicit confirmation
+checks the unchanged guidance/cursor inside the serialized store mutation; repeat
+taps are guarded and post-save side effects check the originating session.
+Chat uses bounded real route/memory context and validated citations; model answers
+cannot mutate route progress. Recording and transcription are cancelled when the
+assistant closes, activity backgrounds, or its session/journey context changes.
+LocalVoice uses foreground PCM16 mono16kHz (20s maximum) without persistent audio.
+LocalSpeech selects only already installed offline voices. No extra model assets.
+FINAL-PASS.txt records current hardware/UI checks and remaining physical validation.
+
 TRAVIS — IMPLEMENTED CONTRACTS
 
 CANONICAL TYPES

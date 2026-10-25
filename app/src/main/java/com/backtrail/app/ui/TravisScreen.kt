@@ -462,7 +462,7 @@ private fun JourneysSheet(state: TravisUiState, act: (TravisAction) -> Unit, clo
     Eyebrow("SAVED ON THIS PHONE")
     Text("Your journeys", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
     if (state.outing.phase != OutingPhase.READY && state.outing.phase != OutingPhase.ENDED) {
-        Text("${state.outing.name} is ${if (state.outing.phase == OutingPhase.RECORDING) "recording" else "paused"}. Finish this journey before starting another.", style = MaterialTheme.typography.bodyMedium)
+        Text(if (state.outing.phase == OutingPhase.RECORDING) "Pause this journey before viewing another, or finish it before starting a new one." else "Your current journey is paused and saved. You can view an earlier journey below.", style = MaterialTheme.typography.bodyMedium)
         PrimaryAction("Continue current journey", "trail", Modifier.fillMaxWidth()) { if (state.outing.phase == OutingPhase.PAUSED) act(TravisAction.Start); close() }
     } else PrimaryAction("Start a new journey", "trail", Modifier.fillMaxWidth()) { act(TravisAction.Start); close() }
     state.savedOutings.sortedByDescending { it.startedAt }.forEach { outing ->

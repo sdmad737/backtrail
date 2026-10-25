@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-24",
+  "build": {
+    "apk": "app/build/outputs/apk/debug/app-debug.apk",
+    "bytes": 86838162,
+    "sha256": "8a5e12e01f9e99a9b75f7d29999bc88b5103adf0ea203a6f6a0e33c9a9b9642d",
+    "jvm": {
+      "tests": 173,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lintErrors": 0,
+    "lintWarnings": 27
+  },
+  "device": "Pixel 11 Pro",
+  "package": "com.backtrail.app.integration",
+  "offline": {
+    "airplaneMode": true,
+    "wifiEnabled": false,
+    "internetPermission": false
+  },
+  "hardware": {
+    "routeConversation": {
+      "turns": 3,
+      "elapsedMillis": [
+        10856,
+        5651,
+        10785
+      ],
+      "validatedCitations": true,
+      "outingMetadataUnchanged": true
+    },
+    "originalPhotoQuestion": {
+      "elapsedMillis": 10036,
+      "freshCapture": false
+    },
+    "voiceTranscription": {
+      "source": "existing private recording",
+      "initMillis": 1451,
+      "generationMillis": 1827,
+      "backend": "NPU language + CPU audio"
+    },
+    "microphone": {
+      "pcmBytes": 19200,
+      "sampleRate": 16000,
+      "channels": 1,
+      "saved": false
+    },
+    "offlineSpeech": {
+      "engineOnStart": true,
+      "engineOnDone": true
+    }
+  },
+  "emulator": {
+    "uiTests": 2,
+    "largerText": 1.3,
+    "keyboard": true,
+    "nearArrowRetained": true,
+    "explicitWaypointAdvance": true
+  },
+  "remainingPhysicalChecks": [
+    "Walk around a bend through several ordered waypoints",
+    "Speak a new question and judge transcript/answer and audible output",
+    "Measure heading alignment and sustained battery use"
+  ],
+  "privateEvidenceRoot": "local-data/final-pass/"
+}

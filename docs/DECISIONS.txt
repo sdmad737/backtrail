@@ -1,3 +1,11 @@
+POST-WALK FINAL PASS — OCTOBER 24, 2026
+User reported confusing route-vs-direct guidance, premature arrival cues, ineffective
+confirmation controls, obstructed AR and underused assistant context. Preserve all
+post-walk Pixel records. Root owns contracts, TravisViewModel, shared docs/builds,
+integration and device installs. Isolated codex/final-ui owns ui/ and UI tests;
+codex/final-ai owns ai/ and AI tests; codex/final-nav owns trip/ and trip tests.
+Agents request contract additions from root; no overlapping shared-file edits.
+
 MAP QUALITY / COMPASS FOLLOW-UP — OCTOBER 24, 2026
 User requested clearer offline maps and a live position/compass display. Preserved
 all existing models and records. Added USGS Hybrid and full higher-detail Aerial

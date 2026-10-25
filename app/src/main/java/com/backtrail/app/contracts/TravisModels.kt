@@ -20,6 +20,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class SavedGuidance(
     val mode: GuidanceMode = GuidanceMode.NONE, val memoryId: String? = null,
     val returnIndex: Int? = null, val goalIndex: Int? = null, val startIndex: Int? = null,
+    val firstIndex: Int? = null,
 )
 @Serializable data class Outing(
     val id: String = "", val name: String = "A little further", val startedAt: Long = 0,
@@ -33,6 +34,12 @@ import kotlinx.serialization.Serializable
 @Serializable enum class GuidanceMode { NONE, RETRACE, FIND_LANDMARK }
 enum class TravisSurface { MAP, AR }
 enum class AssistantMode { FIND_PLACE, TRIP_QUESTION, PHOTO_QUESTION }
+enum class AssistantRole { USER, TRAVIS }
+data class AssistantMessage(
+    val id: String, val role: AssistantRole, val text: String,
+    val status: AssistantAnswerStatus = AssistantAnswerStatus.NONE, val sourceIds: List<String> = emptyList(),
+)
+data class RouteStep(val index: Int, val title: String, val isPhoto: Boolean, val distanceFromPreviousMeters: Double? = null)
 enum class AssistantAnswerStatus { NONE, LIVE, UNAVAILABLE, FAILURE, INFO, SAMPLE }
 @Serializable data class ReminderSuggestion(val memoryId: String, val task: String)
 data class TravisUiState(
@@ -48,15 +55,21 @@ data class TravisUiState(
     val routeTargetIndex: Int? = null, val returnRouteStartIndex: Int? = null,
     val returnRouteEndIndex: Int? = null, val canReturnAlongRoute: Boolean = false,
     val guidanceStatus: String = "",
+    val routeSteps: List<RouteStep> = emptyList(), val routeStepNumber: Int = 0,
+    val routeStepCount: Int = 0, val routeProgress: Float = 0f,
+    val recognizedMemoryId: String? = null,
     val canResumeRetrace: Boolean = false,
     val notificationMemory: Memory? = null, val notificationOutingName: String = "",
     val bearing: Double? = null, val distanceMeters: Double? = null,
     val remainingMeters: Double? = null, val canConfirm: Boolean = false,
     val replay: Boolean = false, val replayStep: Int = 0,
     val modelReady: Boolean = false, val busy: Boolean = false,
+    val voiceRecording: Boolean = false, val voiceProcessing: Boolean = false,
+    val speaking: Boolean = false, val voiceStatus: String = "",
     val modelBackend: String = "Not loaded", val modelFileName: String = "",
     val modelLoadMillis: Long? = null, val modelGenerateMillis: Long? = null,
     val modelOutcome: String = "Not exercised in this session",
+    val assistantMessages: List<AssistantMessage> = emptyList(),
     val answer: String = "", val resultIds: List<String> = emptyList(),
     val assistantMode: AssistantMode = AssistantMode.FIND_PLACE,
     val answerStatus: AssistantAnswerStatus = AssistantAnswerStatus.NONE,
@@ -99,6 +112,13 @@ sealed interface TravisAction {
     data class SetArrivalReminder(val id: String, val enabled: Boolean) : TravisAction
     data object DismissAssistantResult : TravisAction
     data object CheckDirection : TravisAction
+    data object StartVoice : TravisAction
+    data object StopVoice : TravisAction
+    data object CancelVoice : TravisAction
+    data class ReadAloud(val text: String) : TravisAction
+    data object StopSpeaking : TravisAction
+    data class Chat(val query: String) : TravisAction
+    data object ClearConversation : TravisAction
     data class Ask(val query: String) : TravisAction
     data class AskAboutTrip(val query: String) : TravisAction
     data class AskAboutPhoto(val memoryId: String, val query: String) : TravisAction

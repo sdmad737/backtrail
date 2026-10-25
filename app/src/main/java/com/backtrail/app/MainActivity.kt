@@ -40,8 +40,13 @@ class MainActivity:ComponentActivity() {
             val permissions=rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
                 model.refreshPermissions();pending?.let(model::action);pending=null
             }
+            val microphone=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                if(granted)model.action(TravisAction.StartVoice)else model.announce("Microphone permission is needed for voice. You can still type.")
+            }
+            LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { model.stopForegroundVoice() }
             val act:(TravisAction)->Unit={ action->
                 when {
+                    action==TravisAction.StartVoice && checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=android.content.pm.PackageManager.PERMISSION_GRANTED -> microphone.launch(Manifest.permission.RECORD_AUDIO)
                     action==TravisAction.ImportModel -> importer.launch(arrayOf("*/*"))
                     action==TravisAction.RequestPermissions || (action==TravisAction.Start && !state.locationAllowed && !state.replay) || (action==TravisAction.Capture && !state.cameraAllowed && !state.replay) -> {
                         pending=if(action==TravisAction.RequestPermissions)null else action
@@ -51,7 +56,10 @@ class MainActivity:ComponentActivity() {
                 }
             }
             LaunchedEffect(Unit) { if(savedInstanceState==null && intent.getBooleanExtra("explore",false)) model.action(TravisAction.Explore);intent.removeExtra("explore") }
-            TravisScreen(state,act,camera={ modifier->NativeCamera(model.camera,modifier) { model.announce(it) } },map={ modifier->OfflineTrailMap(state,modifier,onMemorySelected={ id->model.action(TravisAction.SelectMemory(id)) }) },
+            TravisScreen(state,act,camera={ modifier->NativeCamera(model.camera,modifier) { model.announce(it) } },map={ modifier->OfflineTrailMap(state,modifier,onMemorySelected={ id->
+                    if(com.backtrail.app.trip.ReturnRoute.plan(state.outing,id)!=null) { model.action(TravisAction.TakeMeBack(id));model.action(TravisAction.SwitchSurface(TravisSurface.AR)) }
+                    else model.action(TravisAction.SelectMemory(id))
+                }) },
                 onHeadingActiveChanged={ visible ->
                     headingVisible=visible
                     if(visible && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))heading.start()else heading.stop()

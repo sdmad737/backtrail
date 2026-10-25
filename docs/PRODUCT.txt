@@ -24,18 +24,21 @@ and Retrace are distinct modes sharing one source of truth across Map/AR.
 Selecting a memory never advances or replaces the saved retrace cursor.
 
 GEMMA'S ROLE
-Gemma 4 E2B + LiteRT-LM 0.18.0 describe a saved real image and resolve a free-text
-query against up to 12 recent saved descriptions/notes. The model returns strict
-bounded JSON with allowed IDs. User reviews the source photo and chooses Find.
-No fabricated coordinates, model-driven progress or automatic claim of recognition.
-Invalid/late/unavailable results remain visible. Original photos and GPS survive
-model failures. No distillation, fine-tuning or extra embedding model selected.
-Two-image comparison is local supporting evidence only. It never supplies a
-location fix or changes progress; hide comparison reasons unless Gemma returns
-SUPPORTS_MATCH, and let the user decide whether to try again or continue.
-Comparison, trip/photo questions and reminder proposals are wired to the native UI.
-The live app prefers the pinned
-G6/NPU artifact when present, otherwise the pinned generic/GPU artifact.
+Ask Travis is an on-device conversation powered by Gemma 4 E2B + LiteRT-LM.
+Text or an explicitly recorded voice question can reference recent conversation,
+saved photos/notes, measured route order/distances, gaps, next waypoint and goal.
+Context is bounded to 12 selected memories and six recent message turns; active
+and recently cited places are prioritized. Original photos remain directly inspectable.
+Citations are validated against allowed IDs and session/request/revision identity.
+Voice records at most 20 seconds in foreground memory, transcribes using Gemma's
+local audio encoder, then asks in the same conversation. No cloud speech service.
+Read aloud uses an installed offline Android voice; unavailable voices stay visible.
+Conversation history is session-only and clears when switching journeys/restarting.
+No fabricated coordinates, model-driven progress or automatic recognition claims.
+Failures stay explicit and never stop independent GPS recording. G6/NPU is preferred
+when its pinned asset is present; generic/GPU remains the explicit compatible option.
+Two-photo comparison supports human recognition; it never supplies a position fix.
+Trip/photo questions, reminder proposals and editable descriptions remain available.
 
 DETERMINISTIC RESPONSIBILITIES
 GPS service, segment boundaries, true bearing geometry, quality gates, ordered
@@ -57,8 +60,7 @@ SCOPE LIMITS
 Approximate camera guidance is core; richer world-tracked AR remains a hardware
 exploration gate. No ground-anchored arrows, GPS-free localization, autonomous
 route planning, shortcuts, route safety certification, rescue transmission,
-cloud fallback, survival chatbot, plant-safety verdicts, voice input/output,
-continuous pocket camera, telemetry or download-at-use assets in the demo.
+cloud fallback, survival chatbot, plant-safety verdicts, continuous pocket camera, telemetry or download-at-use assets in the demo.
 A physical Pixel trial is the next gate, not a property proven by compilation.
 
 EVIDENCE
