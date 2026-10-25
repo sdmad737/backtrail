@@ -57,6 +57,9 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         viewModelScope.launch { combine(LiveSensors.heading,LiveSensors.headingReliable) { heading,reliable->heading to reliable }.collect { (heading,reliable)->
             if(!mutable.value.replay)mutable.update { it.copy(heading=heading,headingReliable=reliable) }
         } }
+        viewModelScope.launch { combine(LiveSensors.mapHeading,LiveSensors.mapHeadingReliable) { heading,reliable->heading to reliable }.collect { (heading,reliable)->
+            if(!mutable.value.replay)mutable.update { it.copy(mapHeading=heading,mapHeadingReliable=reliable) }
+        } }
         viewModelScope.launch { store.loadError.filterNotNull().collect { announce(it) } }
         viewModelScope.launch { while(isActive) {
             delay(1000)
@@ -93,6 +96,8 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             mode=mode,selectedMemoryId=guide.memoryId,
             heading=if(old.replay) replayHeading else LiveSensors.heading.value,
             headingReliable=if(old.replay)issue!="weak_gps" else LiveSensors.headingReliable.value,
+            mapHeading=if(old.replay)replayHeading else LiveSensors.mapHeading.value,
+            mapHeadingReliable=if(old.replay)issue!="weak_gps" else LiveSensors.mapHeadingReliable.value,
             target=target,targetTitle=if(mode==GuidanceMode.RETRACE) nextPhoto?.title?:"Next recorded waypoint" else destination?.title?:"Choose a saved place",
             targetPhoto=nextPhoto?.photoPath?:"",routeTargetIndex=index,
             destinationMemoryId=destination?.id,destinationTitle=destination?.title?:"Recorded start",

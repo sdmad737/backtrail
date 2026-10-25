@@ -28,10 +28,14 @@ and selected memory/mode. UI renders state and sends actions, not route decision
 RecordingService: user-started foreground GPS; remains independent of inference.
 LiveSensors: observed GPS/heading/reliability/failure/tracking status flows.
 NativeCamera: CameraX preview + captured original app-owned JPEG; visible errors.
-CameraHeading: rotation vector rear-camera -Z projection; geomagnetic declination
+CameraHeading: one listener supplies rear-camera -Z projection and a separate
+map display-top compass, remapped for all four screen rotations; geomagnetic declination
 for true north; unstable/near-vertical projection fails closed. Physical calibration
 and portrait/landscape behavior require Pixel measurements.
-OfflineTrailMap: bundled XYZ rasters, geographic trace, pan/zoom, no network path.
+OfflineTrailMap: bundled hybrid/terrain/aerial XYZ rasters, geographic trace,
+continuous pan/zoom and measured-position cone. Aerial1024px sources are mapped
+to their zoom16 XYZ footprints with coarser tiles underneath. The decoded LRU
+cache is bounded to24MiB. No network path.
 LocalVisionService: one serialized local request with strict result validation,
 using a cached engine. The live app selects G6/NPU when that pinned model is
 present, otherwise generic/GPU. Model replacement serializes with service ownership; cancelled teardown completes off

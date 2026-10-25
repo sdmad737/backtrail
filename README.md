@@ -4,7 +4,7 @@
 
 This repository contains one **native Android application** and a polished **interactive browser Explore demo** for iPhone/Android-sized screens. The native app now includes CameraX, GPS recording, persistent outings, offline raster maps, ordered retrace, approximate camera guidance and local reminders. Native iOS is not implemented.
 
-Start with [the integrated demo guide](docs/DEMO.txt) for the installed Pixel build, exact launch commands, live versus replay evidence, and the two-minute demonstration. Use `main` as the shared baseline. Historical teammate measurements remain in [the backend handoff](docs/BACKEND-HANDOFF.md).
+Use [the test menu](docs/TEST-NOW.txt) for what is testable and what remains unverified. Start with [the integrated demo guide](docs/DEMO.txt) for the installed Pixel build, exact launch commands, live versus replay evidence, and the two-minute demonstration. Use `main` as the shared baseline. Historical teammate measurements remain in [the backend handoff](docs/BACKEND-HANDOFF.md).
 
 ## Start UI work on another laptop
 
@@ -57,9 +57,9 @@ Read the [preparation handoff](docs/PREPARATION-STATUS.md) for actual results, l
 
 ## Project boundaries
 
-Android is Kotlin/Compose, CameraX 1.4.2 and LiteRT-LM 0.18.0. App ID remains `com.backtrail.app` to preserve the starter. The runtime has no Internet permission. Weights, SDKs, recordings and generated APKs are excluded from Git. The prepared USGS terrain and aerial packs cover the Hillsborough venue region. Pinch/pan, double-tap zoom, scale, measured uncertainty and tappable saved-place markers are local. Outside coverage, recorded traces remain visible. The provider serves real tiles through zoom 16 here; closer zoom magnifies them rather than inventing detail.
+Android is Kotlin/Compose, CameraX 1.4.2 and LiteRT-LM 0.18.0. App ID remains `com.backtrail.app` to preserve the starter. The runtime has no Internet permission. Weights, SDKs, recordings and generated APKs are excluded from Git. The prepared USGS Hybrid, Terrain and detailed Aerial packs cover the Hillsborough venue region. Pinch/pan, double-tap zoom, scale, measured uncertainty and tappable saved-place markers are local. Outside coverage, recorded traces remain visible. Terrain/Hybrid use cached zoom-16 imagery; Aerial adds 1024px zoom-16 exports (zoom-18 sampling) for clearer close views. Further zoom enlarges the source detail.
 
-Approach haptics require repeated fresh fixes, conservative uncertainty bounds and a cooldown. Camera and heading sensors stop outside the visible live camera view. Gemma is on-demand; no continuous frame inference or 3D engine runs. Battery endurance has not been measured.
+Approach haptics require repeated fresh fixes, conservative uncertainty bounds and a cooldown. The camera stops outside AR/capture. A single compass listener serves visible Map/AR with good GPS and stops when hidden. Gemma is on-demand; no continuous frame inference or 3D engine runs. Battery endurance has not been measured.
 
 AR is a core screen: real camera + location + rear-camera orientation, approximate bearing, straight-line distance and the original saved photo. It has no ground anchors or automatic visual localization. Gemma proposes saved IDs and descriptions; the user recognizes/ confirms a landmark and controls route progress. GPS recording remains independent of inference.
 

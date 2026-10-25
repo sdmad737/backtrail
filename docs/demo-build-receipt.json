@@ -1,13 +1,13 @@
 {
-  "verified_at_utc": "2026-10-24T23:43:36.179896+00:00",
+  "verified_at_utc": "2026-10-25T00:02:10.656228+00:00",
   "build_command": "./gradlew --offline -PtravisSideBySide=true :app:assembleDebug :app:testDebugUnitTest :app:lintDebug",
   "application_id": "com.backtrail.app.integration",
   "launcher": "Travis Integration",
   "apk_path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/app/build/outputs/apk/debug/app-debug.apk",
-  "apk_bytes": 56652097,
-  "apk_sha256": "e890ed3a5567dfeff94b6be11d87bc9fb18434e8996432f54d11c67234bbebd3",
+  "apk_bytes": 85635644,
+  "apk_sha256": "82661cda5570dac5fe42cc9b82ba1295c5b61a15e1e628bbc4b033de36aca484",
   "unit_tests": {
-    "tests": 138,
+    "tests": 144,
     "failures": 0,
     "errors": 0,
     "skipped": 0
@@ -22,19 +22,36 @@
       "layer": "maps",
       "tiles": 121,
       "bytes": 2785869,
+      "pixels_per_tile": 256,
       "manifest_and_apk_match": true
     },
     {
       "layer": "maps-aerial",
       "tiles": 115,
       "bytes": 3685572,
+      "pixels_per_tile": 256,
+      "manifest_and_apk_match": true
+    },
+    {
+      "layer": "maps-hybrid",
+      "tiles": 121,
+      "bytes": 4190072,
+      "pixels_per_tile": 256,
+      "manifest_and_apk_match": true
+    },
+    {
+      "layer": "maps-detail",
+      "tiles": 81,
+      "bytes": 26729769,
+      "pixels_per_tile": 1024,
       "manifest_and_apk_match": true
     }
   ],
   "internet_permission": false,
-  "pixel_install": "adb install -r succeeded for final zoom20 build; earlier interaction build launched and user confirmed smooth pinch",
+  "pixel_install": "adb install -r succeeded: final Hybrid/detailed Aerial/live compass build",
   "phone_physical_navigation_acceptance": "Pending user walk, real orientation and haptic feedback checks",
-  "source": "Interaction pass after77f016d; see commit containing this receipt",
+  "source": "Map quality and compass follow-up after6b19405; see commit containing this receipt",
   "maximum_map_zoom": 20.0,
-  "device_preferences": "Original USB stay-awake setting restored to0; phone left in airplane mode for offline demo"
+  "device_preferences": "Original USB stay-awake setting restored to0; phone left in airplane mode for offline demo",
+  "map_compass": "Implemented with landscape remapping,10 pure bearing tests; physical alignment pending"
 }

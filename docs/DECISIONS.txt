@@ -1,3 +1,15 @@
+MAP QUALITY / COMPASS FOLLOW-UP — OCTOBER 24, 2026
+User requested clearer offline maps and a live position/compass display. Preserved
+all existing models and records. Added USGS Hybrid and full higher-detail Aerial
+covering the same pre-existing public venue bounds;438 rasters verified against
+local manifests and APK contents. No phone-derived map request was executed.
+Single orientation listener supplies independent display-relative map compass
+and rear-camera AR bearing, with true-north correction and freshness/quality gates.
+Compass/map heading and GPS location are distinct UI fields. Download/readiness
+and physical-test limitations are recorded in DEMO.txt and TEST-NOW.txt.
+144 JVM tests, lint and final APK build pass. Final map renders and injected
+pinch pass in emulator; physical compass alignment and fresh photo AI await user.
+
 CURRENT INTEGRATION UPDATE — OCTOBER 24, 2026
 DEMO.txt and demo-build-receipt.json supersede historical pending-device statements
 below. The final interaction build is installed as Travis Integration beside the

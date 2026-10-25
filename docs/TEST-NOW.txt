@@ -1,0 +1,59 @@
+TRAVIS — WHAT TO TEST NOW
+
+Use Travis Integration on the Pixel. Keep airplane mode on. Resume outing to
+start GPS; wait outside for a usable fix before judging navigation or compass.
+The implemented Android demo is testable. It has not all passed a real walk.
+
+AT THE VENUE WITHOUT WALKING
+- Map: pinch/pan, Hybrid / Terrain / Aerial, tap a numbered photo marker,
+  open its saved place and recenter. Detailed Aerial is most useful close in.
+- Compass: hold the phone roughly flat and turn; blue position cone and the
+  approximate degree readout should turn. Portrait is the rehearsed demo layout; some map controls can be obscured by
+  the dock in landscape. Compass rotation math is separately tested. Unavailable
+  means no trustworthy heading; it must not display a guessed direction.
+- Save a place: original photo + note, asynchronous local Gemma description.
+  A failed description must preserve the photo and expose retry.
+- Ask -> Find a place: paraphrase a saved record, then try an unrelated request.
+  Test both real alternatives and no-match. Latest12 records form the catalog.
+- Ask about trip: bounded to four recent saved places, disclosed in the UI.
+- Ask about photo: choose a saved original from the eight recent photos.
+- Select destination -> Guidance tools -> Compare with a current photo.
+  This invokes image inference. Manual opacity overlay is a separate human aid.
+- Places: inspect original notes versus generated observations, edit and remove.
+  Do not delete a record needed for the actual demo.
+
+WALK TEST (TWO DISTINCT LANDMARKS, ONE BEND)
+1. Resume/start and walk away from the start; save two distinguishable photos.
+   Give one an explicit pickup intention. Lock the screen for part of the walk.
+2. Ask for one place by a fresh description. Check its actual original photo.
+3. Take me back: follow the ordered recording. Switch Map/AR; rotate the phone.
+   The next route point must follow the bend rather than point through it.
+4. Select another memory in Find; resume retrace and check progress survived.
+5. Approach a target with good GPS. Approach haptics are optional, quiet and
+   require measured closing; lack of a buzz during weak/stationary GPS is normal.
+6. Return near the pickup after leaving it. Expect one local notification;
+   tap it and check the correct original record. Explicitly mark collected.
+7. Confirm a nearby waypoint, undo once, then continue. End/reopen the outing;
+   original photos, recorded segments and task state must persist.
+
+OTHER REMINDERS
+Saved-place detail exposes Alert when I arrive. A note can be interpreted into
+a return reminder, but you must approve the proposal. Prepare has a requested
+15-minute inexact time reminder; there is no immediate-test button or duration
+picker. It replaces the prior time reminder and does not survive reboot.
+
+EVIDENCE VERSUS REMAINING WORK
+Verified: build/tests; emulator recording/persistence/reminder and AR flows;
+model installed with full byte/SHA256 check; one real offline Pixel NPU text
+retrieval; physical Pixel pinch confirmed by the user.
+Still needs final integrated-phone proof: fresh image description, image Q&A,
+comparison and trip Q&A; physical locked-screen route, compass alignment,
+AR bearing, reminder thresholds/haptic feel, battery endurance.
+See DEMO.txt and the JSON receipts for measured scope; do not call emulator
+movement, replay data or a previous teammate benchmark a new live phone result.
+
+NOT IMPLEMENTED
+Voice input/spoken output, flashlight/SOS tools, automatic visual localization,
+world-tracked ground arrows, continuous pocket-camera recording, native iOS,
+and arbitrary-region map download/import UI. Current maps are prepared and
+bundled before use. Explore is an explicitly labelled sample rehearsal only.

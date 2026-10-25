@@ -1,0 +1,851 @@
+{
+  "region": "Hillsborough event area",
+  "bounds": {
+    "west": -122.39,
+    "south": 37.549,
+    "east": -122.345,
+    "north": 37.585
+  },
+  "zooms": [
+    16
+  ],
+  "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer",
+  "layer": "aerial-detail",
+  "attribution": "USGS, USDA, The National Map: Orthoimagery. March 12, 2025.",
+  "license": "USDA/USGS public-domain orthoimagery in the conterminous US; service permits copy and image export",
+  "license_source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer?f=pjson",
+  "metadata_source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer?f=pjson",
+  "metadata_bytes": 9028,
+  "metadata_sha256": "a636ef944cf99e9fab0f9ffa0825e06307eb6ada37472af0da42ffcfb017f45b",
+  "metadata": {
+    "currentVersion": 11.3,
+    "serviceDescription": "The USGS NAIP Plus service from The National Map consists of National Agriculture Imagery Program (NAIP) and high resolution orthoimagery (HRO) that combine the visual attributes of an aerial photograph with the spatial accuracy and reliability of a map. Digital orthoimage resolution may vary from 6 inches to 1 meter. In the former resolution, every pixel in an orthoimage covers a six inch square of the earth\u2019s surface, while in the latter resolution, each pixel represents a one meter square. Many states contribute orthoimagery to The National Map, and the USGS also relies on a partnership with the U.S. Department of Agriculture's Farm Service Agency. The National Map download client allows free downloads of public domain, 1-meter resolution orthoimagery in JPEG 2000 (jp2) format for the conterminous United States, with many urban areas and other locations at 1-foot (or better) resolution also in JPEG 2000 (jp2) format. For additional information on orthoimagery, go to https://nationalmap.gov/ortho.html . crdate-20250311",
+    "name": "USGSNAIPPlus",
+    "description": "The USGS NAIP Plus service from The National Map consists of National Agriculture Imagery Program (NAIP) and high resolution orthoimagery (HRO) that combine the visual attributes of an aerial photograph with the spatial accuracy and reliability of a map. Digital orthoimage resolution may vary from 6 inches to 1 meter. In the former resolution, every pixel in an orthoimage covers a six inch square of the earth\u2019s surface, while in the latter resolution, each pixel represents a one meter square. Many states contribute orthoimagery to The National Map, and the USGS also relies on a partnership with the U.S. Department of Agriculture's Farm Service Agency. The National Map download client allows free downloads of public domain, 1-meter resolution orthoimagery in JPEG 2000 (jp2) format for the conterminous United States, with many urban areas and other locations at 1-foot (or better) resolution also in JPEG 2000 (jp2) format. For additional information on orthoimagery, go to https://nationalmap.gov/ortho.html . crdate-20250311",
+    "extent": {
+      "xmin": -19959270.299167845,
+      "ymin": -1646499.8997945245,
+      "xmax": 20018099.399214137,
+      "ymax": 11574978.599670358,
+      "spatialReference": {
+        "wkid": 102100,
+        "latestWkid": 3857
+      }
+    },
+    "initialExtent": {
+      "xmin": -19959270.299167845,
+      "ymin": -1646499.8997945245,
+      "xmax": 20018099.399214137,
+      "ymax": 11574978.599670358,
+      "spatialReference": {
+        "wkid": 102100,
+        "latestWkid": 3857
+      }
+    },
+    "fullExtent": {
+      "xmin": -19959270.299167845,
+      "ymin": -1646499.8997945245,
+      "xmax": 20018099.399214137,
+      "ymax": 11574978.599670358,
+      "spatialReference": {
+        "wkid": 102100,
+        "latestWkid": 3857
+      }
+    },
+    "sortableFields": "",
+    "bandCount": 4,
+    "pixelType": "U8",
+    "minValues": [],
+    "maxValues": [],
+    "meanValues": [],
+    "stdvValues": [],
+    "hasMultidimensions": false,
+    "pixelSizeX": 0.299999999987858,
+    "pixelSizeY": 0.299999999987858,
+    "meanPixelSize": 0.299999999987858,
+    "datasetFormat": "AMD",
+    "uncompressedSize": 23491552621115620,
+    "blockWidth": 2048,
+    "blockHeight": 256,
+    "compressionType": "None",
+    "bandNames": [
+      "Band_1",
+      "Band_2",
+      "Band_3",
+      "Band_4"
+    ],
+    "allowCopy": true,
+    "allowAnalysis": true,
+    "itemAccess": false,
+    "inspectionCapabilities": "",
+    "minPixelSize": 0,
+    "maxPixelSize": 0,
+    "copyrightText": "USGS, USDA, The National Map: Orthoimagery. March 12, 2025.",
+    "serviceDataType": "esriImageServiceDataTypeProcessed",
+    "serviceSourceType": "esriImageServiceSourceTypeMosaicDataset",
+    "objectIdField": "OBJECTID",
+    "fields": [
+      {
+        "name": "OBJECTID",
+        "type": "esriFieldTypeOID",
+        "alias": "OBJECTID",
+        "domain": null
+      },
+      {
+        "name": "Shape",
+        "type": "esriFieldTypeGeometry",
+        "alias": "Shape",
+        "domain": null
+      },
+      {
+        "name": "Name",
+        "type": "esriFieldTypeString",
+        "alias": "Name",
+        "domain": null,
+        "length": 200
+      },
+      {
+        "name": "MinPS",
+        "type": "esriFieldTypeDouble",
+        "alias": "MinPS",
+        "domain": null
+      },
+      {
+        "name": "MaxPS",
+        "type": "esriFieldTypeDouble",
+        "alias": "MaxPS",
+        "domain": null
+      },
+      {
+        "name": "Category",
+        "type": "esriFieldTypeInteger",
+        "alias": "Category",
+        "domain": {
+          "type": "codedValue",
+          "name": "MosaicCatalogItemCategoryDomain",
+          "description": "Catalog item categories.",
+          "codedValues": [
+            {
+              "name": "Unknown",
+              "code": 0
+            },
+            {
+              "name": "Primary",
+              "code": 1
+            },
+            {
+              "name": "Overview",
+              "code": 2
+            },
+            {
+              "name": "Unprocessed Overview",
+              "code": 3
+            },
+            {
+              "name": "Partial Overview",
+              "code": 4
+            },
+            {
+              "name": "Inactive",
+              "code": 5
+            },
+            {
+              "name": "Uploaded",
+              "code": 253
+            },
+            {
+              "name": "Incomplete",
+              "code": 254
+            },
+            {
+              "name": "Custom",
+              "code": 255
+            }
+          ],
+          "mergePolicy": "esriMPTDefaultValue",
+          "splitPolicy": "esriSPTDefaultValue"
+        }
+      },
+      {
+        "name": "CenterX",
+        "type": "esriFieldTypeDouble",
+        "alias": "CenterX",
+        "domain": null
+      },
+      {
+        "name": "CenterY",
+        "type": "esriFieldTypeDouble",
+        "alias": "CenterY",
+        "domain": null
+      },
+      {
+        "name": "State",
+        "type": "esriFieldTypeString",
+        "alias": "State",
+        "domain": null,
+        "length": 2
+      },
+      {
+        "name": "Year",
+        "type": "esriFieldTypeSmallInteger",
+        "alias": "Year",
+        "domain": null
+      },
+      {
+        "name": "raster_name",
+        "type": "esriFieldTypeString",
+        "alias": "raster_name",
+        "domain": null,
+        "length": 256
+      },
+      {
+        "name": "download_url",
+        "type": "esriFieldTypeString",
+        "alias": "download_url",
+        "domain": null,
+        "length": 256
+      },
+      {
+        "name": "acquisition_date",
+        "type": "esriFieldTypeDate",
+        "alias": "acquisition_date",
+        "domain": null,
+        "length": 8
+      },
+      {
+        "name": "agency",
+        "type": "esriFieldTypeString",
+        "alias": "agency",
+        "domain": null,
+        "length": 16
+      },
+      {
+        "name": "vendor",
+        "type": "esriFieldTypeString",
+        "alias": "vendor",
+        "domain": null,
+        "length": 16
+      },
+      {
+        "name": "resolution_value",
+        "type": "esriFieldTypeDouble",
+        "alias": "resolution_value",
+        "domain": null
+      },
+      {
+        "name": "resolution_units",
+        "type": "esriFieldTypeString",
+        "alias": "resolution_units",
+        "domain": null,
+        "length": 5
+      },
+      {
+        "name": "band_count",
+        "type": "esriFieldTypeInteger",
+        "alias": "band_count",
+        "domain": null
+      },
+      {
+        "name": "sensor_type",
+        "type": "esriFieldTypeString",
+        "alias": "sensor_type",
+        "domain": null,
+        "length": 4
+      },
+      {
+        "name": "projection_name",
+        "type": "esriFieldTypeString",
+        "alias": "projection_name",
+        "domain": null,
+        "length": 64
+      },
+      {
+        "name": "projection_zone",
+        "type": "esriFieldTypeString",
+        "alias": "projection_zone",
+        "domain": null,
+        "length": 8
+      },
+      {
+        "name": "datum",
+        "type": "esriFieldTypeString",
+        "alias": "datum",
+        "domain": null,
+        "length": 8
+      }
+    ],
+    "capabilities": "Image,Metadata,Catalog,Mensuration",
+    "defaultMosaicMethod": "ByAttribute",
+    "allowedMosaicMethods": "ByAttribute,Center,LockRaster",
+    "sortField": "Year",
+    "sortValue": "3000",
+    "sortAscending": true,
+    "mosaicOperator": "First",
+    "maxDownloadSizeLimit": 2048,
+    "defaultCompressionQuality": 90,
+    "defaultResamplingMethod": "Nearest",
+    "maxImageHeight": 4000,
+    "maxImageWidth": 4000,
+    "maxRecordCount": 50,
+    "maxDownloadImageCount": 0,
+    "maxMosaicImageCount": 50,
+    "allowRasterFunction": true,
+    "rasterFunctionInfos": [
+      {
+        "name": "NaturalColor",
+        "description": "Natural Color bands red, green, blue (1, 2, 3) displayed with fixed stretch.",
+        "help": ""
+      },
+      {
+        "name": "FalseColorComposite",
+        "description": "Bands near-infrared, red, green (4, 1, 2) displayed with fixed stretch.",
+        "help": ""
+      },
+      {
+        "name": "NDVI_Color",
+        "description": "Normalized difference vegetation index (NDVI) with color map. Dark green is thick vigorous vegetation and brown represents sparse vegetation.",
+        "help": ""
+      },
+      {
+        "name": "None",
+        "description": "Make a Raster or Raster Dataset into a Function Raster Dataset.",
+        "help": ""
+      }
+    ],
+    "rasterTypeInfos": [
+      {
+        "name": "Raster Dataset",
+        "description": "Supports all ArcGIS Raster Datasets",
+        "help": ""
+      }
+    ],
+    "mensurationCapabilities": "Basic",
+    "hasHistograms": false,
+    "hasColormap": false,
+    "hasRasterAttributeTable": false,
+    "minScale": 0,
+    "maxScale": 0,
+    "exportTilesAllowed": false,
+    "supportsStatistics": true,
+    "supportsAdvancedQueries": true,
+    "editFieldsInfo": null,
+    "ownershipBasedAccessControlForRasters": null,
+    "allowComputeTiePoints": false,
+    "useStandardizedQueries": true,
+    "advancedQueryCapabilities": {
+      "useStandardizedQueries": true,
+      "supportsStatistics": true,
+      "supportsOrderBy": true,
+      "supportsDistinct": true,
+      "supportsPagination": true
+    },
+    "spatialReference": {
+      "wkid": 102100,
+      "latestWkid": 3857
+    }
+  },
+  "prepared_at": "2026-10-25T00:00:59.329751+00:00",
+  "complete": true,
+  "request_kind": "exportImage",
+  "tile_pixels": 1024,
+  "cached_max_zoom": 16,
+  "detail_note": "1024px RGB JPEG exports over XYZ zoom-16 extents; same sampling as 512px zoom-17 exports with fewer requests. Source imagery resolution and date vary.",
+  "hash_note": "Locally calculated full SHA-256; USGS does not publish independent tile digests.",
+  "files": [
+    {
+      "path": "16/10487/25374.jpg",
+      "bytes": 338325,
+      "sha256": "0c0eb020affc513fb247f64729a4d74fa652cd46ef7837ad2c56610aa858ad1b",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624747.417776097%2C4520791.600898465%2C-13624135.921549816%2C4521403.097124746&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10487/25375.jpg",
+      "bytes": 336386,
+      "sha256": "26bc9b25fdf9b4aee861148c76e6d993937855f92f8adeedbe9420c0549d85ca",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624747.417776097%2C4520180.104672182%2C-13624135.921549816%2C4520791.600898465&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10487/25376.jpg",
+      "bytes": 353591,
+      "sha256": "151124abf7057d1b3291f087b4c90e2256825d000e41db5a0a53c765c04ffc05",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624747.417776097%2C4519568.608445901%2C-13624135.921549816%2C4520180.104672182&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10487/25377.jpg",
+      "bytes": 343480,
+      "sha256": "f6e0429aa4d242cf4f81dd801c38dbd35b8e49ffbef4325103b993e5b649efdd",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624747.417776097%2C4518957.112219620%2C-13624135.921549816%2C4519568.608445901&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10487/25378.jpg",
+      "bytes": 338926,
+      "sha256": "a86dc17f081ecbab94c98d28c1acc4ac1a77d00bca1e62e4295bfd4d89f465e4",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624747.417776097%2C4518345.615993340%2C-13624135.921549816%2C4518957.112219620&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10487/25379.jpg",
+      "bytes": 276884,
+      "sha256": "8315937ab5143b6138ea2a14a6f58e438a119300ba4f1b69ce2cb91ad068eb86",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624747.417776097%2C4517734.119767057%2C-13624135.921549816%2C4518345.615993340&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10487/25380.jpg",
+      "bytes": 296422,
+      "sha256": "796a16a0e1798510ea36fc24f601476a3c99a0d05d5593c6e294981bc5696090",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624747.417776097%2C4517122.623540776%2C-13624135.921549816%2C4517734.119767057&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10487/25381.jpg",
+      "bytes": 250253,
+      "sha256": "09b3f5295bc67a465ba61cfaa2b739b790b7f8068a5d89043d9be49f95b1ed01",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624747.417776097%2C4516511.127314495%2C-13624135.921549816%2C4517122.623540776&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10487/25382.jpg",
+      "bytes": 283041,
+      "sha256": "67db58aba9f2b6b92529957800bca8b87c9333b22c3d1782355ae292a898d7da",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624747.417776097%2C4515899.631088214%2C-13624135.921549816%2C4516511.127314495&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10488/25374.jpg",
+      "bytes": 334888,
+      "sha256": "4c467f1de3103be9f221229e8d11c58da56abd2365466bd6cea8ca74b2e301a5",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624135.921549816%2C4520791.600898465%2C-13623524.425323535%2C4521403.097124746&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10488/25375.jpg",
+      "bytes": 325448,
+      "sha256": "da1bc82adc26990c967fc159e24e26e70b0429ad1ff149c2d14a1fadbd038c78",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624135.921549816%2C4520180.104672182%2C-13623524.425323535%2C4520791.600898465&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10488/25376.jpg",
+      "bytes": 333705,
+      "sha256": "8ea8c7e2879c1fce1f9f594b02f5cfbfdd26d19775773629594b8b9be810517c",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624135.921549816%2C4519568.608445901%2C-13623524.425323535%2C4520180.104672182&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10488/25377.jpg",
+      "bytes": 344333,
+      "sha256": "a56a5883e819b46dd7707bec4bcb36e683e32e5c663b020493db7fd09be4c081",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624135.921549816%2C4518957.112219620%2C-13623524.425323535%2C4519568.608445901&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10488/25378.jpg",
+      "bytes": 334891,
+      "sha256": "a40e449fa40cc562ac5639e3ec6c49ad1e652a9341cf31362f5ba36d55aff57b",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624135.921549816%2C4518345.615993340%2C-13623524.425323535%2C4518957.112219620&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10488/25379.jpg",
+      "bytes": 326862,
+      "sha256": "7bcc4cc06b4144597321060817bd2d77b86ca64bc67ddc11a6a65d6e3cb699ef",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624135.921549816%2C4517734.119767057%2C-13623524.425323535%2C4518345.615993340&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10488/25380.jpg",
+      "bytes": 266854,
+      "sha256": "9bc350049f0a3f4a0ba79deaa904f0f7e20f9bb6937f0bab2d595bc7fd635e8d",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624135.921549816%2C4517122.623540776%2C-13623524.425323535%2C4517734.119767057&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10488/25381.jpg",
+      "bytes": 278963,
+      "sha256": "0a0f6addc79856a429ccef29c57f6eedafabe721bffe962fb91f8b8aaebc9934",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624135.921549816%2C4516511.127314495%2C-13623524.425323535%2C4517122.623540776&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10488/25382.jpg",
+      "bytes": 312830,
+      "sha256": "5a99def3ab52dd667ae97575a8f7c3f51befb6906979f5ee7d593356eefeb961",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13624135.921549816%2C4515899.631088214%2C-13623524.425323535%2C4516511.127314495&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10489/25374.jpg",
+      "bytes": 377641,
+      "sha256": "55545f98b62553a8cc05cfadd65c5c9247aa07e322974c7bd00435e480d0a3ea",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13623524.425323535%2C4520791.600898465%2C-13622912.929097254%2C4521403.097124746&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10489/25375.jpg",
+      "bytes": 394025,
+      "sha256": "dbc13cce4205286e2b82fc574beef59c6fb3fdf9f313c294e83492d6699618fa",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13623524.425323535%2C4520180.104672182%2C-13622912.929097254%2C4520791.600898465&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10489/25376.jpg",
+      "bytes": 364341,
+      "sha256": "7f6041965c3d5d3ddd2203ffb347e8ccbca29af14cc0272db984c55ba9f0d0a9",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13623524.425323535%2C4519568.608445901%2C-13622912.929097254%2C4520180.104672182&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10489/25377.jpg",
+      "bytes": 338812,
+      "sha256": "e2f9bc446fd3d9f0162f147aac2fd81f5a065678b537d62e7112066ddb837c98",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13623524.425323535%2C4518957.112219620%2C-13622912.929097254%2C4519568.608445901&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10489/25378.jpg",
+      "bytes": 325795,
+      "sha256": "1515bb85d1aeb4ec7f7174544f7a3447cf1b088d431b9f09ac018277fa64d7ce",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13623524.425323535%2C4518345.615993340%2C-13622912.929097254%2C4518957.112219620&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10489/25379.jpg",
+      "bytes": 330784,
+      "sha256": "6580995d3be42c25126fe4414dfa472ae9bc1ecdc3d645cefcebb80098ff9fe9",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13623524.425323535%2C4517734.119767057%2C-13622912.929097254%2C4518345.615993340&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10489/25380.jpg",
+      "bytes": 337318,
+      "sha256": "3b19397bb5101a9fea1641d191adceff9d2215d2ef7018b4c208c5774e2ba911",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13623524.425323535%2C4517122.623540776%2C-13622912.929097254%2C4517734.119767057&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10489/25381.jpg",
+      "bytes": 305012,
+      "sha256": "ff9230e7c0d1515165fe25129805059212df757cadd9126b5dfd74c8c22b36a5",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13623524.425323535%2C4516511.127314495%2C-13622912.929097254%2C4517122.623540776&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10489/25382.jpg",
+      "bytes": 268664,
+      "sha256": "1097793ebe4f7b53409204269a0f358004484719b33594ed4b54d2e99310a747",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13623524.425323535%2C4515899.631088214%2C-13622912.929097254%2C4516511.127314495&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10490/25374.jpg",
+      "bytes": 374878,
+      "sha256": "c44da61c10d156cd288afc350d37c8640a7fa80fab9b5adf0e3ed2837c28c932",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622912.929097254%2C4520791.600898465%2C-13622301.432870971%2C4521403.097124746&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10490/25375.jpg",
+      "bytes": 379515,
+      "sha256": "fa3694661a7069f5a7634017b7593e1802be682909846d290078722e56453f63",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622912.929097254%2C4520180.104672182%2C-13622301.432870971%2C4520791.600898465&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10490/25376.jpg",
+      "bytes": 341093,
+      "sha256": "21ce714f4e41bd44bb43696facf5cfc235aa2a90e54db308906301a3242b5b0b",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622912.929097254%2C4519568.608445901%2C-13622301.432870971%2C4520180.104672182&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10490/25377.jpg",
+      "bytes": 326516,
+      "sha256": "afaf81b4d1467d1092f7e7d660fedda0739de97e2147987117faf60b3c94d131",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622912.929097254%2C4518957.112219620%2C-13622301.432870971%2C4519568.608445901&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10490/25378.jpg",
+      "bytes": 319171,
+      "sha256": "8f91a03e9066ac5623afbc87cb19f6d46b4a28d74774de52e6a33708f787379a",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622912.929097254%2C4518345.615993340%2C-13622301.432870971%2C4518957.112219620&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10490/25379.jpg",
+      "bytes": 321388,
+      "sha256": "a361b89d43a43354cca0a18b35174605c5758688056219adadb0e21976bf2344",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622912.929097254%2C4517734.119767057%2C-13622301.432870971%2C4518345.615993340&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10490/25380.jpg",
+      "bytes": 320964,
+      "sha256": "962196cfff3cdc363947967ca0df74fca0c07ffba1cb6d95983bb7a23ef708b4",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622912.929097254%2C4517122.623540776%2C-13622301.432870971%2C4517734.119767057&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10490/25381.jpg",
+      "bytes": 350087,
+      "sha256": "4bd82ce1bf56e5e71e2fdcdc5ce0d9b1711d6eb89d40dd848bbeefc3d2ced043",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622912.929097254%2C4516511.127314495%2C-13622301.432870971%2C4517122.623540776&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10490/25382.jpg",
+      "bytes": 326868,
+      "sha256": "8e11305d6d1029523e1080f0c25ebc9f1608bec050659fd7ff47b9ffd1b7e849",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622912.929097254%2C4515899.631088214%2C-13622301.432870971%2C4516511.127314495&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10491/25374.jpg",
+      "bytes": 350028,
+      "sha256": "ecc6d613b526c6056db8d982269213530dc9e01d210eaab6d28f0e6bf07388d9",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622301.432870971%2C4520791.600898465%2C-13621689.936644690%2C4521403.097124746&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10491/25375.jpg",
+      "bytes": 364972,
+      "sha256": "6d553a947d0a3ef5e5ba8ab437817ea580f6d4777ef6c5e02e39df4ce0d0f464",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622301.432870971%2C4520180.104672182%2C-13621689.936644690%2C4520791.600898465&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10491/25376.jpg",
+      "bytes": 324242,
+      "sha256": "12522d02bd7a73d117a9093a5f1b8f3b7ceecebbbdc0159d5948fb916cfa7a8d",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622301.432870971%2C4519568.608445901%2C-13621689.936644690%2C4520180.104672182&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10491/25377.jpg",
+      "bytes": 309928,
+      "sha256": "41c581bfc04e6f9a2d429998907523bc2eed8f46716348b2f6bf127f32d05dd5",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622301.432870971%2C4518957.112219620%2C-13621689.936644690%2C4519568.608445901&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10491/25378.jpg",
+      "bytes": 285733,
+      "sha256": "a8894eabc297a86d7d6976e448cff57b6c35d32cd93221715471661a95d6196e",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622301.432870971%2C4518345.615993340%2C-13621689.936644690%2C4518957.112219620&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10491/25379.jpg",
+      "bytes": 324023,
+      "sha256": "bf2177a62df2b10edd15787ccb5e8d85a7839b6401fbc7b0d13e872078b03de4",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622301.432870971%2C4517734.119767057%2C-13621689.936644690%2C4518345.615993340&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10491/25380.jpg",
+      "bytes": 328334,
+      "sha256": "10604531b0640a7c9c08f8e13778622523056a4d30c3be9c83317cbeb8d2f316",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622301.432870971%2C4517122.623540776%2C-13621689.936644690%2C4517734.119767057&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10491/25381.jpg",
+      "bytes": 327719,
+      "sha256": "5f939666e216fc61714848ff98e6bb9baf4a6a96a6862a76d20321560ffde17b",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622301.432870971%2C4516511.127314495%2C-13621689.936644690%2C4517122.623540776&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10491/25382.jpg",
+      "bytes": 327651,
+      "sha256": "876a30c3b19edb92614c292443e9ed83104855c78813b9b5aa8300ec03a2f335",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13622301.432870971%2C4515899.631088214%2C-13621689.936644690%2C4516511.127314495&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10492/25374.jpg",
+      "bytes": 333777,
+      "sha256": "75e187a8a122e79b4b70bc4398b2660ac46196822e0c5d3fbfe9835f00d71388",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621689.936644690%2C4520791.600898465%2C-13621078.440418407%2C4521403.097124746&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10492/25375.jpg",
+      "bytes": 340278,
+      "sha256": "a3ecad27918e14ca1d5fc7c554784655980d3a92a09cfa7bf6f9fd6b035e5a56",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621689.936644690%2C4520180.104672182%2C-13621078.440418407%2C4520791.600898465&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10492/25376.jpg",
+      "bytes": 328050,
+      "sha256": "af08447fc931b52de7f0fef5e225d8e4f212b7e30300ad079bae53dc97bbdbaf",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621689.936644690%2C4519568.608445901%2C-13621078.440418407%2C4520180.104672182&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10492/25377.jpg",
+      "bytes": 261449,
+      "sha256": "bbffee025994828fdff5d3d7de96982faf4c060b209415882148e4e7a046e964",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621689.936644690%2C4518957.112219620%2C-13621078.440418407%2C4519568.608445901&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10492/25378.jpg",
+      "bytes": 281184,
+      "sha256": "391633ccdb1bf928b21a9708806df32ee04891ee3dae88d513d262aaec600638",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621689.936644690%2C4518345.615993340%2C-13621078.440418407%2C4518957.112219620&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10492/25379.jpg",
+      "bytes": 322333,
+      "sha256": "909c8c0fafcc754f29a937c2885f3bd4e095a19f9f52b0111bb48c04c7d2920b",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621689.936644690%2C4517734.119767057%2C-13621078.440418407%2C4518345.615993340&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10492/25380.jpg",
+      "bytes": 310745,
+      "sha256": "a494fb6e5bc5e42602b4bbebef85e689de311f594bbe9cd854fe94521ba40412",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621689.936644690%2C4517122.623540776%2C-13621078.440418407%2C4517734.119767057&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10492/25381.jpg",
+      "bytes": 312689,
+      "sha256": "5b6f638b71524644495052102eca4f5926308cc54abb6cf34f44ce1457db3670",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621689.936644690%2C4516511.127314495%2C-13621078.440418407%2C4517122.623540776&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10492/25382.jpg",
+      "bytes": 322328,
+      "sha256": "511dc48f0e029205735ecad649e215c837deafd2c72bc00ceffa653d7b3324be",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621689.936644690%2C4515899.631088214%2C-13621078.440418407%2C4516511.127314495&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10493/25374.jpg",
+      "bytes": 322827,
+      "sha256": "d9f2b7bed818995e974953f50f4700d4ccaa128f5fbfc4811cf5654b0f60e1aa",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621078.440418407%2C4520791.600898465%2C-13620466.944192126%2C4521403.097124746&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10493/25375.jpg",
+      "bytes": 350791,
+      "sha256": "da5ad9585b85fb5cd82aad2eac6009b293e424976d3d5a402d5d6f883b92afa5",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621078.440418407%2C4520180.104672182%2C-13620466.944192126%2C4520791.600898465&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10493/25376.jpg",
+      "bytes": 333675,
+      "sha256": "ae675163bc8d0283191428baf623a663ab396b200b90943d9215ffae6f764f98",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621078.440418407%2C4519568.608445901%2C-13620466.944192126%2C4520180.104672182&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10493/25377.jpg",
+      "bytes": 303835,
+      "sha256": "dad99d58e8eec95be90cc2e804c14104e9170394770d662a45b8fbf89027da62",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621078.440418407%2C4518957.112219620%2C-13620466.944192126%2C4519568.608445901&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10493/25378.jpg",
+      "bytes": 335862,
+      "sha256": "62b68a40e0dc51898c7841c7a0f63b1fcd8883b79796d3b22b7f852495033278",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621078.440418407%2C4518345.615993340%2C-13620466.944192126%2C4518957.112219620&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10493/25379.jpg",
+      "bytes": 336950,
+      "sha256": "b091b6a0aa7eeae037e50024df547267618ed92b8ba42d938a71562deb121182",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621078.440418407%2C4517734.119767057%2C-13620466.944192126%2C4518345.615993340&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10493/25380.jpg",
+      "bytes": 339650,
+      "sha256": "2e07e5ab79129d4546fe7d088e3b96ce7dc1d6630f8e5ef0f2b9360ede6726af",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621078.440418407%2C4517122.623540776%2C-13620466.944192126%2C4517734.119767057&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10493/25381.jpg",
+      "bytes": 320163,
+      "sha256": "03c17dc4242ea2868d37e645368a580ce25f24b97c8fbf399aba979b4ad03be6",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621078.440418407%2C4516511.127314495%2C-13620466.944192126%2C4517122.623540776&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10493/25382.jpg",
+      "bytes": 319942,
+      "sha256": "ba8ee3f890c25a8ed4c612f3d34b51f46888b4dbfac57d6470aeba3145034214",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13621078.440418407%2C4515899.631088214%2C-13620466.944192126%2C4516511.127314495&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10494/25374.jpg",
+      "bytes": 324611,
+      "sha256": "0c173b1526686b7c93d1f42a2e513663dceae5cc29c145991b0afac46717bb56",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13620466.944192126%2C4520791.600898465%2C-13619855.447965845%2C4521403.097124746&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10494/25375.jpg",
+      "bytes": 339293,
+      "sha256": "dfdb8abdcb25931c8190a9bacf86266014a18704c7b50a633f41c957206f92aa",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13620466.944192126%2C4520180.104672182%2C-13619855.447965845%2C4520791.600898465&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10494/25376.jpg",
+      "bytes": 345380,
+      "sha256": "5ac033de6b6d75b702b232c24ec96927c29ee24b06f59a533b09d7d847ddde1f",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13620466.944192126%2C4519568.608445901%2C-13619855.447965845%2C4520180.104672182&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10494/25377.jpg",
+      "bytes": 355752,
+      "sha256": "512fb1d5a77c209916f9a78b0ceb8f763e74e3c813deb27bc251a3107104892f",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13620466.944192126%2C4518957.112219620%2C-13619855.447965845%2C4519568.608445901&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10494/25378.jpg",
+      "bytes": 357693,
+      "sha256": "331c1ac60bb656bdbaa88bb0eef2929b9800751ef6166aad14433f1c336fda3b",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13620466.944192126%2C4518345.615993340%2C-13619855.447965845%2C4518957.112219620&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10494/25379.jpg",
+      "bytes": 356221,
+      "sha256": "5ba9ff631248ac755e8e5a4fff76d2f344464f6589b309bd5f84af8b48e18d7c",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13620466.944192126%2C4517734.119767057%2C-13619855.447965845%2C4518345.615993340&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10494/25380.jpg",
+      "bytes": 347494,
+      "sha256": "ab0c3f53c0d473028134d2d54b8d3793430bd485ffe2103717ec346c9a9d2b4c",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13620466.944192126%2C4517122.623540776%2C-13619855.447965845%2C4517734.119767057&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10494/25381.jpg",
+      "bytes": 336319,
+      "sha256": "87c1cb8197c0c22766504bc66a2624ff8181134b2c055998d2a3af0c8274aa1a",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13620466.944192126%2C4516511.127314495%2C-13619855.447965845%2C4517122.623540776&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10494/25382.jpg",
+      "bytes": 347670,
+      "sha256": "8418a48c50ec2f3adfd4a55327be85de7c6e72dff9177e3efee44ebd109950ba",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13620466.944192126%2C4515899.631088214%2C-13619855.447965845%2C4516511.127314495&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10495/25374.jpg",
+      "bytes": 317036,
+      "sha256": "2b3c8b48a47dc47de54cf5083c3b65e49b6b2e6cab586af39dbb249e898f9ae7",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13619855.447965845%2C4520791.600898465%2C-13619243.951739565%2C4521403.097124746&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10495/25375.jpg",
+      "bytes": 325518,
+      "sha256": "da96b21eb7df84907d685025600fd799bb4c503edb07b27e765094c00df2af3d",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13619855.447965845%2C4520180.104672182%2C-13619243.951739565%2C4520791.600898465&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10495/25376.jpg",
+      "bytes": 347229,
+      "sha256": "b97242082f0bfa48400ffde1076feec48e006fbd2cb1de7f24a6ca3e88f6f314",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13619855.447965845%2C4519568.608445901%2C-13619243.951739565%2C4520180.104672182&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10495/25377.jpg",
+      "bytes": 366546,
+      "sha256": "d817a375cde66446aac68f45c24bfdac5cf95ed2dd948f4795d1dc48cc0834b8",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13619855.447965845%2C4518957.112219620%2C-13619243.951739565%2C4519568.608445901&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10495/25378.jpg",
+      "bytes": 361203,
+      "sha256": "dd41aefce1927aafa69dc9693b8664dfd30aec3834cdeb6329ffa13babd9e55e",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13619855.447965845%2C4518345.615993340%2C-13619243.951739565%2C4518957.112219620&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10495/25379.jpg",
+      "bytes": 363762,
+      "sha256": "63283b2b0dd174ff4eb3b356172989353c92b40f4ad47dfbd2dfbcf6cfe249f0",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13619855.447965845%2C4517734.119767057%2C-13619243.951739565%2C4518345.615993340&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10495/25380.jpg",
+      "bytes": 355863,
+      "sha256": "a0995a17b9177cbf22e9fece4f549930417af4a69c7dfb819f42a744bec49de4",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13619855.447965845%2C4517122.623540776%2C-13619243.951739565%2C4517734.119767057&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10495/25381.jpg",
+      "bytes": 341633,
+      "sha256": "24e505439ad205045e4527ce72d576e22b450e094bef8eefc3492b00b961c1f7",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13619855.447965845%2C4516511.127314495%2C-13619243.951739565%2C4517122.623540776&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    },
+    {
+      "path": "16/10495/25382.jpg",
+      "bytes": 342434,
+      "sha256": "fae60ad1d67b40e9e716bbba9dc77e8d8627038143f0bf061a4cdc329f250fe1",
+      "source": "https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/exportImage?bbox=-13619855.447965845%2C4515899.631088214%2C-13619243.951739565%2C4516511.127314495&bboxSR=3857&imageSR=3857&size=1024%2C1024&format=jpg&bandIds=0%2C1%2C2&compressionQuality=90&f=image"
+    }
+  ],
+  "export_parameters": {
+    "bboxSR": 3857,
+    "imageSR": 3857,
+    "size": "1024,1024",
+    "format": "jpg",
+    "bandIds": "0,1,2",
+    "compressionQuality": 90,
+    "f": "image"
+  }
+}
