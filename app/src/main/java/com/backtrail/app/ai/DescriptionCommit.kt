@@ -15,7 +15,7 @@ internal object DescriptionCommit {
         val unclear = description.label.equals("Unclear view", ignoreCase = true) || description.fixedFeatures.isEmpty()
         val updated = memory.copy(
             description = if (unclear) "" else description.fixedFeatures.joinToString(" · "),
-            title = if (memory.note.isBlank()) description.label else memory.title,
+            title = PlaceNaming.afterDescription(memory.title,memory.note,description.label,unclear),
             indexing = "Gemma 4 · local result",
         )
         if (updated == memory) return Decision(outing, true)

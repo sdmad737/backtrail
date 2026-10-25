@@ -58,11 +58,17 @@ class LocalVisionService(
     override fun describe(
         context: RequestContext,
         image: ImageRef,
+    ): Flow<InferenceState<CheckpointDescription>> = describe(context,image,"")
+
+    fun describe(
+        context: RequestContext,
+        image: ImageRef,
+        userNote: String,
     ): Flow<InferenceState<CheckpointDescription>> = request(
         context = context,
         op = "describe",
         images = listOf(image),
-        contents = { Contents.of(Content.ImageFile(image.absolutePath), Content.Text(describePrompt)) },
+        contents = { Contents.of(Content.ImageFile(image.absolutePath), Content.Text(PlaceNaming.descriptionPrompt(describePrompt,userNote))) },
         schema = DESCRIPTION_SCHEMA,
         maxOutputTokens = 384,
         invalidMessage = "The model did not return a valid description. Try another photo.",
