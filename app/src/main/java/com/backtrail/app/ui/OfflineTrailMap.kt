@@ -177,7 +177,8 @@ fun OfflineTrailMap(state: TravisUiState, modifier: Modifier = Modifier, onMemor
     val showTiles = !(state.replay && !state.mapAvailable)
     val covered = showTiles && visibleTiles.isNotEmpty()
     val aerialAvailable = "maps-aerial" in mapIndex
-    val controlsTop = if (aerialAvailable) 188.dp else 158.dp
+    val controlsTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + if (density.fontScale > 1.2f) 126.dp else 110.dp
+    var layerMenu by remember { mutableStateOf(false) }
     val latitudeAtCenter = Math.toDegrees(atan(sinh(PI * (1 - 2 * viewport.centerY))))
     val metersPerPixel = 156543.03392 * cos(Math.toRadians(latitudeAtCenter)) / 2.0.pow(viewport.zoom)
     val scaleWidth = with(density) { 72.dp.toPx() }
@@ -277,36 +278,32 @@ fun OfflineTrailMap(state: TravisUiState, modifier: Modifier = Modifier, onMemor
             FilledTonalIconButton(onClick = { zoomAt(Offset(mapSize.width / 2f, mapSize.height * MAP_ANCHOR_Y.toFloat()), .5) }, modifier = Modifier.semantics { contentDescription = "Zoom out" }, enabled = viewport.zoom > MIN_ZOOM) { Text("−", style = MaterialTheme.typography.titleLarge) }
             FilledTonalIconButton(onClick = { following = true; viewport = viewport.copy(centerX = focusWorld.first, centerY = focusWorld.second); previewId = null }, modifier = Modifier.semantics { contentDescription = if (!following) "Recenter map" else if (state.mode == GuidanceMode.FIND_LANDMARK) "Map centered on saved place" else "Map following location" }) { TravisGlyph("ar", Modifier.size(20.dp), palette.primary) }
         }
-        Column(Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 125.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            if (aerialAvailable) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("maps-hybrid" to "Hybrid", "maps" to "Terrain", "maps-aerial" to "Aerial").filter { it.first in mapIndex }.forEach { (path, title) ->
-                    FilterChip(selected = layer == path, onClick = { selectedLayer = path }, label = { Text(title) }, colors = FilterChipDefaults.filterChipColors(containerColor = palette.surface, labelColor = palette.onSurface))
+        Column(Modifier.align(Alignment.TopStart).padding(start = 12.dp, top = controlsTop), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (aerialAvailable) Box {
+                FilledTonalButton(onClick = { layerMenu = true }, modifier = Modifier.heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 12.dp), shape = RoundedCornerShape(14.dp)) {
+                    Text("${when(layer) { "maps-aerial" -> "Aerial"; "maps-hybrid" -> "Hybrid"; else -> "Terrain" }} · map style", style = MaterialTheme.typography.labelMedium)
+                }
+                DropdownMenu(expanded = layerMenu, onDismissRequest = { layerMenu = false }) {
+                    listOf("maps-hybrid" to "Hybrid", "maps" to "Terrain", "maps-aerial" to "Aerial").filter { it.first in mapIndex }.forEach { (path, title) ->
+                        DropdownMenuItem(text = { Text(title) }, onClick = { selectedLayer = path; layerMenu = false })
+                    }
                 }
             }
-            Surface(color = palette.surface.copy(alpha = .95f), shape = RoundedCornerShape(8.dp)) {
-                Text(when {
-                    mapIndex.isEmpty() -> "Loading saved map…"
-                    !covered -> "Outside saved map · trace retained"
-                    layer == "maps-aerial" && raster.layer == layer && raster.tiles.keys.any { it.path.startsWith("maps-detail/") && it in visibleTiles } -> "USGS detailed aerial · saved offline"
-                    layer == "maps-aerial" -> "USGS aerial imagery · saved offline"
-                    layer == "maps-hybrid" -> "USGS imagery + labels · saved offline"
-                    else -> "USGS terrain · saved offline"
-                }, Modifier.padding(horizontal = 9.dp, vertical = 5.dp), style = MaterialTheme.typography.labelSmall)
-            }
-            Surface(color = palette.surface.copy(alpha = .93f), shape = RoundedCornerShape(7.dp)) {
-                Column(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Surface(color = palette.surface.copy(alpha = .88f), shape = RoundedCornerShape(7.dp)) {
+                Column(Modifier.padding(horizontal = 8.dp, vertical = 5.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(when { mapIndex.isEmpty() -> "Loading saved map…"; !covered -> "No offline map here"; else -> "USGS · offline" }, style = MaterialTheme.typography.labelSmall)
                     Text(distanceLabel(scaleMeters), style = MaterialTheme.typography.labelSmall)
-                    Canvas(Modifier.width(with(density) { (scaleMeters / metersPerPixel).toFloat().toDp() }).height(6.dp)) {
+                    Canvas(Modifier.width(with(density) { (scaleMeters / metersPerPixel).toFloat().toDp() }).height(5.dp)) {
                         val color = palette.onSurface
-                        drawLine(color, Offset(0f, 0f), Offset(0f, size.height), 2.dp.toPx())
-                        drawLine(color, Offset(0f, size.height / 2), Offset(size.width, size.height / 2), 2.dp.toPx())
-                        drawLine(color, Offset(size.width, 0f), Offset(size.width, size.height), 2.dp.toPx())
+                        drawLine(color, Offset(0f, 0f), Offset(0f, size.height), 1.5.dp.toPx())
+                        drawLine(color, Offset(0f, size.height / 2), Offset(size.width, size.height / 2), 1.5.dp.toPx())
+                        drawLine(color, Offset(size.width, 0f), Offset(size.width, size.height), 1.5.dp.toPx())
                     }
                 }
             }
         }
         preview?.let { memory ->
-            Surface(Modifier.align(Alignment.TopCenter).padding(top = if (aerialAvailable) 260.dp else 222.dp, start = 16.dp, end = 76.dp), color = palette.surface, shape = RoundedCornerShape(18.dp), shadowElevation = 6.dp) {
+            Surface(Modifier.align(Alignment.TopCenter).padding(top = controlsTop + 110.dp, start = 12.dp, end = 76.dp), color = palette.surface, shape = RoundedCornerShape(18.dp), shadowElevation = 6.dp) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         TravisPhoto(memory.photoPath, "Original saved photo of ${memory.title}", Modifier.size(60.dp).clip(RoundedCornerShape(12.dp)))

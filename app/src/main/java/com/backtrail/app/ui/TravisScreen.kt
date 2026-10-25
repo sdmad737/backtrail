@@ -49,6 +49,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 internal val TravisGreen = Color(0xFF173F35)
 internal val TravisOrange = Color(0xFFE87742)
@@ -119,98 +122,85 @@ fun TravisScreen(
             }
         }
         Surface(Modifier.fillMaxSize(), color = palette.background) {
-            Column(Modifier.fillMaxSize().safeDrawingPadding()) {
-                if (state.surface != TravisSurface.AR) Row(
-                    Modifier.fillMaxWidth().padding(start = 20.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TravisLogo(Modifier.size(34.dp))
-                    Spacer(Modifier.width(11.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("travis", fontSize = 25.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.sp)
-                        Text("REMEMBER THE WAY BACK", fontSize = 9.sp, letterSpacing = .55.sp, color = palette.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val landscape = maxWidth > maxHeight
+                val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                val barHeight = 80.dp + bottomInset
+                val dockMaxHeight = if (landscape) maxHeight - barHeight - 84.dp else maxHeight * if (state.surface == TravisSurface.AR) .31f else .37f
+                if (state.surface == TravisSurface.MAP) map(Modifier.fillMaxSize())
+                else if (!state.captureMode) TravisCameraGuidance(state, { cameraModifier ->
+                    if(liveCameraVisible)camera(cameraModifier)else Box(cameraModifier.background(TravisGreen))
+                }, Modifier.fillMaxSize())
+                else Box(Modifier.fillMaxSize().background(TravisGreen))
+
+                Box(Modifier.fillMaxWidth().height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 82.dp)
+                    .background(Brush.verticalGradient(listOf(palette.surface.copy(alpha = .94f), Color.Transparent))))
+                Column(Modifier.align(Alignment.TopStart).statusBarsPadding().padding(horizontal = 12.dp, vertical = 4.dp)
+                    .fillMaxWidth(if (landscape) .52f else 1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(shape = RoundedCornerShape(18.dp), color = palette.surface.copy(alpha = .96f), shadowElevation = 2.dp, modifier = Modifier.weight(1f)) {
+                            Row(Modifier.padding(start = 10.dp, end = 12.dp, top = 7.dp, bottom = 7.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TravisLogo(Modifier.size(27.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(if (state.outing.id.isBlank()) "Travis" else state.outing.name, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(when {
+                                        state.replay -> "Explore · sample journey"
+                                        state.mode == GuidanceMode.RETRACE -> "Returning · ${state.destinationTitle}"
+                                        state.mode == GuidanceMode.FIND_LANDMARK -> "Finding · ${state.destinationTitle}"
+                                        state.outing.phase == OutingPhase.RECORDING -> "Recording this journey"
+                                        state.outing.phase == OutingPhase.PAUSED -> "Current journey · paused"
+                                        state.outing.phase == OutingPhase.ENDED -> "Viewing a saved journey"
+                                        else -> "Ready for a new journey"
+                                    }, style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
+                            }
+                        }
+                        FilledTonalIconButton(onClick = { sheet = TravisSheet.PREPARE }, modifier = Modifier.size(48.dp).semantics { contentDescription = "Prepare and settings" }) { TravisGlyph("settings", Modifier.size(22.dp), palette.primary) }
                     }
-                    TextButton(onClick = { sheet = TravisSheet.JOURNEYS }) { Text("Journeys") }
-                    IconButton(onClick = { sheet = TravisSheet.PREPARE }, modifier = Modifier.size(48.dp).semantics { contentDescription = "Prepare and settings" }) {
-                        TravisGlyph("settings", Modifier.size(23.dp), palette.onSurface)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (state.replay) Surface(onClick = { sheet = TravisSheet.REPLAY }, shape = RoundedCornerShape(10.dp), color = Color(0xFFFFE3B6)) {
+                            Text("REPLAY · sample controls", Modifier.padding(horizontal = 10.dp, vertical = 7.dp), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF673D0C))
+                        } else QualityLabel(state)
+                        if (state.surface == TravisSurface.MAP) {
+                            val heading = state.mapHeading.takeIf { state.mapHeadingReliable && state.fixQuality == FixQuality.USABLE }
+                            Surface(shape = RoundedCornerShape(10.dp), color = palette.surface.copy(alpha = .94f), modifier = Modifier.semantics { contentDescription = if (heading == null) "North-up map. Compass unavailable." else "North-up map. Approximate facing direction ${heading.toInt()} degrees." }) {
+                                Row(Modifier.padding(horizontal = 9.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                    if (heading != null) TravisGlyph("north", Modifier.size(16.dp).rotate(heading.toFloat()), TravisBlue)
+                                    Text(if (heading == null) "North up" else "≈${heading.toInt()}°", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
+                                }
+                            }
+                        }
                     }
                 }
-                BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
-                    val dockMaxHeight = maxHeight * if (state.surface == TravisSurface.AR) .34f else .45f
-                    if (state.surface == TravisSurface.MAP) map(Modifier.fillMaxSize())
-                    else if (!state.captureMode) TravisCameraGuidance(state, { cameraModifier ->
-                        if(liveCameraVisible)camera(cameraModifier)else Box(cameraModifier.background(TravisGreen))
-                    }, Modifier.fillMaxSize())
-                    else Box(Modifier.fillMaxSize().background(TravisGreen))
 
-                    Column(Modifier.align(Alignment.TopCenter).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.SpaceBetween) {
-                            Surface(shape = RoundedCornerShape(20.dp), color = palette.surface, shadowElevation = 2.dp) {
-                                Row(Modifier.padding(4.dp)) {
-                                    listOf(TravisSurface.MAP to "Map", TravisSurface.AR to "Camera").forEach { (surface, title) ->
-                                        val selected = state.surface == surface
-                                        Surface(
-                                            shape = RoundedCornerShape(16.dp),
-                                            color = if (selected) palette.primary else Color.Transparent,
-                                            onClick = { act(TravisAction.SwitchSurface(surface)) },
-                                        ) {
-                                            Row(Modifier.heightIn(min = 44.dp).padding(horizontal = 17.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                                                TravisGlyph(if (surface == TravisSurface.MAP) "map" else "ar", Modifier.size(18.dp), if (selected) palette.onPrimary else palette.onSurface)
-                                                Text(title, fontWeight = FontWeight.SemiBold, color = if (selected) palette.onPrimary else palette.onSurface)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            if (state.surface == TravisSurface.MAP) {
-                                val heading = state.mapHeading.takeIf { state.mapHeadingReliable && state.fixQuality == FixQuality.USABLE }
-                                Surface(shape = RoundedCornerShape(16.dp), color = palette.surface, shadowElevation = 2.dp,
-                                    modifier = Modifier.semantics { contentDescription = if (heading == null) "Map is north up. Compass unavailable; use a fresh GPS fix and move away from magnetic interference." else "Map is north up. Approximate facing direction ${heading.toInt()} degrees." }) {
-                                    Column(Modifier.widthIn(min = 67.dp).padding(horizontal = 8.dp, vertical = 5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text(if (heading == null) "COMPASS" else "NORTH UP", fontSize = 8.sp, fontWeight = FontWeight.Bold)
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                            if (heading != null) TravisGlyph("north", Modifier.size(17.dp).rotate(heading.toFloat()), TravisBlue)
-                                            Text(if (heading == null) "Unavailable" else "≈${heading.toInt()}°", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = if (heading == null) palette.onSurfaceVariant else TravisBlue)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (state.replay) {
-                            Surface(onClick = { sheet = TravisSheet.REPLAY }, shape = RoundedCornerShape(10.dp), color = Color(0xFFFFE3B6)) {
-                                Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Text("REPLAY", fontSize = 10.sp, letterSpacing = 1.sp, fontWeight = FontWeight.Bold, color = Color(0xFF673D0C))
-                                    Text("  Sample movement · controls", fontSize = 11.sp, color = Color(0xFF673D0C))
-                                }
-                            }
-                        } else {
-                            QualityLabel(state)
+                Column(
+                    Modifier.align(if (landscape) Alignment.BottomEnd else Alignment.BottomCenter)
+                        .fillMaxWidth(if (landscape) .46f else 1f).padding(start = 12.dp, end = 12.dp, bottom = barHeight + 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    if (state.notice.isNotBlank()) Surface(color = palette.surface, shape = RoundedCornerShape(14.dp), shadowElevation = 2.dp) {
+                        Row(Modifier.fillMaxWidth().padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(state.notice, Modifier.weight(1f).padding(vertical = 8.dp), style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            TextButton(onClick = { act(TravisAction.DismissNotice) }) { Text("OK") }
                         }
                     }
-
-                    Column(
-                        Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        if (state.notice.isNotBlank()) {
-                            Surface(color = palette.surface, shape = RoundedCornerShape(16.dp), shadowElevation = 2.dp) {
-                                Row(Modifier.fillMaxWidth().padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Text(state.notice, Modifier.weight(1f).padding(vertical = 10.dp), style = MaterialTheme.typography.bodySmall, maxLines = 4, overflow = TextOverflow.Ellipsis)
-                                    TextButton(onClick = { act(TravisAction.DismissNotice) }) { Text("OK") }
-                                }
-                            }
+                    Surface(shape = RoundedCornerShape(22.dp), color = palette.surface.copy(alpha = if (state.surface == TravisSurface.AR) .91f else .98f), shadowElevation = 5.dp) {
+                        Column(Modifier.fillMaxWidth().heightIn(max = dockMaxHeight.coerceAtLeast(110.dp)).verticalScroll(rememberScrollState()).padding(14.dp).animateContentSize(tween(140)), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                            DockContent(state, act, onAsk = { sheet = TravisSheet.ASK }, onMemories = { sheet = TravisSheet.MEMORIES }, onPrepare = { sheet = TravisSheet.PREPARE }, onJourneys = { sheet = TravisSheet.JOURNEYS })
                         }
-                        Surface(
-                            shape = RoundedCornerShape(24.dp), color = palette.surface.copy(alpha = if (state.surface == TravisSurface.AR) .94f else 1f),
-                            shadowElevation = 8.dp, border = BorderStroke(1.dp, palette.outlineVariant.copy(alpha = .55f)),
-                        ) {
-                            Column(
-                                Modifier.fillMaxWidth().heightIn(max = dockMaxHeight).verticalScroll(rememberScrollState()).padding(if (state.surface == TravisSurface.AR) 12.dp else 16.dp).animateContentSize(tween(180)),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                DockContent(state, act, onAsk = { sheet = TravisSheet.ASK }, onMemories = { sheet = TravisSheet.MEMORIES }, onPrepare = { sheet = TravisSheet.PREPARE })
+                    }
+                }
+                NavigationBar(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(), containerColor = palette.surface, tonalElevation = 3.dp, windowInsets = WindowInsets.navigationBars) {
+                    listOf("Map" to "map", "Camera" to "ar", "Travis" to "spark", "Journeys" to "trail").forEach { (label, icon) ->
+                        val selected = when(label) { "Map" -> sheet == null && state.surface == TravisSurface.MAP; "Camera" -> sheet == null && state.surface == TravisSurface.AR; "Travis" -> sheet == TravisSheet.ASK; else -> sheet == TravisSheet.JOURNEYS }
+                        NavigationBarItem(selected = selected, onClick = {
+                            when(label) {
+                                "Map" -> { sheet = null; act(TravisAction.SwitchSurface(TravisSurface.MAP)) }
+                                "Camera" -> { sheet = null; act(TravisAction.SwitchSurface(TravisSurface.AR)) }
+                                "Travis" -> sheet = TravisSheet.ASK
+                                else -> sheet = TravisSheet.JOURNEYS
                             }
-                        }
+                        }, icon = { TravisGlyph(icon, Modifier.size(21.dp), if(selected) palette.primary else palette.onSurfaceVariant) }, label = { Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1) })
                     }
                 }
             }
@@ -236,9 +226,10 @@ fun TravisScreen(
         }
 
         if (state.captureMode) {
-            ModalBottomSheet(onDismissRequest = { if (!state.captureBusy) act(TravisAction.CancelCapture) }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = palette.surface) {
-                CaptureSheet(state, act, camera)
-            }
+            Dialog(
+                onDismissRequest = { if (!state.captureBusy) act(TravisAction.CancelCapture) },
+                properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+            ) { CaptureScreen(state, act, camera) }
         } else sheet?.let { active ->
             ModalBottomSheet(onDismissRequest = { sheet = null }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = palette.surface) {
                 if (active == TravisSheet.ASK) {
@@ -261,7 +252,7 @@ fun TravisScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk: () -> Unit, onMemories: () -> Unit, onPrepare: () -> Unit) {
+private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk: () -> Unit, onMemories: () -> Unit, onPrepare: () -> Unit, onJourneys: () -> Unit) {
     val outing = state.outing
     val palette = MaterialTheme.colorScheme
     var guidanceTools by rememberSaveable(state.mode, state.target?.id) { mutableStateOf(false) }
@@ -281,18 +272,20 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
             }
             if (isRoute && state.routeStepCount > 0) LinearProgressIndicator(progress = { state.routeProgress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(3.dp).clip(CircleShape), color = TravisOrange, trackColor = palette.outlineVariant)
             val recognized = state.recognizedMemoryId != null && state.recognizedMemoryId == state.selectedMemoryId
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                PrimaryAction(if (recognized) "Place recognized" else if (isRoute) "I'm at this waypoint" else "I recognize this place", if (recognized) "check" else "trail", Modifier.weight(1f), state.canConfirm && !recognized) { act(TravisAction.Confirm) }
-                QuietAction("Travis", "spark", Modifier.widthIn(min = 90.dp), onClick = onAsk)
-            }
-            if (!state.canConfirm && !recognized) Text(when {
-                state.fixQuality != FixQuality.USABLE -> "A fresh, accurate GPS fix is needed to confirm."
-                (state.target?.accuracy ?: 0f) > 25f -> "This saved location is too uncertain to confirm by GPS. Compare the original photo."
-                (state.fix?.accuracy ?: 0f) > 15f -> "GPS is ±${state.fix?.accuracy?.toInt()} m. Wait for a more accurate fix before confirming."
-                (state.distanceMeters ?: Double.POSITIVE_INFINITY) > 12.0 -> "Keep following the arrow · ${distanceLabel(state.distanceMeters)} to this waypoint."
-                else -> "You're close, but GPS uncertainty is still too large to confirm. Wait for a steadier fix."
-            }, style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
-            if (state.canConfirm && !recognized) Text("Close enough to check. Compare your surroundings before confirming.", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
+            val finalDestination = isRoute && state.routeTargetIndex == state.returnRouteStartIndex
+            val showConfirmation = !isRoute || finalDestination || guidanceTools
+            if (showConfirmation) {
+                PrimaryAction(if (recognized) "Place recognized" else if (finalDestination) "I've reached my destination" else if (isRoute) "Check this waypoint" else "I recognize this place", if (recognized) "check" else "trail", Modifier.fillMaxWidth(), state.canConfirm && !recognized) { act(TravisAction.Confirm) }
+                if (!state.canConfirm && !recognized) Text(when {
+                    !state.directionUsable -> state.navigationMessage.ifBlank { "Wait for a reliable position before confirming." }
+                    state.fixQuality != FixQuality.USABLE -> "A fresh, accurate GPS fix is needed to confirm."
+                    (state.target?.accuracy ?: 0f) > 25f -> "This saved location is too uncertain to confirm by GPS. Compare the original photo."
+                    (state.fix?.accuracy ?: 0f) > 15f -> "GPS is ±${state.fix?.accuracy?.toInt()} m. Wait for a more accurate fix before confirming."
+                    (state.distanceMeters ?: Double.POSITIVE_INFINITY) > 12.0 -> "${distanceLabel(state.distanceMeters)} to this saved waypoint. Keep following your trail."
+                    else -> "You're close. Wait for a steadier fix, then check your surroundings."
+                }, style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
+                if (state.canConfirm && !recognized) Text("Close enough to check. Compare your surroundings before confirming.", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
+            } else Text(if (state.directionUsable) "Following trail · progress updates as you walk" else state.navigationMessage.ifBlank { "Waiting for a reliable position on your trail" }, style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
             if (guidanceTools) {
                 if (state.guidanceStatus.isNotBlank()) Text(state.guidanceStatus, style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
                 if (isRoute) RouteItinerary(state)
@@ -376,8 +369,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                         OutingPhase.ENDED -> "JOURNEY SAVED"
                         else -> "YOUR RECORDED TRAIL"
                     })
-                    Text(outing.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("${outing.points.size} recorded fixes · ${outing.memories.size} saved places", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
+                    Text("${distanceLabel(com.backtrail.app.trip.TrailMath.length(outing.points))} recorded · ${outing.memories.size} places", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
                 }
                 if (outing.phase == OutingPhase.RECORDING) {
                     IconButton(onClick = { act(TravisAction.Pause) }, modifier = Modifier.semantics { contentDescription = "Pause recording" }) { TravisGlyph("pause", Modifier.size(22.dp), palette.primary) }
@@ -390,14 +382,13 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 PrimaryAction(when (outing.phase) { OutingPhase.PAUSED -> "Resume journey"; OutingPhase.ENDED -> "Review saved places"; else -> "Save a place" }, if (outing.phase == OutingPhase.PAUSED) "play" else "camera", Modifier.weight(1f)) {
                     if (outing.phase == OutingPhase.ENDED) onMemories() else act(if (outing.phase == OutingPhase.PAUSED) TravisAction.Start else TravisAction.Capture)
                 }
-                QuietAction("Ask", "spark", Modifier.widthIn(min = 86.dp), onClick = onAsk)
             }
             FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = { act(TravisAction.HeadBack) }, enabled = outing.points.size > 1) { TravisGlyph("back", Modifier.size(16.dp), palette.primary); Spacer(Modifier.width(6.dp)); Text("Return to start") }
-                TextButton(onClick = onMemories) { Text("Your places") }
+                if (outing.phase != OutingPhase.ENDED) TextButton(onClick = onMemories) { Text("Your places") }
                 if (state.replay) TextButton(onClick = { act(TravisAction.ReplayNext) }) { Text("Next step") }
                 else if (outing.phase != OutingPhase.ENDED) TextButton(onClick = { act(TravisAction.End) }) { Text("Finish journey") }
-                else TextButton(onClick = { act(TravisAction.Start) }) { Text("Start a new journey") }
+                else TextButton(onClick = onJourneys) { Text("New journey") }
             }
         }
     }
@@ -414,70 +405,124 @@ internal fun TravisLogo(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun CaptureSheet(state: TravisUiState, act: (TravisAction) -> Unit, camera: @Composable (Modifier) -> Unit) {
+private fun CaptureScreen(state: TravisUiState, act: (TravisAction) -> Unit, camera: @Composable (Modifier) -> Unit) {
     var note by rememberSaveable { mutableStateOf("") }
     var pickup by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().imePadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        if (state.notice.isNotBlank()) {
-            Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(12.dp)) {
-                Text(state.notice, Modifier.padding(12.dp), style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-        Eyebrow("SAVE SOMETHING WORTH RETURNING TO")
-        Text("Remember this place.", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-        Box(Modifier.fillMaxWidth().height(205.dp).clip(RoundedCornerShape(20.dp)).background(TravisGreen)) {
+    val review = state.capturedPhotoPath.isNotBlank()
+    val palette = MaterialTheme.colorScheme
+    BoxWithConstraints(Modifier.fillMaxSize().background(if (review) palette.surface else Color.Black)) {
+        val photoHeight = (maxHeight * .4f).coerceIn(150.dp, 330.dp)
+        if (!review) {
             if (state.replay) {
-                TravisPhoto(state.outing.memories.lastOrNull()?.photoPath.orEmpty(), "Sample landmark preview", Modifier.fillMaxSize())
-                Text("SAMPLE CAMERA PREVIEW", Modifier.align(Alignment.BottomStart).padding(12.dp).background(TravisGreen).padding(6.dp), color = Color.White, fontSize = 10.sp, letterSpacing = 1.sp)
+                TravisPhoto(state.outing.memories.lastOrNull()?.photoPath.orEmpty(), "Sample camera preview, not a live camera", Modifier.fillMaxSize())
             } else if (state.cameraAllowed) camera(Modifier.fillMaxSize())
-            else Column(Modifier.align(Alignment.Center).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Camera access needed", color = Color.White)
+            else Column(Modifier.align(Alignment.Center).padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Camera access needed", color = Color.White, style = MaterialTheme.typography.titleLarge)
                 TextButton(onClick = { act(TravisAction.RequestPermissions) }) { Text("Allow camera", color = Color.White) }
             }
-            Surface(Modifier.align(Alignment.TopEnd).padding(12.dp), shape = CircleShape, color = Color.Black.copy(alpha = .5f)) {
-                Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) { TravisGlyph("camera", Modifier.size(22.dp), Color.White) }
+            Box(Modifier.fillMaxWidth().height(210.dp).align(Alignment.TopCenter).background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = .75f), Color.Transparent))))
+            Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    TextButton(onClick = { act(TravisAction.CancelCapture) }, enabled = !state.captureBusy) { Text("Cancel", color = Color.White) }
+                    Text(if (state.replay) "SAMPLE CAMERA" else "SAVE A PLACE", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                }
+                Text("Photograph a place or something to remember", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 8.dp))
+            }
+            Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = .8f)))).navigationBarsPadding().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (state.notice.isNotBlank()) Text(state.notice, color = Color.White, style = MaterialTheme.typography.bodySmall)
+                Surface(onClick = { act(TravisAction.TakePhoto) }, enabled = !state.captureBusy && (state.cameraAllowed || state.replay), shape = CircleShape, color = Color.White.copy(alpha = .2f), border = BorderStroke(3.dp, Color.White), modifier = Modifier.size(84.dp).semantics { contentDescription = "Take photo" }) {
+                    Box(Modifier.padding(7.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
+                        if (state.captureBusy) CircularProgressIndicator(Modifier.size(30.dp), color = TravisGreen)
+                        else TravisGlyph("camera", Modifier.size(30.dp), TravisGreen)
+                    }
+                }
+                Text(if (state.captureBusy) "Taking photo…" else "Take photo", color = Color.White, style = MaterialTheme.typography.labelLarge)
+            }
+        } else {
+            Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    TextButton(onClick = { act(TravisAction.CancelCapture) }, enabled = !state.captureBusy) { Text("Cancel") }
+                    Text("Review your place", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    TextButton(onClick = { act(TravisAction.RetakePhoto) }, enabled = !state.captureBusy) { Text("Retake") }
+                }
+                Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    TravisPhoto(state.capturedPhotoPath, "Original photo just captured", Modifier.fillMaxWidth().height(photoHeight).clip(RoundedCornerShape(20.dp)))
+                    if (state.replay) Text("SAMPLE PHOTO · EXPLORE", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
+                    Text("Add a detail to help you remember.", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                    OutlinedTextField(value = note, onValueChange = { note = it.take(2000) }, modifier = Modifier.fillMaxWidth(), label = { Text("Note · optional") }, placeholder = { Text("My backpack is beside the gate") }, minLines = 2, maxLines = 5, shape = RoundedCornerShape(15.dp), enabled = !state.captureBusy)
+                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(enabled = !state.captureBusy) { pickup = !pickup }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = pickup, onCheckedChange = { pickup = it }, enabled = !state.captureBusy)
+                        Column(Modifier.weight(1f)) {
+                            Text("Remind me on the way back", fontWeight = FontWeight.Medium)
+                            Text("For something you want to pick up", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
+                        }
+                    }
+                    if (state.notice.isNotBlank()) Text(state.notice, style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
+                    Text("Saved on this phone. Travis can add a description with Gemma afterward.", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
+                    Spacer(Modifier.height(4.dp))
+                }
+                Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (state.captureBusy) LinearProgressIndicator(Modifier.fillMaxWidth())
+                    PrimaryAction(if (state.captureBusy) "Saving place…" else "Save place", "check", Modifier.fillMaxWidth(), !state.captureBusy) { act(TravisAction.SavePhoto(note, pickup)) }
+                }
             }
         }
-        Text(if (state.fixQuality == FixQuality.USABLE) "Photo and current measured location will be saved together." else "Photo will be saved. A reliable location is not available yet.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        OutlinedTextField(
-            value = note, onValueChange = { note = it.take(2000) }, modifier = Modifier.fillMaxWidth(),
-            label = { Text("Your note · optional") }, placeholder = { Text("My jacket is on the wooden bench…") },
-            minLines = 2, maxLines = 5, shape = RoundedCornerShape(15.dp), enabled = !state.captureBusy,
-        )
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).clickable(enabled = !state.captureBusy) { pickup = !pickup }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = pickup, onCheckedChange = { pickup = it }, enabled = !state.captureBusy)
-            Column(Modifier.weight(1f)) {
-                Text("Remind me on the way back", fontWeight = FontWeight.Medium)
-                Text("An opted-in local pickup reminder", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        if (state.captureBusy) LinearProgressIndicator(Modifier.fillMaxWidth())
-        PrimaryAction(if (state.captureBusy) "Saving original photo…" else "Save photo & place", "camera", Modifier.fillMaxWidth(), !state.captureBusy && (state.cameraAllowed || state.replay)) { act(TravisAction.SavePhoto(note, pickup)) }
-        Text("The original stays on your phone. Gemma can add a description afterward.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun JourneysSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: () -> Unit) {
-    Eyebrow("SAVED ON THIS PHONE")
-    Text("Your journeys", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-    if (state.outing.phase != OutingPhase.READY && state.outing.phase != OutingPhase.ENDED) {
-        Text(if (state.outing.phase == OutingPhase.RECORDING) "Pause this journey before viewing another, or finish it before starting a new one." else "Your current journey is paused and saved. You can view an earlier journey below.", style = MaterialTheme.typography.bodyMedium)
-        PrimaryAction("Continue current journey", "trail", Modifier.fillMaxWidth()) { if (state.outing.phase == OutingPhase.PAUSED) act(TravisAction.Start); close() }
-    } else PrimaryAction("Start a new journey", "trail", Modifier.fillMaxWidth()) { act(TravisAction.Start); close() }
-    state.savedOutings.sortedByDescending { it.startedAt }.forEach { outing ->
-        Surface(onClick = { act(TravisAction.OpenOuting(outing.id)); close() }, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
-            Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                outing.memories.firstOrNull()?.let { TravisPhoto(it.photoPath, "Original photo from ${outing.name}", Modifier.size(50.dp).clip(RoundedCornerShape(10.dp))) }
-                Column(Modifier.weight(1f)) {
-                    Text(outing.name, fontWeight = FontWeight.SemiBold)
-                    Text("${SimpleDateFormat("MMM d · HH:mm", Locale.getDefault()).format(Date(outing.startedAt))} · ${outing.memories.size} saved places", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    var renameId by rememberSaveable { mutableStateOf<String?>(null) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var newJourney by rememberSaveable { mutableStateOf(false) }
+    val currentActive = state.outing.phase in listOf(OutingPhase.RECORDING, OutingPhase.PAUSED)
+    if (renameId != null) AlertDialog(
+        onDismissRequest = { renameId = null }, title = { Text("Rename journey") },
+        text = { OutlinedTextField(value = name, onValueChange = { name = it.take(60) }, label = { Text("Journey name") }, singleLine = true, modifier = Modifier.fillMaxWidth()) },
+        confirmButton = { TextButton(onClick = { renameId?.let { act(TravisAction.RenameOuting(it, name.trim())) }; renameId = null }, enabled = name.isNotBlank()) { Text("Save name") } },
+        dismissButton = { TextButton(onClick = { renameId = null }) { Text("Cancel") } },
+    )
+    if (newJourney) AlertDialog(
+        onDismissRequest = { newJourney = false }, title = { Text(if(currentActive) "Save this journey and start fresh?" else "Start a new journey") },
+        text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if(currentActive) Text("${state.outing.name} will be saved with its trail and places. A separate journey will begin.")
+            OutlinedTextField(value = name, onValueChange = { name = it.take(60) }, label = { Text("Name · optional") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        } },
+        confirmButton = { TextButton(onClick = { act(TravisAction.StartNewJourney(name.trim())); newJourney = false; close() }) { Text(if(currentActive) "Save & start new" else "Start journey") } },
+        dismissButton = { TextButton(onClick = { newJourney = false }) { Text("Keep current") } },
+    )
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text("Journeys", Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+        TextButton(onClick = close) { Text("Done") }
+    }
+    Text("Each journey keeps its own trail, places and return progress.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    PrimaryAction("Start a new journey", "trail", Modifier.fillMaxWidth()) { name = ""; newJourney = true }
+    if(currentActive) Text("Current journey is ${if(state.outing.phase == OutingPhase.RECORDING) "recording" else "paused"}. ${if(state.outing.phase == OutingPhase.RECORDING) "Pause before opening another journey." else "Open it to resume recording."}", style = MaterialTheme.typography.bodySmall)
+    val journeys = if(state.replay) listOf(state.outing) else state.savedOutings.sortedByDescending { it.startedAt }
+    journeys.forEach { outing ->
+        val selected = outing.id == state.outing.id
+        Surface(shape = RoundedCornerShape(16.dp), color = if(selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    outing.memories.firstOrNull()?.let { TravisPhoto(it.photoPath, "Original photo from ${outing.name}", Modifier.size(46.dp).clip(RoundedCornerShape(10.dp))) }
+                    Column(Modifier.weight(1f)) {
+                        Text(outing.name, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text("${SimpleDateFormat("MMM d · HH:mm", Locale.getDefault()).format(Date(outing.startedAt))} · ${outing.memories.size} places", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if(selected) Text(if(currentActive) "CURRENT JOURNEY" else "VIEWING THIS JOURNEY", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    }
                 }
-                Text(if (outing.id == state.outing.id) "Open" else "View", style = MaterialTheme.typography.labelMedium)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    TextButton(onClick = { renameId = outing.id; name = outing.name }, enabled = !state.replay) { Text("Rename") }
+                    TextButton(onClick = {
+                        if(selected && outing.phase == OutingPhase.PAUSED) act(TravisAction.Start)
+                        else if(!selected) act(TravisAction.OpenOuting(outing.id))
+                        close()
+                    }, enabled = selected || state.outing.phase != OutingPhase.RECORDING) { Text(if(selected && outing.phase == OutingPhase.PAUSED) "Resume this journey" else if(selected) "Back to journey" else "Open journey") }
+                }
             }
         }
     }
-    if (state.savedOutings.isEmpty()) Text("Your journeys will appear here after you start recording.", style = MaterialTheme.typography.bodyMedium)
+    if (journeys.isEmpty()) Text("No saved journeys yet. Start one above to begin your trail.", style = MaterialTheme.typography.bodyMedium)
 }
 
 @Composable

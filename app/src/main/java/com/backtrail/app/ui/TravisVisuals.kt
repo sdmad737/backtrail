@@ -116,7 +116,7 @@ internal fun TravisMap(state: TravisUiState, modifier: Modifier = Modifier) {
 @Composable
 internal fun TravisCameraGuidance(state: TravisUiState, camera: @Composable (Modifier) -> Unit, modifier: Modifier = Modifier) {
     val relative = if (state.bearing?.isFinite() == true && state.heading?.isFinite() == true) ((state.bearing - state.heading + 540) % 360) - 180 else null
-    val usable = state.fixQuality == FixQuality.USABLE && state.headingReliable && relative != null
+    val usable = state.directionUsable && state.fixQuality == FixQuality.USABLE && state.headingReliable && relative != null
     val fontScale = LocalDensity.current.fontScale
     var compareOriginal by rememberSaveable(state.outing.id, state.target?.id, state.targetPhoto) { mutableStateOf(false) }
     var photoOpacity by rememberSaveable { mutableFloatStateOf(.45f) }
@@ -124,19 +124,20 @@ internal fun TravisCameraGuidance(state: TravisUiState, camera: @Composable (Mod
     val showReference = compareOriginal && hasReference && (state.cameraAllowed || state.replay)
     BoxWithConstraints(modifier.background(Color(0xFF1C3028))) {
         val compact = maxHeight < 560.dp || fontScale > 1.2f
-        val topInset = if (state.replay) 115.dp else 108.dp
-        val hudHeight = (maxHeight * .64f - topInset - 4.dp).coerceAtLeast(100.dp)
+        val landscape = maxWidth > maxHeight
+        val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + if (landscape) (if (fontScale > 1.2f) 130.dp else 112.dp) else if (fontScale > 1.2f) 126.dp else 112.dp
+        val hudHeight = (if (landscape) maxHeight - WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() - 88.dp - topInset else maxHeight * .64f - topInset - 4.dp).coerceAtLeast(90.dp)
         if (state.replay) TravisPhoto(state.outing.memories.lastOrNull()?.photoPath.orEmpty(), "Replay camera preview, not a live camera", Modifier.fillMaxSize())
         else if (state.cameraAllowed) camera(Modifier.fillMaxSize())
         if (showReference) TravisPhoto(state.targetPhoto, "Manual original-photo reference; not aligned or recognized", Modifier.fillMaxSize().graphicsLayer { alpha = photoOpacity })
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = .35f), Color.Transparent, Color.Black.copy(alpha = .18f)))))
         Column(
-            Modifier.align(Alignment.TopCenter).widthIn(max = 330.dp).fillMaxWidth(if (state.mode == GuidanceMode.RETRACE) .78f else .9f)
+            Modifier.align(if (landscape) Alignment.TopStart else Alignment.TopCenter).width(if (landscape) maxWidth * .52f else minOf(330.dp, maxWidth * if (state.mode == GuidanceMode.RETRACE) .78f else .9f))
                 .padding(top = topInset).heightIn(max = hudHeight).verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Surface(shape = RoundedCornerShape(8.dp), color = Color.Black.copy(alpha = .52f)) {
+            if (!landscape) Surface(shape = RoundedCornerShape(8.dp), color = Color.Black.copy(alpha = .52f)) {
                 Text(if (state.replay) "REPLAY CAMERA · APPROXIMATE" else "APPROXIMATE CAMERA GUIDANCE", Modifier.padding(horizontal = 10.dp, vertical = 5.dp), fontSize = 9.sp, letterSpacing = .5.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
             when {
@@ -151,21 +152,15 @@ internal fun TravisCameraGuidance(state: TravisUiState, camera: @Composable (Mod
                             colors = SliderDefaults.colors(thumbColor = TravisOrange, activeTrackColor = TravisOrange, inactiveTrackColor = Color.White.copy(alpha = .28f)))
                     }
                 }
-                !usable -> CameraStatus(if (state.fixQuality != FixQuality.USABLE) "Waiting for GPS" else "Direction unavailable", if (state.fixQuality == FixQuality.STALE) "Location is stale. Use your saved photo and map." else if (state.fixQuality != FixQuality.USABLE) "A fresh, accurate location is needed for the arrow." else "Hold the phone upright, away from magnetic interference.")
+                !usable -> CameraStatus(if (!state.directionUsable) "Guidance paused" else "Direction unavailable", if (!state.directionUsable) state.navigationMessage.ifBlank { "A fresh, accurate location on this trail is needed for the arrow." } else state.headingStatus.ifBlank { "Hold the phone upright, away from magnetic interference." })
                 else -> {
-                    // This is a camera-relative compass, never a world anchor or arrival claim.
-                    ARDirectionalInstrument(relative, state.heading!!, Modifier.width(if (compact) 158.dp else 210.dp).height(if (compact) 112.dp else 156.dp))
-                    Surface(shape = RoundedCornerShape(16.dp), color = Color.Black.copy(alpha = .50f)) {
-                        Column(Modifier.padding(horizontal = 16.dp, vertical = 9.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(distanceLabel(state.distanceMeters), color = Color.White, fontSize = if (compact) 28.sp else 36.sp, fontWeight = FontWeight.SemiBold)
-                            Text(if (state.mode == GuidanceMode.RETRACE) "TO NEXT WAYPOINT" else "STRAIGHT LINE TO PLACE", color = Color.White.copy(alpha = .85f), fontSize = 9.sp, letterSpacing = .5.sp)
-                            Text(when {
-                                abs(relative) < 12 -> "Ahead, approximately"
-                                abs(relative) > 140 -> "Turn to look behind"
-                                relative > 0 -> "Turn right"
-                                else -> "Turn left"
-                            }, color = Color(0xFFFFC89E), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                        }
+                    // Bearing follows the local ordered trail; the displayed distance is route distance.
+                    if (landscape) Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                        ARDirectionalInstrument(relative, state.heading!!, Modifier.width(145.dp).height(105.dp))
+                        GuidanceDistance(state, relative, true, Modifier.weight(1f))
+                    } else {
+                        ARDirectionalInstrument(relative, state.heading!!, Modifier.width(if (compact) 158.dp else 210.dp).height(if (compact) 112.dp else 156.dp))
+                        GuidanceDistance(state, relative, compact)
                     }
                 }
             }
@@ -174,7 +169,7 @@ internal fun TravisCameraGuidance(state: TravisUiState, camera: @Composable (Mod
                 Spacer(Modifier.width(7.dp)); Text(if (showReference) "Show direction" else "Overlay saved photo", style = MaterialTheme.typography.labelMedium)
             }
         }
-        if (state.mode == GuidanceMode.RETRACE && state.routeStepCount > 0 && maxHeight >= 480.dp) {
+        if (state.mode == GuidanceMode.RETRACE && state.routeStepCount > 0 && maxHeight >= 480.dp && !landscape) {
             Surface(modifier = Modifier.align(Alignment.CenterEnd).offset(y = (-maxHeight.value * .1f).dp).padding(end = 10.dp), shape = RoundedCornerShape(22.dp), color = Color.Black.copy(alpha = .48f)) {
                 Column(Modifier.padding(horizontal = 9.dp, vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("TRAIL", color = Color.White.copy(alpha = .8f), fontSize = 8.sp, letterSpacing = .6.sp)
@@ -185,6 +180,22 @@ internal fun TravisCameraGuidance(state: TravisUiState, camera: @Composable (Mod
                     Text("${(state.routeProgress.coerceIn(0f, 1f) * 100).toInt()}%", color = Color.White, fontSize = 10.sp)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun GuidanceDistance(state: TravisUiState, relative: Double, compact: Boolean, modifier: Modifier = Modifier) {
+    Surface(modifier = modifier, shape = RoundedCornerShape(16.dp), color = Color.Black.copy(alpha = .50f)) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(if (state.mode == GuidanceMode.RETRACE) "≈ ${distanceLabel(state.remainingMeters)}" else distanceLabel(state.distanceMeters), color = Color.White, fontSize = if (compact) 26.sp else 36.sp, fontWeight = FontWeight.SemiBold)
+            Text(if (state.mode == GuidanceMode.RETRACE) "LEFT ON RECORDED TRAIL" else "STRAIGHT LINE TO PLACE", color = Color.White.copy(alpha = .85f), fontSize = 9.sp, letterSpacing = .5.sp, textAlign = TextAlign.Center)
+            Text(when {
+                abs(relative) < 12 -> "Ahead, approximately"
+                abs(relative) > 140 -> "Turn to look behind"
+                relative > 0 -> "Turn right"
+                else -> "Turn left"
+            }, color = Color(0xFFFFC89E), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
         }
     }
 }
