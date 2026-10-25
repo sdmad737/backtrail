@@ -290,6 +290,30 @@ class LocalVisionService(
         )
     }
 
+    /** One bounded text request, with measured route context and caller-owned conversation history. */
+    fun chat(
+        context: RequestContext,
+        question: String,
+        outing: Outing,
+        fix: TrailPoint? = null,
+        history: List<ConversationTurn> = emptyList(),
+        nowMillis: Long = System.currentTimeMillis(),
+    ): Flow<InferenceState<TripAnswer>> {
+        if (context.tripId != outing.id || context.tripRevision != outing.revision)
+            return failure(context, FailureKind.INVALID_RESULT, "Your journey changed. Ask again with the current route.")
+        val built = try { RouteConversationPrompt.build(question, outing, fix, history, nowMillis) }
+            catch (_: IllegalArgumentException) {
+                return failure(context, FailureKind.INVALID_RESULT, "Use a question up to 500 characters. Your saved places are unchanged.")
+            }
+        return request(
+            context = context, op = "route-chat", images = emptyList(),
+            contents = { Contents.of(Content.Text(built.prompt)) },
+            schema = tripSchema(built.idMap.keys), maxOutputTokens = 256,
+            invalidMessage = "Travis could not ground that answer in this journey. Try a more specific question.",
+            validate = { AssistantValidator.tripAnswer(it, built.idMap, built.names) },
+        )
+    }
+
     /** "What tree is this?" about a photo just taken. Safety verdicts are refused, see [SafetyTopics]. */
     fun askAboutPhoto(
         context: RequestContext,
@@ -334,14 +358,37 @@ class LocalVisionService(
         is Question.Audio -> Content.AudioBytes(wav)
     }
 
-    /** Text-only pick among saved places (prompt and schema from [DestinationPrompt], main@b344256+). */
+    /** Original port stays compatible; integration can supply measured route context through the overload. */
     override fun resolveDestination(
         context: RequestContext,
         query: String,
         allowedCheckpoints: List<Checkpoint>,
+    ): Flow<InferenceState<DestinationProposal>> = destinationRequest(context, query, allowedCheckpoints, null)
+
+    fun resolveDestination(
+        context: RequestContext,
+        query: String,
+        allowedCheckpoints: List<Checkpoint>,
+        outing: Outing,
+        fix: TrailPoint? = null,
+        nowMillis: Long = System.currentTimeMillis(),
+    ): Flow<InferenceState<DestinationProposal>> {
+        if (context.tripId != outing.id || context.tripRevision != outing.revision ||
+            allowedCheckpoints.any { checkpoint -> outing.memories.none { it.id == checkpoint.id } })
+            return failure(context, FailureKind.INVALID_RESULT, "Your journey changed. Search again with the current saved places.")
+        val geometry = try { RouteConversationPrompt.geometry(outing, fix, allowedCheckpoints.map { it.id }.toSet(), nowMillis) }
+            catch (_: IllegalArgumentException) { return failure(context, FailureKind.INVALID_RESULT, "The saved route context is unavailable. Your route is unchanged.") }
+        return destinationRequest(context, query, allowedCheckpoints, geometry)
+    }
+
+    private fun destinationRequest(
+        context: RequestContext,
+        query: String,
+        allowedCheckpoints: List<Checkpoint>,
+        routeContext: kotlinx.serialization.json.JsonObject?,
     ): Flow<InferenceState<DestinationProposal>> {
         val prompt = try {
-            DestinationPrompt.build(query, allowedCheckpoints)
+            DestinationPrompt.build(query, allowedCheckpoints, routeContext)
         } catch (_: IllegalArgumentException) {
             return failure(context, FailureKind.INVALID_RESULT, "Use a question up to 500 characters and a catalog of at most 12 saved places.")
         }
@@ -350,12 +397,9 @@ class LocalVisionService(
         }
         val allowedIds = allowedCheckpoints.map { it.id }.toSet()
         return request(
-            context = context,
-            op = "destination",
-            images = emptyList(),
+            context = context, op = "destination", images = emptyList(),
             contents = { Contents.of(Content.Text(prompt)) },
-            schema = DestinationPrompt.schema(allowedIds),
-            maxOutputTokens = 384,
+            schema = DestinationPrompt.schema(allowedIds), maxOutputTokens = 384,
             invalidMessage = "Gemma returned an invalid result. Your route and saved places are unchanged.",
             validate = { ProposalValidator.destinationMatches(it, allowedIds) },
         )
@@ -470,9 +514,10 @@ class LocalVisionService(
 
         fun tripSchema(ids: Collection<String>): String {
             val idList = ids.joinToString(",") { "\"$it\"" }
+            val sourceItem = if (ids.isEmpty()) "{\"type\":\"string\"}" else "{\"type\":\"string\",\"enum\":[$idList]}"
             return "{\"type\":\"object\",\"properties\":{" +
                 "\"answer\":{\"type\":\"string\",\"minLength\":1,\"maxLength\":600}," +
-                "\"sourceIds\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"enum\":[$idList]},\"maxItems\":${ids.size}}," +
+                "\"sourceIds\":{\"type\":\"array\",\"items\":$sourceItem,\"maxItems\":${ids.size}}," +
                 "\"grounded\":{\"type\":\"boolean\"}}," +
                 "\"required\":[\"answer\",\"sourceIds\",\"grounded\"],\"additionalProperties\":false}"
         }

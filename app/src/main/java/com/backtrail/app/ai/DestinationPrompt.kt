@@ -8,7 +8,7 @@ import kotlinx.serialization.json.JsonNull
 
 /** A deliberately small local catalog; no embedding model or coordinate generation is involved. */
 internal object DestinationPrompt {
-    fun build(query: String, checkpoints: List<Checkpoint>): String {
+    fun build(query: String, checkpoints: List<Checkpoint>, routeContext: JsonObject? = null): String {
         require(query.isNotBlank() && query.length <= 500)
         require(checkpoints.size <= 12)
         require(checkpoints.map { it.id }.toSet().size == checkpoints.size)
@@ -24,9 +24,11 @@ internal object DestinationPrompt {
                 "userNotes" to JsonPrimitive(checkpoint.userNotes.take(800)),
             ))
         })
-        val payload = JsonObject(mapOf("catalog" to catalog, "query" to JsonPrimitive(query))).toString()
+        val fields = mutableMapOf<String, kotlinx.serialization.json.JsonElement>("catalog" to catalog, "query" to JsonPrimitive(query))
+        routeContext?.let { fields["measuredRoute"] = it }
+        val payload = JsonObject(fields).toString()
         // Bound the total prompt before allocating native KV state. Do not silently drop candidates.
-        require(payload.length <= 8_000)
+        require(payload.length <= if (routeContext == null) 8_000 else 12_000)
         return INSTRUCTION + payload
     }
 
@@ -43,6 +45,8 @@ internal object DestinationPrompt {
         "For before/after/first/last, use supplied captureOrder (smaller means saved earlier), " +
         "capturedAtMillis and routeSampleIndex, never catalog position or invented chronology. " +
         "A null time or route index is unknown. A photo's capture order is not proof of an unrecorded event. " +
+        "When measuredRoute is present, use its segment and recorded distances for path relationships. " +
+        "Never treat straight-line distance as walked distance, connect gaps or infer that nearby coordinates are the same route visit. " +
         "A relational query needs both the candidate and a supported reference record, for example the bridge. " +
         "If the reference is absent or ambiguous, or ordering evidence conflicts, keep every plausible candidate instead of guessing. " +
         "Check every candidate independently and list ALL that satisfy the query. Never break a tie using recency, " +
