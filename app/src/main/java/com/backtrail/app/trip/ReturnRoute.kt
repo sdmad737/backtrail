@@ -191,15 +191,30 @@ object ReturnRoute {
             if (points[i].segment != points[from].segment) return null
             travelled += TrailMath.distance(points[i], points[i + 1])
             if (i == goal || i in photos || points[i - 1].segment != points[i].segment) return i
-            // Retain recorded bends even when they occur inside a short look-ahead window.
-            val incoming = TrailMath.bearing(points[i + 1], points[i])
-            val outgoing = TrailMath.bearing(points[i], points[i - 1])
-            val legs = TrailMath.distance(points[i + 1], points[i]) >= 1 &&
-                TrailMath.distance(points[i], points[i - 1]) >= 1
-            if (legs && abs(TrailMath.delta(outgoing, incoming)) >= 35) return i
-            if (travelled >= 25) return i
+            // Adjacent samples can be only 2m apart with a reported 12m GPS radius.
+            // A bend must survive a useful baseline on both sides, not just one noisy step.
+            val baseline = maxOf(6.0, points[i].accuracy.toDouble() * 1.5)
+            val nearbyMilestone = (i - 1 downTo goal).firstOrNull { j ->
+                points[j].segment == points[i].segment && (j == goal || j in photos)
+            }?.let { j -> (j..i).all { points[it].segment == points[i].segment } &&
+                TrailMath.length(points.subList(j, i + 1)) <= baseline } == true
+            if (!nearbyMilestone && travelled >= baseline && sustainedBend(points, i, from, goal, baseline)) return i
+            if (!nearbyMilestone && travelled >= 25) return i
         }
         return null
+    }
+
+    internal fun sustainedBend(points: List<TrailPoint>, at: Int, upper: Int, lower: Int, baseline: Double): Boolean {
+        var before = at
+        while (before < upper && points[before + 1].segment == points[at].segment &&
+            TrailMath.distance(points[at], points[before]) < baseline) before++
+        var after = at
+        while (after > lower && points[after - 1].segment == points[at].segment &&
+            TrailMath.distance(points[at], points[after]) < baseline) after--
+        if (TrailMath.distance(points[at], points[before]) < baseline ||
+            TrailMath.distance(points[at], points[after]) < baseline) return false
+        return abs(TrailMath.delta(TrailMath.bearing(points[at], points[after]),
+            TrailMath.bearing(points[before], points[at]))) >= 35
     }
 
     fun remaining(outing: Outing, fix: TrailPoint?): Double? {

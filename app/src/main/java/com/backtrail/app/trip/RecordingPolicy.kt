@@ -43,7 +43,7 @@ class RecordingPolicy {
         lastSampleElapsed = sample.elapsedMillis
         // A wall-clock adjustment must not make new samples look older than the route.
         val fix = point.copy(time = sample.nowWallMillis - age)
-        if (fix.accuracy > 50) {
+        if (fix.accuracy > 25) {
             interrupt()
             return RecordingUpdate(outing, fix, true)
         }

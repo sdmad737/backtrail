@@ -251,4 +251,12 @@ class ReturnRouteTest {
         assertEquals(3,resumed.guidance.firstIndex)
     }
 
+    @Test fun twoMeterGpsWiggleAtTwelveMeterAccuracyIsNotATurnWaypoint() {
+        val xy=listOf(0.0 to 0.0,0.0 to -1.3,-1.2 to -3.0,-.9 to -5.6,-.7 to -7.8,
+            -.3 to -10.8,.3 to -14.5,.4 to -18.2,1.3 to -21.2,1.3 to -23.4,1.9 to -26.2,3.5 to -27.5)
+        val points=xy.mapIndexed { i,(x,y)->point(i,y/111_195.0,x/111_195.0).copy(accuracy=12f) }
+        val out=Outing(id="noisy-walk",points=points,memories=listOf(Memory("bag","Backpack",capturedAt=1,point=points[1],routeIndex=1)))
+        assertEquals("First return target should be the recorded backpack, not a GPS wiggle two meters from departure",1,ReturnRoute.next(out,points.lastIndex,1))
+    }
+
 }

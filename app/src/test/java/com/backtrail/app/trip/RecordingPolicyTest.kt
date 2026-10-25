@@ -150,4 +150,15 @@ class RecordingPolicyTest {
         assertTrue(next.outing.points.isEmpty())
         assertFalse(next.evidenceInterrupted)
     }
+    @Test fun accuracyBetweenTwentyFiveAndFiftyMetersCannotPolluteRecordedGeometry() {
+        val policy=RecordingPolicy()
+        val first=policy.accept(recording,sample(1_000)).outing
+        val weak=policy.accept(first,sample(2_000,lon=.0003,accuracy=35f))
+        assertEquals(first.points,weak.outing.points)
+        assertEquals(35f,weak.fix!!.accuracy)
+        assertTrue(weak.evidenceInterrupted)
+        val recovered=policy.accept(weak.outing,sample(3_000,lon=.0001))
+        assertEquals(listOf(0,1),recovered.outing.points.map { it.segment })
+    }
+
 }
