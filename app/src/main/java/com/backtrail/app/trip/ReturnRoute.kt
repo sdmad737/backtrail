@@ -30,10 +30,14 @@ object ReturnRoute {
         val start = guide.startIndex ?: outing.points.lastIndex
         val current = completed ?: targetIndex(outing) ?: return null
         if (goal !in outing.points.indices || start !in outing.points.indices || current !in goal..start) return null
-        val indices = mutableListOf<Int>()
-        var cursor = start
-        // A resumed return may retain an unconfirmed target at its starting cursor.
-        if (current == start) indices.add(start)
+        // Persist the first target so confirming a resumed zero-distance first step
+        // cannot remove it and renumber every remaining waypoint. Old records keep
+        // their departure as a stable first marker until a new return is started.
+        val first = guide.firstIndex ?: start
+        if (first !in goal..start || current > first ||
+            (first..start).any { outing.points[it].segment != outing.points[start].segment }) return null
+        val indices = mutableListOf(first)
+        var cursor = first
         while (cursor > goal) {
             val following = next(outing, cursor, goal) ?: break
             indices.add(following)
@@ -106,7 +110,7 @@ object ReturnRoute {
     private fun continueHome(outing: Outing, confirmed: Int): Outing? {
         if (confirmed == 0) return outing.copy(retraceIndex = null, guidance = SavedGuidance(), suspendedGuidance = null)
         val next = next(outing, confirmed, 0) ?: return null
-        return outing.copy(retraceIndex = next, guidance = SavedGuidance(GuidanceMode.RETRACE, startIndex = confirmed), suspendedGuidance = null)
+        return outing.copy(retraceIndex = next, guidance = SavedGuidance(GuidanceMode.RETRACE, startIndex = confirmed, firstIndex = next), suspendedGuidance = null)
     }
 
     /** Explicit continuation can change the home cursor; merely finding a memory never does. */
@@ -119,7 +123,7 @@ object ReturnRoute {
             completedIndex(outing, suspended)?.let { return continueHome(outing, it) }
         }
         val home = validIndex(outing, outing.retraceIndex) ?: return null
-        return outing.copy(guidance = SavedGuidance(GuidanceMode.RETRACE, startIndex = outing.points.lastIndex), suspendedGuidance = null, retraceIndex = home)
+        return outing.copy(guidance = SavedGuidance(GuidanceMode.RETRACE, startIndex = outing.points.lastIndex, firstIndex = home), suspendedGuidance = null, retraceIndex = home)
     }
 
     fun canResume(outing: Outing): Boolean = resume(outing) != null
@@ -132,7 +136,7 @@ object ReturnRoute {
         }
         val known = knownIndex(outing)
         val next = known ?: next(outing, outing.points.lastIndex, 0) ?: return null
-        return outing.copy(retraceIndex = next, guidance = SavedGuidance(GuidanceMode.RETRACE, startIndex = outing.points.lastIndex), suspendedGuidance = null)
+        return outing.copy(retraceIndex = next, guidance = SavedGuidance(GuidanceMode.RETRACE, startIndex = outing.points.lastIndex, firstIndex = next), suspendedGuidance = null)
     }
 
     fun undoContext(outing: Outing): UndoContext? {

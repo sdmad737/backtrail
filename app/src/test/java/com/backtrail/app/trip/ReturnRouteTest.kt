@@ -180,7 +180,7 @@ class ReturnRouteTest {
     @Test fun itineraryNamesEverySavedWaypointBeforeTheRequestedGoal() {
         val base=longerOuting()
         val plan=ReturnRoute.plan(base,"start")!!
-        val returning=base.copy(guidance=SavedGuidance(GuidanceMode.RETRACE,"start",plan.nextIndex,plan.goalIndex,plan.startIndex))
+        val returning=base.copy(guidance=SavedGuidance(GuidanceMode.RETRACE,"start",plan.nextIndex,plan.goalIndex,plan.startIndex,firstIndex=plan.nextIndex))
         val itinerary=ReturnRoute.itinerary(returning)!!
         assertEquals(listOf(3,1,0),itinerary.steps.map { it.index })
         assertEquals(0,itinerary.currentStepIndex)
@@ -220,6 +220,35 @@ class ReturnRouteTest {
         val finding=ReturnRoute.suspendForFind(base,"b")
         assertNull(ReturnRoute.itinerary(finding))
         assertEquals(itinerary,ReturnRoute.itinerary(ReturnRoute.resume(finding)!!))
+    }
+
+    @Test fun resumedFirstTargetKeepsStableItineraryAfterItsConfirmation() {
+        val returning=longerOuting().copy(guidance=SavedGuidance(GuidanceMode.RETRACE,"start",3,0,3))
+        val before=ReturnRoute.itinerary(returning)!!
+        val advanced=returning.copy(guidance=returning.guidance.copy(returnIndex=ReturnRoute.next(returning,3,0)))
+        val after=ReturnRoute.itinerary(advanced)!!
+        assertEquals(before.steps.map { it.index },after.steps.map { it.index })
+        assertEquals(before.currentStepIndex+1,after.currentStepIndex)
+    }
+
+    @Test fun persistedFirstTargetRemainsStableWhenItIsNotTheDeparture() {
+        val base=longerOuting().copy(guidance=SavedGuidance(GuidanceMode.RETRACE,"start",3,0,5,firstIndex=3))
+        val before=ReturnRoute.itinerary(base)!!
+        val after=ReturnRoute.itinerary(base.copy(guidance=base.guidance.copy(returnIndex=1)))!!
+        assertEquals(listOf(3,1,0),before.steps.map { it.index })
+        assertEquals(before.steps,after.steps)
+        assertEquals(1,after.currentStepIndex)
+        assertTrue(after.progress>before.progress)
+    }
+
+    @Test fun newReturnModesPersistTheirFirstTarget() {
+        val home=ReturnRoute.headBack(longerOuting())!!
+        assertEquals(home.retraceIndex,home.guidance.firstIndex)
+        val continued=ReturnRoute.resume(ReturnRoute.completeTarget(atMemoryGoal())!!)!!
+        assertEquals(continued.retraceIndex,continued.guidance.firstIndex)
+        val legacy=longerOuting().copy(retraceIndex=3)
+        val resumed=ReturnRoute.resume(legacy)!!
+        assertEquals(3,resumed.guidance.firstIndex)
     }
 
 }
