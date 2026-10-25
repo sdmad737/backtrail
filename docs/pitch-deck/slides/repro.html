@@ -1,0 +1,24 @@
+<section id="repro" data-transition="fade" style="background:#F4F1E8;color:#163B32;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:28px">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#B45E1E">Appendix · Reproduce it</p>
+<h2 style="font-family:'Domine', Georgia, serif;font-size:52px;font-weight:700;line-height:1.1">Pinned models, hashed on the phone, one command per benchmark.</h2>
+<div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:28px;font-weight:700;color:#163B32">Stack</h3>
+<ul style="font-size:24px;line-height:1.45;color:#3D4F48">
+<li>Pixel 11 Pro (grizzly), Google Tensor G6, Android 17, 12 GB RAM</li>
+<li>LiteRT-LM 0.18.0 · litert-npu-runtime-google-tensor 2.3.0 · Kotlin / Compose · CameraX</li>
+<li>gemma-4-E2B-it_Google_Tensor_G6.litertlm · 3,313,938,293 B · SHA-256 f86c7c19…95b7</li>
+<li>gemma-4-E2B-it.litertlm (GPU fallback) · 2,588,147,712 B · SHA-256 18193810…a63c</li>
+<li>embeddinggemma-2-740m_Google_Tensor_G6.litertlm · 615,713,460 B</li>
+<li>Build: 138 JVM tests, lint 0 errors, 21 emulator checks; APK has no INTERNET permission</li>
+</ul>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:28px;font-weight:700;color:#163B32">Run the numbers yourself</h3>
+<p style="font-family:'Courier New', monospace;font-size:24px;line-height:1.5;color:#163B32;background:#EBE6D9;padding:22px;border-radius:14px">./gradlew :app:assembleDebug :app:assembleDebugAndroidTest<br>adb shell cmd connectivity airplane-mode enable<br>adb shell am instrument -w -e class com.backtrail.app.bench.GemmaDeviceBench#describe -e backend NPU -e model gemma-4-E2B-it_Google_Tensor_G6.litertlm com.backtrail.app.test/androidx.test.runner.AndroidJUnitRunner</p>
+<p style="font-size:24px;line-height:1.4;color:#3D4F48">Same for #compare, #embed and AssistantDeviceBench#assistant. Mac evals: evals/README.md (pip install litert-lm==0.18.0). Every run writes a JSON receipt; the log records timestamps and commit hashes.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5C6B64">docs/INFERENCE-LOG.md · docs/demo-phone-receipt.json · docs/demo-build-receipt.json · evals/RESULTS.md · github.com/sdmad737/backtrail</p>
+<aside>For the engineer who asks “can I run this?” Yes: the models are public on Hugging Face, the runtime is public, the commands are here, and the receipts carry hashes.</aside>
+</section>

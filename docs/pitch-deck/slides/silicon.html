@@ -1,0 +1,29 @@
+<section id="silicon" data-transition="fade" style="background:#F4F1E8;color:#163B32;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#B45E1E">Pushing the silicon</p>
+<h2 style="font-family:'Domine', Georgia, serif;font-size:60px;font-weight:700;line-height:1.1">Both models on the Tensor G6 NPU: faster to load, lighter in memory, 17× faster embeddings.</h2>
+<div style="display:flex;flex-direction:row;gap:40px;align-items:flex-start">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:30px;font-weight:700;color:#163B32">Gemma 4 E2B (vision LLM), one photo</h3>
+<table style="font-size:26px;color:#163B32">
+<tr style="background:#163B32"><th style="width:40%;text-align:left;color:#F4F1E8;padding:12px 16px">Measure</th><th style="width:20%;color:#F4F1E8">NPU</th><th style="width:20%;color:#F4F1E8">GPU</th><th style="width:20%;color:#F4F1E8">CPU</th></tr>
+<tr style="background:#EBE6D9"><td style="text-align:left">Model load, cold</td><td style="text-align:center;color:#1E5246"><b>1.5 s</b></td><td style="text-align:center">6.8 s</td><td style="text-align:center">12.1 s</td></tr>
+<tr><td style="text-align:left">Describe a photo, warm</td><td style="text-align:center;color:#1E5246"><b>7.7 s</b></td><td style="text-align:center">8.7 s</td><td style="text-align:center">9.1 s</td></tr>
+<tr style="background:#EBE6D9"><td style="text-align:left">Same-spot check, 3 pairs</td><td style="text-align:center;color:#1E5246"><b>13.6 s</b></td><td style="text-align:center">36.4 s</td><td style="text-align:center">not run</td></tr>
+<tr><td style="text-align:left">Peak app memory</td><td style="text-align:center;color:#1E5246"><b>851 MB</b></td><td style="text-align:center">1,338 MB</td><td style="text-align:center">3,154 MB</td></tr>
+</table>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:30px;font-weight:700;color:#163B32">EmbeddingGemma 2 740M (256-d vectors)</h3>
+<table style="font-size:26px;color:#163B32">
+<tr style="background:#163B32"><th style="width:40%;text-align:left;color:#F4F1E8;padding:12px 16px">Measure</th><th style="width:20%;color:#F4F1E8">NPU</th><th style="width:20%;color:#F4F1E8">GPU</th><th style="width:20%;color:#F4F1E8">Gain</th></tr>
+<tr style="background:#EBE6D9"><td style="text-align:left">Model load</td><td style="text-align:center;color:#1E5246"><b>1.1 s</b></td><td style="text-align:center">19.2 s</td><td style="text-align:center"><b>17×</b></td></tr>
+<tr><td style="text-align:left">Text query</td><td style="text-align:center;color:#1E5246"><b>13 to 16 ms</b></td><td style="text-align:center">95 to 106 ms</td><td style="text-align:center"><b>6 to 8×</b></td></tr>
+<tr style="background:#EBE6D9"><td style="text-align:left">One photo</td><td style="text-align:center;color:#1E5246"><b>228 ms</b></td><td style="text-align:center">918 ms</td><td style="text-align:center"><b>4×</b></td></tr>
+<tr><td style="text-align:left">Rank 8 saved spots</td><td style="text-align:center;color:#1E5246"><b>25 to 30 ms</b></td><td style="text-align:center">not run</td><td style="text-align:center">—</td></tr>
+</table>
+</div>
+</div>
+<p style="font-size:26px;line-height:1.4;color:#3D4F48">Honest reading: Gemma’s per-photo generation is only 1.1 to 1.25× faster on the NPU; the wins are load time (4.6× vs GPU, 8.1× vs CPU), memory (3.7× less than CPU) and the embedding path. The NPU uses Google’s Tensor G6 build of each model; GPU and CPU use the generic build.</p>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5C6B64">Pixel 11 Pro, Android 17, airplane mode, LiteRT-LM 0.18.0. Full runs with timestamps: docs/INFERENCE-LOG.md.</p>
+<aside>Lead with the honest sentence, it buys credibility for everything else: generation is only slightly faster, but load, memory and embeddings are where the NPU changes the product. 1.5 s load means the model can be dropped and reloaded; 851 MB means it coexists with the camera and the map; 13 ms embeddings mean search feels instant.</aside>
+</section>
