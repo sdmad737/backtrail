@@ -32,6 +32,25 @@ class TrailMathTest {
         assertNotEquals(FixQuality.USABLE,TrailMath.quality(point,10_000))
         assertFalse(TrailMath.canConfirm(point,point,10_000))
     }
+    @Test fun poorAccuracyCannotExpandConfirmationToThirtyMeters() {
+        val target=p(0)
+        val fix=p(1,lon=.00027,accuracy=25f)
+        assertTrue(TrailMath.distance(fix,target)>29)
+        assertFalse(TrailMath.canConfirm(fix,target,10_000))
+    }
+    @Test fun confirmationRequiresClosePositionAndBoundedUncertainty() {
+        val target=p(0)
+        assertFalse(TrailMath.canConfirm(p(1,lon=.00013),target,10_000))
+        assertFalse(TrailMath.canConfirm(p(1,lon=.0001,accuracy=15f),target,10_000))
+        assertFalse(TrailMath.canConfirm(p(0),target.copy(accuracy=40f),10_000))
+        assertTrue(TrailMath.canConfirm(p(1,lon=.00005,accuracy=5f),target,10_000))
+    }
+    @Test fun olderAdmittedSavedFixNeedsCloserConfirmationInsteadOfAnExpandedRadius() {
+        val saved=p(0,accuracy=18f)
+        assertTrue(TrailMath.canConfirm(p(1,lon=.00005),saved,10_000))
+        assertFalse(TrailMath.canConfirm(p(1,lon=.00008),saved,10_000))
+        assertFalse(TrailMath.canConfirm(p(0,accuracy=18f),saved,10_000))
+    }
     @Test fun compassWraparoundUsesShortRotation() {
         assertEquals(2.0,TrailMath.delta(1.0,359.0),.001)
         assertEquals(-2.0,TrailMath.delta(359.0,1.0),.001)

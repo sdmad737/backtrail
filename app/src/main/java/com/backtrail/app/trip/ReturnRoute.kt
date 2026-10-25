@@ -8,6 +8,56 @@ object ReturnRoute {
     data class Plan(val nextIndex: Int, val goalIndex: Int, val startIndex: Int)
     data class UndoContext(val outingId: String, val memoryId: String?, val goalIndex: Int, val startIndex: Int)
 
+    data class Step(val index: Int, val distanceFromPreviousMeters: Double)
+    data class Itinerary(
+        val steps: List<Step>,
+        val currentStepIndex: Int,
+        val confirmedDistanceMeters: Double,
+        val totalDistanceMeters: Double,
+        val progress: Float,
+        val reachesGoal: Boolean,
+    )
+
+    /** The same ordered targets used by navigation, with only user-confirmed progress.
+     * Position proximity and nearest-point matching cannot skip steps or complete this bar.
+     * A gap yields the reachable segment and reachesGoal=false, never a connecting line.
+     */
+    fun itinerary(outing: Outing): Itinerary? {
+        val guide = outing.guidance
+        val completed = completedIndex(outing, guide)
+        if (guide.mode != GuidanceMode.RETRACE && completed == null) return null
+        val goal = if (guide.memoryId == null) 0 else guide.goalIndex ?: return null
+        val start = guide.startIndex ?: outing.points.lastIndex
+        val current = completed ?: targetIndex(outing) ?: return null
+        if (goal !in outing.points.indices || start !in outing.points.indices || current !in goal..start) return null
+        val indices = mutableListOf<Int>()
+        var cursor = start
+        // A resumed return may retain an unconfirmed target at its starting cursor.
+        if (current == start) indices.add(start)
+        while (cursor > goal) {
+            val following = next(outing, cursor, goal) ?: break
+            indices.add(following)
+            cursor = following
+        }
+        // Old saved routes or edits may have a valid cursor between generated targets.
+        // Retain that cursor explicitly instead of implying it has been confirmed.
+        if (current !in indices) {
+            if ((current..start).any { outing.points[it].segment != outing.points[start].segment }) return null
+            indices.add(current)
+            indices.sortDescending()
+        }
+        if (indices.isEmpty()) return null
+        var previous = start
+        val steps = indices.map { index ->
+            Step(index, TrailMath.length(outing.points.subList(index, previous + 1))).also { previous = index }
+        }
+        val active = indices.indexOf(current)
+        val total = steps.sumOf { it.distanceFromPreviousMeters }
+        val confirmed = if (completed != null) total else steps.take(active).sumOf { it.distanceFromPreviousMeters }
+        val progress = if (completed != null) 1f else if (total > 0) (confirmed / total).toFloat().coerceIn(0f, 1f) else 0f
+        return Itinerary(steps, active, confirmed, total, progress, indices.last() == goal)
+    }
+
     private fun validIndex(outing: Outing, index: Int?) = index?.takeIf { it in outing.points.indices }
 
     /** FIND retains returnIndex only after the user confirmed the destination's route point. */

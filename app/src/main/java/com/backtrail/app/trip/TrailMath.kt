@@ -37,9 +37,17 @@ object TrailMath {
         }
         return null
     }
-    fun canConfirm(fix: TrailPoint?, target: TrailPoint?, now: Long): Boolean =
-        fix!=null && target!=null && validCoordinates(target) && target.accuracy.isFinite() && target.accuracy>0 &&
-            quality(fix,now)==FixQuality.USABLE && distance(fix,target)<=max(15.0,fix.accuracy*1.5)
+    /** Eligibility for an explicit human confirmation, never an automatic arrival claim.
+     * Poor GPS must tighten this gate rather than enlarge the accepted area.
+     */
+    fun canConfirm(fix: TrailPoint?, target: TrailPoint?, now: Long): Boolean {
+        if (fix == null || target == null || !validCoordinates(target) ||
+            quality(fix, now) != FixQuality.USABLE ||
+            !target.accuracy.isFinite() || target.accuracy <= 0 ||
+            fix.accuracy > 15 || target.accuracy > 25) return false
+        val meters = distance(fix, target)
+        return meters <= 12.0 && meters + max(fix.accuracy, target.accuracy) <= 25.0
+    }
     fun pickup(phase: PickupPhase, distance: Double, accuracy: Float, recent: Boolean): PickupPhase {
         if(!recent || !distance.isFinite() || distance<0 || !accuracy.isFinite() || accuracy>25 || accuracy<=0) return phase
         return when(phase) {

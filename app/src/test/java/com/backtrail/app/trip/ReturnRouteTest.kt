@@ -177,4 +177,49 @@ class ReturnRouteTest {
         assertNull(ReturnRoute.remaining(resumed,resumed.points[3]))
     }
 
+    @Test fun itineraryNamesEverySavedWaypointBeforeTheRequestedGoal() {
+        val base=longerOuting()
+        val plan=ReturnRoute.plan(base,"start")!!
+        val returning=base.copy(guidance=SavedGuidance(GuidanceMode.RETRACE,"start",plan.nextIndex,plan.goalIndex,plan.startIndex))
+        val itinerary=ReturnRoute.itinerary(returning)!!
+        assertEquals(listOf(3,1,0),itinerary.steps.map { it.index })
+        assertEquals(0,itinerary.currentStepIndex)
+        assertEquals(0f,itinerary.progress)
+        assertTrue(itinerary.reachesGoal)
+        assertEquals(TrailMath.length(base.points),itinerary.totalDistanceMeters,.001)
+        val atSecond=returning.copy(guidance=returning.guidance.copy(returnIndex=1))
+        val progressed=ReturnRoute.itinerary(atSecond)!!
+        assertEquals(1,progressed.currentStepIndex)
+        assertTrue(progressed.progress>0f && progressed.progress<1f)
+        assertEquals(TrailMath.length(base.points.subList(3,6)),progressed.confirmedDistanceMeters,.001)
+    }
+
+    @Test fun itineraryDoesNotCompleteBeforeExplicitFinalConfirmation() {
+        val atGoal=atMemoryGoal()
+        assertEquals(0f,ReturnRoute.itinerary(atGoal)!!.progress)
+        val completed=ReturnRoute.completeTarget(atGoal)!!
+        assertEquals(1f,ReturnRoute.itinerary(completed)!!.progress)
+        val direct=ReturnRoute.suspendForFind(longerOuting(),"a")
+        assertNull(ReturnRoute.itinerary(direct))
+    }
+
+    @Test fun itineraryStopsAtGapAndDoesNotCountDisconnectedDistance() {
+        val base=longerOuting().let { it.copy(points=it.points.mapIndexed { i,p->p.copy(segment=if(i<2)0 else 1) }) }
+        val returning=ReturnRoute.headBack(base)!!
+        val itinerary=ReturnRoute.itinerary(returning)!!
+        assertEquals(listOf(3,2),itinerary.steps.map { it.index })
+        assertFalse(itinerary.reachesGoal)
+        assertEquals(TrailMath.length(base.points.subList(2,6)),itinerary.totalDistanceMeters,.001)
+    }
+
+    @Test fun itineraryKeepsKnownTargetAndNeverUsesNearestCrossing() {
+        val base=longerOuting().copy(guidance=SavedGuidance(GuidanceMode.RETRACE,"start",3,0,3))
+        val itinerary=ReturnRoute.itinerary(base)!!
+        assertEquals(listOf(3,1,0),itinerary.steps.map { it.index })
+        assertEquals(0f,itinerary.progress)
+        val finding=ReturnRoute.suspendForFind(base,"b")
+        assertNull(ReturnRoute.itinerary(finding))
+        assertEquals(itinerary,ReturnRoute.itinerary(ReturnRoute.resume(finding)!!))
+    }
+
 }
