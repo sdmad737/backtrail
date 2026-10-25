@@ -71,8 +71,23 @@ class RouteFollowerIntegrationTest {
             assertNull(advanced.recognizedMemoryId)
             report.put("intermediateCursorAdvanced",true).put("bearingContinuesWest",true).put("pickupAndRecognitionUnchanged",true)
             fixes(60.0,40f)
-            withTimeout(5_000) { model.state.first { it.fix?.accuracy==40f && it.bearing==null } }
-            report.put("weakGpsRemovesBearing",true)
+            val weak=withTimeout(5_000) { model.state.first { it.fix?.accuracy==40f } }
+            assertNotNull("GPS loss must retain the last useful route pointer",weak.bearing)
+            assertFalse("Old guidance cannot confirm arrival",weak.canConfirm)
+            assertTrue(weak.lastKnownGuidance)
+            val heldIndex=weak.routeTargetIndex
+            instrumentation.runOnMainSync { LiveSensors.fix.value=null;LiveSensors.heading.value=90.0;LiveSensors.headingReliable.value=true }
+            val lost=withTimeout(5_000) { model.state.first { it.fix==null && it.heading==90.0 && it.lastKnownGuidance } }
+            assertEquals(weak.bearing,lost.bearing);assertEquals(weak.remainingMeters,lost.remainingMeters)
+            assertEquals(heldIndex,lost.routeTargetIndex);assertNotNull(lost.lastKnownFix);assertFalse(lost.canConfirm)
+            instrumentation.runOnMainSync { LiveSensors.heading.value=180.0 }
+            val rotated=withTimeout(5_000) { model.state.first { it.heading==180.0 } }
+            assertEquals(lost.bearing,rotated.bearing)
+            assertTrue("Live heading changes the camera-relative pointer",TrailMath.delta(rotated.bearing!!,rotated.heading!!)!=TrailMath.delta(lost.bearing!!,lost.heading!!))
+            fixes(59.0)
+            val recovered=withTimeout(5_000) { model.state.first { it.directionUsable && !it.lastKnownGuidance } }
+            assertNotNull(recovered.bearing)
+            report.put("weakGpsRetainsReferenceBearing",true).put("nullGpsKeepsCompassAndPositionReference",true).put("recoveryUsesFreshGuidance",true)
             store.mutate(seed.id) { requireNotNull(it).copy(guidance=SavedGuidance(GuidanceMode.RETRACE,"goal",0,0,3,firstIndex=0)) }
             withTimeout(5_000) { model.state.first { it.routeTargetIndex==0 } }
             fixes(1.0)
@@ -84,7 +99,7 @@ class RouteFollowerIntegrationTest {
             assertNull("Position uncertainty near destination must suppress exact arrow",near.bearing)
             report.put("finalDestinationRequiresExplicitConfirmation",true)
         } finally {
-            instrumentation.runOnMainSync { models.clear();LiveSensors.fix.value=null;LiveSensors.trackingRunning.value=false }
+            instrumentation.runOnMainSync { models.clear();LiveSensors.fix.value=null;LiveSensors.heading.value=null;LiveSensors.headingReliable.value=false;LiveSensors.trackingRunning.value=false }
             if(oldActive==null)prefs.edit().remove("active").commit()else prefs.edit().putString("active",oldActive).commit()
             if(before==null)recordFile.delete()else recordFile.writeBytes(before)
             File(app.filesDir,"bench").apply { mkdirs() }.resolve("route-follower-integration.json").writeText(report.toString(2))

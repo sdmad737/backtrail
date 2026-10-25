@@ -19,7 +19,7 @@ import kotlin.math.*
 /** A camera-relative instrument, not a world anchor. Repaints only when supplied
  * sensor state changes; no frame timer, extra sensors, model calls or 3D engine. */
 @Composable
-internal fun ARDirectionalInstrument(relativeDegrees: Double, headingDegrees: Double, modifier: Modifier = Modifier) {
+internal fun ARDirectionalInstrument(relativeDegrees: Double, headingDegrees: Double, modifier: Modifier = Modifier, northUp: Boolean = false) {
     var previous by remember { mutableDoubleStateOf(relativeDegrees) }
     var unwrapped by remember { mutableFloatStateOf(relativeDegrees.toFloat()) }
     LaunchedEffect(relativeDegrees) {
@@ -27,7 +27,7 @@ internal fun ARDirectionalInstrument(relativeDegrees: Double, headingDegrees: Do
         previous = relativeDegrees
     }
     val animated by animateFloatAsState(unwrapped, tween(110), label = "Camera direction")
-    Canvas(modifier.semantics { contentDescription = "Approximate camera compass toward the next target" }) {
+    Canvas(modifier.semantics { contentDescription = if (northUp) "Last route bearing on a fixed north-up compass" else "Approximate camera compass toward the next target" }) {
         val radius = min(size.width * .42f, size.height * .64f)
         val center = Offset(size.width / 2, size.height * .61f)
         fun project(x: Float, forward: Float, height: Float = 0f): Offset {

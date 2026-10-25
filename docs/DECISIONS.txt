@@ -1,3 +1,11 @@
+GPS-CONTINUITY HOTFIX — OCTOBER 24, 2026
+User reports removing the pointer during GPS loss makes guidance unusable. Root
+owns this targeted integration/UI/sensor fix; read-only agent reviews the changes.
+Retain labelled historical guidance without weakening live route matching, final
+arrival or reminder rules. No inertial position fabrication, new models, background
+sensor loop, dependencies or storage migrations. Detailed checks are recorded in
+GPS-CONTINUITY.txt. Existing journeys/photos and model files are preserved.
+
 NAVIGATION FIELD FAILURE PASS — OCTOBER 24, 2026
 User reports arrow targets points behind/past or wrong route sections. Root owns
 contracts/ViewModel/entry/shareddocs/install. Isolated accuracy-route owns trip

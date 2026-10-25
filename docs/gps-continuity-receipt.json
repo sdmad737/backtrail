@@ -1,0 +1,37 @@
+{
+  "change": "Retain explicitly historical pointer and map position through GPS loss; independent compass",
+  "apk": {
+    "bytes": 86938558,
+    "sha256": "3a24ec94b74ce007200b569c12efbc2858d53e8d6216708340fe53d334759e16"
+  },
+  "jvm": {
+    "tests": 207,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 27
+  },
+  "emulator": {
+    "tests": 4,
+    "passed": 4,
+    "syntheticGPS": true,
+    "renderedWeakGpsChecked": true
+  },
+  "pixel": {
+    "model": "Pixel 11 Pro",
+    "package": "com.backtrail.app.integration",
+    "installed": true,
+    "launchStatus": "ok",
+    "savedJourneys": 5,
+    "savedJourneyBytesUnchanged": true,
+    "physicalGpsLossWalkVerified": false
+  },
+  "limitations": [
+    "Historical guidance snapshot is in-memory only",
+    "No GPS-free localization or invented initial bearing",
+    "Physical walking and battery measurements pending"
+  ]
+}

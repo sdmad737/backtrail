@@ -89,8 +89,9 @@ geometry must have <=25m accuracy. Heading rejects reported uncertainty over25°
 Unknown numeric heading uncertainty remains unknown; it never becomes precise.
 RouteFollower matches a bounded local portion of the ordered polyline using three
 distinct fixes. Its look-ahead respects sustained corners; short GPS wiggles are
-not treated as turns. Uncertain, ambiguous, off-route or gap states suppress the
-arrow. Near a destination, overlapping GPS uncertainty requires the original photo.
+not treated as turns. Ambiguous, off-route, gap and unresolved close-position states suppress live
+directional guidance. GPS outage/reacquisition can retain the last measured
+route bearing as explicitly historical display data, never as a current fix. Near a destination, overlapping GPS uncertainty requires the original photo.
 Measured progress may advance intermediate points through a session/cursor/goal
 checked atomic write. It never recognizes, collects or completes the destination.
 Final confirmation is explicit. Segment gaps have no invented connector. Remaining
@@ -120,3 +121,16 @@ Integrated live-app offline NPU text retrieval is verified on Pixel; fresh image
 inference and physical navigation acceptance remain pending. See DEMO.txt and
 demo-build-receipt.json for current checks, DEVICE-INTEGRATION.txt and
 PREPARATION-STATUS.md for prior work.
+
+GPS-CONTINUITY UPDATE — OCTOBER 24, 2026
+GuidanceContinuity retains presentation-only bearing/distance/age for the same
+journey, mode, destination and route cursor during weak/missing GPS or recovery.
+It never feeds the retained location into RouteFollower, storage, reminders or
+confirmation. Distance/progress freeze; confirmation and approach haptics stay off.
+No previous bearing means no invented bearing. Ambiguous/off-route/gap/near-place
+uncertainty does not resurrect an old arrow. Changing the target clears the cache.
+A separate lastKnownFix keeps a muted historical map marker. CameraHeading uses
+a valid current/saved geographic region for declination; a fresh GPS fix is not
+required for an otherwise reliable compass. Sensor lifetime depends on foreground
+Map/Camera visibility, not GPS quality. Unreliable compass offers an explicitly
+fixed north-up bearing reference rather than pretending to track phone rotation.

@@ -70,7 +70,8 @@ fun OfflineTrailMap(state: TravisUiState, modifier: Modifier = Modifier, onMemor
     val density = LocalDensity.current
     val palette = MaterialTheme.colorScheme
     val points = state.outing.points
-    val focus = if (state.mode == GuidanceMode.FIND_LANDMARK) state.target else state.fix
+    val displayFix = if (state.fixQuality == FixQuality.USABLE) state.fix else state.lastKnownFix ?: state.fix
+    val focus = if (state.mode == GuidanceMode.FIND_LANDMARK) state.target else displayFix
     val fallback = remember(points) {
         if (points.isEmpty()) 37.566 to -122.369 else
             (points.minOf { it.latitude } + points.maxOf { it.latitude }) / 2 to
@@ -255,14 +256,14 @@ fun OfflineTrailMap(state: TravisUiState, modifier: Modifier = Modifier, onMemor
         // Draw the measured position above saved-place markers; dense nearby
         // memories must not conceal the user's location.
         Canvas(Modifier.fillMaxSize()) {
-            state.fix?.let { point ->
+            displayFix?.let { point ->
                 val center = screenPoint(world(point.latitude, point.longitude))
                 val metersPerPixel = 156543.03392 * cos(Math.toRadians(point.latitude)) / 2.0.pow(viewport.zoom)
                 val fresh = state.fixQuality == FixQuality.USABLE
                 drawCircle(TravisBlue.copy(alpha = if (fresh) .16f else .08f), (point.accuracy / metersPerPixel).toFloat().coerceIn(9.dp.toPx(), 160.dp.toPx()), center)
-                if (fresh && state.mapHeadingReliable) state.mapHeading?.let { heading ->
+                if (state.mapHeadingReliable) state.mapHeading?.let { heading ->
                     val radius = 47.dp.toPx()
-                    drawArc(TravisBlue.copy(alpha = .28f), heading.toFloat() - 115f, 50f, true,
+                    drawArc((if (fresh) TravisBlue else Color.Gray).copy(alpha = .28f), heading.toFloat() - 115f, 50f, true,
                         Offset(center.x - radius, center.y - radius), androidx.compose.ui.geometry.Size(radius * 2, radius * 2))
                     val radians = Math.toRadians(heading)
                     val tip = center + Offset(sin(radians).toFloat(), -cos(radians).toFloat()) * 18.dp.toPx()

@@ -61,6 +61,26 @@ class GuidanceConversationDeviceTest {
         awaitNode("Check this waypoint")
         assertNull("Intermediate waypoint is not the destination", find("I've reached my destination"))
     }
+    @Test fun weakGpsRetainsVisibleLabelledPointer() {
+        launch()
+        tap("Return to start")
+        find("OK")?.let { tap("OK") }
+        tap("Camera")
+        awaitNode("Approximate camera compass toward the next target")
+        tap("REPLAY · sample controls")
+        tap("Weak GPS")
+        awaitNode("Approximate camera compass toward the next target")
+        awaitNode("AT LAST GPS POSITION · DISTANCE HELD")
+        assertNull(find("Guidance paused"))
+        val screenshot=automation.takeScreenshot()
+        val directory=java.io.File(instrumentation.targetContext.filesDir,"bench").apply { mkdirs() }
+        java.io.File(directory,"gps-continuity-ui.png").outputStream().use { screenshot.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
+        screenshot.recycle()
+        tap("REPLAY · sample controls")
+        tap("Normal")
+        awaitNode("LEFT ON RECORDED TRAIL")
+        assertNull(find("AT LAST GPS POSITION · DISTANCE HELD"))
+    }
     @Test fun chatShowsUserTurnAndExplicitSampleResponse() {
         launch()
         tap("Travis")

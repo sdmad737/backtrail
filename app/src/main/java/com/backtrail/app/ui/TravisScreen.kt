@@ -97,12 +97,12 @@ fun TravisScreen(
         LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { visible=true }
         LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { visible=false }
         val liveCameraVisible=visible && !state.replay && state.cameraAllowed && state.surface==TravisSurface.AR && !state.captureMode && sheet==null
-        val liveHeadingVisible=visible && !state.replay && !state.captureMode && sheet==null && state.fixQuality==FixQuality.USABLE && (state.surface==TravisSurface.MAP || liveCameraVisible)
+        val liveHeadingVisible=visible && !state.replay && !state.captureMode && sheet==null && (state.surface==TravisSurface.MAP || liveCameraVisible)
         LaunchedEffect(liveHeadingVisible) { onHeadingActiveChanged(liveHeadingVisible) }
         DisposableEffect(Unit) { onDispose { onHeadingActiveChanged(false) } }
         val approach=remember { ApproachFeedback() }
-        LaunchedEffect(state.outing.id,state.fix?.time,state.fixQuality,state.target?.id,state.mode,approachHaptics,visible,sheet,state.captureMode,state.replay) {
-            val enabled=approachHaptics && visible && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && sheet==null && !state.captureMode && !state.replay && state.mode!=GuidanceMode.NONE && state.fixQuality==FixQuality.USABLE
+        LaunchedEffect(state.outing.id,state.fix?.time,state.fixQuality,state.target?.id,state.mode,state.lastKnownGuidance,approachHaptics,visible,sheet,state.captureMode,state.replay) {
+            val enabled=approachHaptics && visible && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && sheet==null && !state.captureMode && !state.replay && state.mode!=GuidanceMode.NONE && !state.lastKnownGuidance && state.fixQuality==FixQuality.USABLE
             if(approach.observe(state.target?.let { "${state.outing.id}:${it.id}" },state.distanceMeters,state.fix?.accuracy,state.fix?.time,System.currentTimeMillis(),enabled))
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         }
@@ -165,7 +165,7 @@ fun TravisScreen(
                             Text("REPLAY · sample controls", Modifier.padding(horizontal = 10.dp, vertical = 7.dp), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF673D0C))
                         } else QualityLabel(state)
                         if (state.surface == TravisSurface.MAP) {
-                            val heading = state.mapHeading.takeIf { state.mapHeadingReliable && state.fixQuality == FixQuality.USABLE }
+                            val heading = state.mapHeading.takeIf { state.mapHeadingReliable }
                             Surface(shape = RoundedCornerShape(10.dp), color = palette.surface.copy(alpha = .94f), modifier = Modifier.semantics { contentDescription = if (heading == null) "North-up map. Compass unavailable." else "North-up map. Approximate facing direction ${heading.toInt()} degrees." }) {
                                 Row(Modifier.padding(horizontal = 9.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                                     if (heading != null) TravisGlyph("north", Modifier.size(16.dp).rotate(heading.toFloat()), TravisBlue)
@@ -271,7 +271,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Eyebrow(if (isRoute) "BACK TO ${state.destinationTitle.uppercase()}" else "DIRECT BEARING · ${state.destinationTitle.uppercase()}")
                     Text(if (isRoute) "Next: ${state.routeSteps.firstOrNull { it.index == state.routeTargetIndex }?.title ?: state.targetTitle.removePrefix("Next ")}" else state.targetTitle, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(if (isRoute) "${distanceLabel(state.remainingMeters)} along your trail · waypoint ${state.routeStepNumber.coerceAtLeast(1)} of ${state.routeStepCount.coerceAtLeast(1)}" else "${distanceLabel(state.distanceMeters)} straight line · not a route", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
+                    Text((if (state.lastKnownGuidance) "Last known · " else "") + if (isRoute) "${distanceLabel(state.remainingMeters)} along your trail · waypoint ${state.routeStepNumber.coerceAtLeast(1)} of ${state.routeStepCount.coerceAtLeast(1)}" else "${distanceLabel(state.distanceMeters)} straight line · not a route", style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
                 }
                 IconButton(onClick = { guidanceTools = !guidanceTools }, modifier = Modifier.semantics { contentDescription = if (guidanceTools) "Hide route details" else "Show route details" }) {
                     TravisGlyph("info", Modifier.size(22.dp), palette.primary)
@@ -722,10 +722,10 @@ private fun ReadinessRow(title: String, detail: String, ready: Boolean) {
 @Composable
 internal fun QualityLabel(state: TravisUiState) {
     Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surface) {
-        Text(state.sensorStatus.ifBlank { when (state.fixQuality) {
+        Text(if (state.lastKnownGuidance) "GPS updating · last direction ${state.guidanceAgeSeconds}s ago" else if (state.fix == null && state.lastKnownFix != null) "GPS unavailable · showing last known position" else state.sensorStatus.ifBlank { when (state.fixQuality) {
             FixQuality.USABLE -> "GPS ±${state.fix?.accuracy?.toInt() ?: 0} m · ${state.fix?.let { ((System.currentTimeMillis() - it.time).coerceAtLeast(0) / 1000) } ?: 0}s ago"
             FixQuality.APPROXIMATE -> "Weak GPS · position approximate"
-            FixQuality.STALE -> "Location stale · guidance paused"
+            FixQuality.STALE -> "GPS updating · showing last measured position"
             FixQuality.UNAVAILABLE -> "Waiting for a measured location"
         } }, Modifier.padding(horizontal = 10.dp, vertical = 7.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
     }

@@ -75,7 +75,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         viewModelScope.launch { while(isActive) {
             delay(1000)
             val state=mutable.value
-            if(mutable.subscriptionCount.value>0 && !state.replay && (TrailMath.quality(state.fix,System.currentTimeMillis())!=state.fixQuality || (state.directionUsable && state.fix?.let { System.currentTimeMillis()-it.time>5_000 }==true)))refresh()
+            if(mutable.subscriptionCount.value>0 && !state.replay && (state.lastKnownGuidance || TrailMath.quality(state.fix,System.currentTimeMillis())!=state.fixQuality || (state.directionUsable && state.fix?.let { System.currentTimeMillis()-it.time>5_000 }==true)))refresh()
         } }
         refreshPermissions()
     }
@@ -126,14 +126,14 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             mode==GuidanceMode.FIND_LANDMARK->usable && !directUncertain && fix!=null && System.currentTimeMillis()-fix.time in 0..5_000 && fix.accuracy<=15 && target!=null
             else->false
         }
-        mutable.value=old.copy(outing=outing,assistantMessages=if(old.outing.id==outing.id)old.assistantMessages else emptyList(),recognizedMemoryId=old.recognizedMemoryId?.takeIf { it==guide.memoryId },savedOutings=store.outings.value,fix=fix,fixQuality=quality,
+        val measured=old.copy(outing=outing,assistantMessages=if(old.outing.id==outing.id)old.assistantMessages else emptyList(),recognizedMemoryId=old.recognizedMemoryId?.takeIf { it==guide.memoryId },savedOutings=store.outings.value,fix=fix,fixQuality=quality,
             mode=mode,selectedMemoryId=guide.memoryId,
             heading=if(old.replay) replayHeading else LiveSensors.heading.value,
-            headingReliable=if(old.replay)issue!="weak_gps" else LiveSensors.headingReliable.value,
+            headingReliable=if(old.replay)true else LiveSensors.headingReliable.value,
             headingAccuracyDegrees=if(old.replay)3.0 else LiveSensors.headingAccuracyDegrees.value,
             headingStatus=if(old.replay)"Sample heading" else LiveSensors.headingStatus.value,
             mapHeading=if(old.replay)replayHeading else LiveSensors.mapHeading.value,
-            mapHeadingReliable=if(old.replay)issue!="weak_gps" else LiveSensors.mapHeadingReliable.value,
+            mapHeadingReliable=if(old.replay)true else LiveSensors.mapHeadingReliable.value,
             target=target,targetTitle=if(mode==GuidanceMode.RETRACE) nextPhoto?.title?:"Next recorded waypoint" else destination?.title?:"Choose a saved place",
             targetPhoto=nextPhoto?.photoPath?:"",routeTargetIndex=index,
             destinationMemoryId=destination?.id,destinationTitle=destination?.title?:"Recorded start",
@@ -160,6 +160,8 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             canConfirm=if(old.replay)usable && fix!=null && target!=null && TrailMath.distance(fix,target)<=12 else TrailMath.canConfirm(fix,target,System.currentTimeMillis()),
             sensorStatus=if(old.replay)"" else LiveSensors.failure.value,
             mapAvailable=issue!="missing_maps" && fix?.let { it.latitude in 37.549..37.585 && it.longitude in -122.390..-122.345 }==true)
+        mutable.value=GuidanceContinuity.present(old,measured,navigation?.status,System.currentTimeMillis())
+        if(!old.replay) LiveSensors.headingReferenceFix.value=HeadingReference.choose(fix,mutable.value.lastKnownFix ?: outing.points.lastOrNull())
         if(navigation?.passedTargetIndex!=null && navigation.nextTargetIndex!=null)
             advanceMeasuredNavigation(outing,navigation.passedTargetIndex,navigation.nextTargetIndex)
 

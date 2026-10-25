@@ -6,15 +6,15 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.WindowManager
-import com.backtrail.app.contracts.FixQuality
 import com.backtrail.app.contracts.TrailPoint
-import com.backtrail.app.trip.TrailMath
 import kotlinx.coroutines.flow.MutableStateFlow
 
 object LiveSensors {
     val trackingRunning=MutableStateFlow(false)
     val guidanceMode=MutableStateFlow(com.backtrail.app.contracts.GuidanceMode.NONE)
     val fix=MutableStateFlow<TrailPoint?>(null)
+    // Geographic reference for declination only; never a navigation fix.
+    val headingReferenceFix=MutableStateFlow<TrailPoint?>(null)
     val heading=MutableStateFlow<Double?>(null)
     val headingReliable=MutableStateFlow(false)
     val headingAccuracyDegrees=MutableStateFlow<Double?>(null)
@@ -61,7 +61,6 @@ class CameraHeading(context: Context) : SensorEventListener {
         if(!started) { invalidate();return }
         started=false
         manager.unregisterListener(this);handler.removeCallbacks(expire)
-        declinationFixId=null
         invalidate()
     }
     override fun onAccuracyChanged(sensor:Sensor?, value:Int) {
@@ -74,21 +73,21 @@ class CameraHeading(context: Context) : SensorEventListener {
         accuracy=event.accuracy
         handler.removeCallbacks(expire)
         handler.postDelayed(expire,1_500)
-        val fix=LiveSensors.fix.value
+        val fix=HeadingReference.choose(LiveSensors.fix.value,LiveSensors.headingReferenceFix.value)
         val measurement=HeadingQuality.assess(event.values,accuracy,event.timestamp/1_000_000,SystemClock.elapsedRealtime())
         if(!measurement.usable) {
             invalidate(measurement.reason)
             LiveSensors.headingAccuracyDegrees.value=measurement.accuracyDegrees
             return
         }
-        if(TrailMath.quality(fix,System.currentTimeMillis())!=FixQuality.USABLE) {
-            invalidate("Waiting for a fresh GPS fix")
+        if(fix==null && declinationFixId==null) {
+            invalidate("Open a saved journey or wait for the first GPS location")
             return
         }
         LiveSensors.headingAccuracyDegrees.value=measurement.accuracyDegrees
         LiveSensors.headingStatus.value=measurement.reason
         SensorManager.getRotationMatrixFromVector(rotation,event.values)
-        if(declinationFixId!=fix!!.id) {
+        if(fix!=null && declinationFixId!=fix.id) {
             cachedDeclination=GeomagneticField(fix.latitude.toFloat(),fix.longitude.toFloat(),0f,System.currentTimeMillis()).declination.toDouble()
             declinationFixId=fix.id
         }

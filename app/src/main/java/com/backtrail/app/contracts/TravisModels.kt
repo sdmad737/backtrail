@@ -46,6 +46,8 @@ enum class AssistantAnswerStatus { NONE, LIVE, UNAVAILABLE, FAILURE, INFO, SAMPL
 data class TravisUiState(
     val outing: Outing = Outing(), val savedOutings: List<Outing> = emptyList(),
     val fix: TrailPoint? = null, val fixQuality: FixQuality = FixQuality.UNAVAILABLE,
+    val lastKnownFix: TrailPoint? = null,
+    val lastKnownGuidance: Boolean = false, val guidanceMeasuredAt: Long? = null, val guidanceAgeSeconds: Long = 0,
     val heading: Double? = null, val headingReliable: Boolean = false,
     val mapHeading: Double? = null, val mapHeadingReliable: Boolean = false,
     val headingAccuracyDegrees: Double? = null, val headingStatus: String = "",

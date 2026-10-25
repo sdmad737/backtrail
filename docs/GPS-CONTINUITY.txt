@@ -1,0 +1,43 @@
+TRAVIS — GPS-LOSS GUIDANCE CONTINUITY — OCTOBER 24, 2026
+
+PROBLEM AND FIX
+Fresh-GPS requirements were applied to both route matching and presentation, and
+also disabled the compass sensor lifecycle. This erased useful historical guidance.
+GPS outages now retain the last measured route bearing, distance and muted map
+position. A reliable live compass keeps rotating the arrow. The UI says LAST KNOWN,
+shows age and explicitly holds distance/progress. It never estimates movement from
+accelerometer data. If the compass itself is unreliable, the saved bearing remains
+available as a labelled fixed north-up reference.
+
+BOUNDARIES
+LiveSensors.fix remains the actual observation, including null/weak states. Retained
+coordinates never enter RouteFollower, route persistence, arrival, reminders or
+confirmation. Approach haptics are disabled for held guidance. Changing journey,
+mode, target or cursor clears the old direction. Ambiguous/off-route/gap/near-place
+uncertainty still suppresses directional instructions. No prior measured bearing
+means none is invented; this does not add GPS-free positioning or inertial navigation.
+This display snapshot lasts for the current app session, not across process restarts.
+GPS recording, local inference and stored photos/models are unchanged.
+Sensors still stop when Map/Camera is hidden or the app backgrounds. No extra sensor,
+model inference, network call, 3D engine or continuously running animation was added.
+
+VERIFICATION
+Reproduced before the fix in the real ViewModel/OutingStore emulator test:
+AssertionError: GPS loss must retain the last useful route pointer.
+After fix:207 JVM tests,0 failures/errors/skips; lint0errors/27warnings; APK/test APK
+build success. Four emulator tests pass: ViewModel GPS loss/null fix/heading changes/
+recovery and unchanged arrival/progress; visible labelled weak-GPS camera pointer;
+existing route UI and assistant conversation flows. Rendered weak-GPS UI inspected.
+Emulator tests inject synthetic geometry; they are not physical walking evidence.
+Pixel 11 Pro: installed com.backtrail.app.integration, launch returned Status:ok.
+All5 saved journey records match the pre-update bytes exactly. Local private backup
+and screenshots are ignored under local-data/gps-continuity/. Existing models and
+photos were not copied, replaced or deleted. Physical walk, actual GPS outage recovery,
+compass alignment and battery behavior of this update remain to be checked by walking.
+
+BUILD
+source .tooling/env.sh
+./gradlew --offline -PtravisSideBySide=true :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :app:lintDebug
+APK:app/build/outputs/apk/debug/app-debug.apk
+Bytes:86938558
+SHA256:3a24ec94b74ce007200b569c12efbc2858d53e8d6216708340fe53d334759e16
