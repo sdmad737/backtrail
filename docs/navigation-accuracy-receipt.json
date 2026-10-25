@@ -1,0 +1,28 @@
+{
+  "verified_at_utc": "2026-10-25T01:31:54.961999+00:00",
+  "source_base": "4e2fe95cd519c5103817d1632641d3d1c925b22b",
+  "application_id": "com.backtrail.app.integration",
+  "apk_path": "/Users/shahinmadantschi/Downloads/backtrail-team-handoff/app/build/outputs/apk/debug/app-debug.apk",
+  "apk_bytes": 86930342,
+  "apk_sha256": "56e4de6c7a3fc1d094b4b9dbef2588532cd5d7bc11c7ff614be0580166df5e8d",
+  "unit_tests": {
+    "tests": 195,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Error": 0,
+    "Warning": 27,
+    "Fatal": 0
+  },
+  "emulator": "1 actual ViewModel/store route regression and 5 UI acceptance tests passed; synthetic coordinates/sample conversations explicitly labelled. Final resume/photo-lifetime correction reran route and 3 layout/capture tests: OK (4 tests),31.2s. Contrast-only final change compiled/linted, rendered on Pixel.",
+  "pixel_install": "adb install -r succeeded; saved user data preserved; original com.backtrail.app untouched",
+  "pixel_photo_capture": "Live rear-camera preview inspected; real photo draft -> review; Cancel removed one draft; saved metadata byte-identical before/after.",
+  "offline": "Airplane mode1,WiFi0; existing models and438 map tiles unchanged; no runtime network path added.",
+  "physical_walk": "Not rerun. Field heading alignment, navigation accuracy and battery measurements remain pending.",
+  "gemma_role": "Local photo descriptions, route-aware conversation and requested image comparison; no model-derived coordinates, arrival or route mutation.",
+  "private_evidence": "Ignored local-data/navigation-accuracy and local-data/final-demo; no personal photos or walks committed.",
+  "pixel_installed_apk_sha256": "56e4de6c7a3fc1d094b4b9dbef2588532cd5d7bc11c7ff614be0580166df5e8d",
+  "pixel_contrast": "Final photo review shows light headings/body/reminder text and light status-bar icons on dark surfaces; inspected physical Pixel screenshot."
+}

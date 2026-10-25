@@ -28,6 +28,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
@@ -52,6 +53,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.view.WindowCompat
 
 internal val TravisGreen = Color(0xFF173F35)
 internal val TravisOrange = Color(0xFFE87742)
@@ -229,7 +232,11 @@ fun TravisScreen(
             Dialog(
                 onDismissRequest = { if (!state.captureBusy) act(TravisAction.CancelCapture) },
                 properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
-            ) { CaptureScreen(state, act, camera) }
+            ) {
+                Surface(Modifier.fillMaxSize(), color = palette.surface, contentColor = palette.onSurface) {
+                    CaptureScreen(state, act, camera)
+                }
+            }
         } else sheet?.let { active ->
             ModalBottomSheet(onDismissRequest = { sheet = null }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = palette.surface) {
                 if (active == TravisSheet.ASK) {
@@ -410,6 +417,16 @@ private fun CaptureScreen(state: TravisUiState, act: (TravisAction) -> Unit, cam
     var pickup by rememberSaveable { mutableStateOf(false) }
     val review = state.capturedPhotoPath.isNotBlank()
     val palette = MaterialTheme.colorScheme
+    val view = LocalView.current
+    val dark = isSystemInDarkTheme()
+    SideEffect {
+        (view.parent as? DialogWindowProvider)?.window?.let { window ->
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = review && !dark
+                isAppearanceLightNavigationBars = review && !dark
+            }
+        }
+    }
     BoxWithConstraints(Modifier.fillMaxSize().background(if (review) palette.surface else Color.Black)) {
         val photoHeight = (maxHeight * .4f).coerceIn(150.dp, 330.dp)
         if (!review) {
