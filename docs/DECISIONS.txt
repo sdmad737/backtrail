@@ -1,3 +1,10 @@
+DEMO POINTER RESTORATION — OCTOBER 24, 2026
+User explicitly requests visible approximate guidance despite GPS uncertainty.
+Root owns the targeted UI/composition/trip fix; read-only agent review found no
+blocker. Actual Pixel evidence: fresh +/-13m fix, NEAR_DESTINATION, hidden pointer.
+214 JVM tests and4 emulator tests pass. The red fresh-GPS regression failed before
+the fix. Approximate presentation is separate from strict progress/arrival.
+
 GPS-CONTINUITY HOTFIX — OCTOBER 24, 2026
 User reports removing the pointer during GPS loss makes guidance unusable. Root
 owns this targeted integration/UI/sensor fix; read-only agent reviews the changes.

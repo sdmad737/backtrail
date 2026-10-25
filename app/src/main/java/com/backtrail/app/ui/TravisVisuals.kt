@@ -117,7 +117,7 @@ internal fun TravisMap(state: TravisUiState, modifier: Modifier = Modifier) {
 @Composable
 internal fun TravisCameraGuidance(state: TravisUiState, camera: @Composable (Modifier) -> Unit, modifier: Modifier = Modifier) {
     val relative = if (state.bearing?.isFinite() == true && state.heading?.isFinite() == true) ((state.bearing - state.heading + 540) % 360) - 180 else null
-    val hasDirection = (state.directionUsable || state.lastKnownGuidance) && state.bearing?.isFinite() == true
+    val hasDirection = (state.directionUsable || state.approximateDirection || state.lastKnownGuidance) && state.bearing?.isFinite() == true
     val usable = hasDirection && state.headingReliable && relative != null
     val fontScale = LocalDensity.current.fontScale
     var compareOriginal by rememberSaveable(state.outing.id, state.target?.id, state.targetPhoto) { mutableStateOf(false) }
@@ -160,12 +160,15 @@ internal fun TravisCameraGuidance(state: TravisUiState, camera: @Composable (Mod
                     CameraStatus("North-up reference · compass unavailable", state.headingStatus.ifBlank { "Hold the phone upright, away from magnetic interference." })
                     if (state.lastKnownGuidance) Text("Last GPS direction · ${state.guidanceAgeSeconds}s ago", color = Color(0xFFFFC89E), style = MaterialTheme.typography.labelMedium)
                 }
-                !usable -> CameraStatus(if (!state.directionUsable) "Guidance paused" else "Direction unavailable", if (!state.directionUsable) state.navigationMessage.ifBlank { "A fresh, accurate location on this trail is needed for the arrow." } else state.headingStatus.ifBlank { "Hold the phone upright, away from magnetic interference." })
+                !usable -> CameraStatus(if (!state.directionUsable) "Waiting for location" else "Direction unavailable", if (!state.directionUsable) state.navigationMessage.ifBlank { "A fresh, accurate location on this trail is needed for the arrow." } else state.headingStatus.ifBlank { "Hold the phone upright, away from magnetic interference." })
                 else -> {
                     if (state.lastKnownGuidance) Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF6B390F).copy(alpha = .92f)) {
                         Text("LAST KNOWN · ${state.guidanceAgeSeconds}s ago · GPS updating", Modifier.padding(horizontal = 10.dp, vertical = 6.dp), color = Color.White, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center)
                     }
-                    // Bearing follows the local ordered trail; the displayed distance is route distance.
+                    if (state.approximateDirection && !state.lastKnownGuidance) Surface(shape = RoundedCornerShape(8.dp), color = Color.Black.copy(alpha = .6f)) {
+                        Text(state.pointerMessage, Modifier.padding(horizontal = 10.dp, vertical = 6.dp), color = Color(0xFFFFC89E), style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center)
+                    }
+                    // Matched guidance uses route distance; approximate pointers label waypoint distance.
                     if (landscape) Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
                         ARDirectionalInstrument(relative, state.heading!!, Modifier.width(145.dp).height(105.dp))
                         GuidanceDistance(state, relative, true, Modifier.weight(1f))
@@ -199,8 +202,8 @@ internal fun TravisCameraGuidance(state: TravisUiState, camera: @Composable (Mod
 private fun GuidanceDistance(state: TravisUiState, relative: Double, compact: Boolean, modifier: Modifier = Modifier) {
     Surface(modifier = modifier, shape = RoundedCornerShape(16.dp), color = Color.Black.copy(alpha = .50f)) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(if (state.mode == GuidanceMode.RETRACE) "≈ ${distanceLabel(state.remainingMeters)}" else distanceLabel(state.distanceMeters), color = Color.White, fontSize = if (compact) 26.sp else 36.sp, fontWeight = FontWeight.SemiBold)
-            Text(if (state.lastKnownGuidance) "AT LAST GPS POSITION · DISTANCE HELD" else if (state.mode == GuidanceMode.RETRACE) "LEFT ON RECORDED TRAIL" else "STRAIGHT LINE TO PLACE", color = Color.White.copy(alpha = .85f), fontSize = 9.sp, letterSpacing = .5.sp, textAlign = TextAlign.Center)
+            Text(if (state.approximateDirection) "≈ ${distanceLabel(state.pointerDistanceMeters)}" else if (state.mode == GuidanceMode.RETRACE) "≈ ${distanceLabel(state.remainingMeters)}" else distanceLabel(state.distanceMeters), color = Color.White, fontSize = if (compact) 26.sp else 36.sp, fontWeight = FontWeight.SemiBold)
+            Text(if (state.lastKnownGuidance) "AT LAST GPS POSITION · DISTANCE HELD" else if (state.approximateDirection) "TO WAYPOINT · APPROXIMATE BEARING" else if (state.mode == GuidanceMode.RETRACE) "LEFT ON RECORDED TRAIL" else "STRAIGHT LINE TO PLACE", color = Color.White.copy(alpha = .85f), fontSize = 9.sp, letterSpacing = .5.sp, textAlign = TextAlign.Center)
             Text(when {
                 state.lastKnownGuidance -> "Reference only · check your trail"
                 abs(relative) < 12 -> "Ahead, approximately"

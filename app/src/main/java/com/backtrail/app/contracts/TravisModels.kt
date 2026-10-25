@@ -52,6 +52,7 @@ data class TravisUiState(
     val mapHeading: Double? = null, val mapHeadingReliable: Boolean = false,
     val headingAccuracyDegrees: Double? = null, val headingStatus: String = "",
     val directionUsable: Boolean = false, val navigationMessage: String = "",
+    val approximateDirection: Boolean = false, val pointerDistanceMeters: Double? = null, val pointerMessage: String = "",
     val surface: TravisSurface = TravisSurface.MAP, val mode: GuidanceMode = GuidanceMode.NONE,
     val selectedMemoryId: String? = null, val target: TrailPoint? = null,
     val targetTitle: String = "Choose a saved place", val targetPhoto: String = "",

@@ -17,7 +17,9 @@ Map: prepared offline surroundings, measured position/uncertainty, segmented
 recorded route and photo markers. Missing map coverage leaves the trace visible.
 AR: live rear camera and approximate direction along a local look-ahead on the
 ordered recorded trail, with approximate remaining route length. Explicit direct
-Find uses a straight-line bearing only when GPS can resolve it.
+Find uses a labelled straight-line bearing. Map-quality measured positions also
+show approximate waypoint pointers while strict route matching is uncertain,
+including near a destination. Approximate pointers never authorize arrival.
 Show the original photo where available. During GPS loss retain the last measured
 route pointer and distance as explicitly labelled historical reference; freeze
 progress and arrival checks. Keep the live compass independent of GPS quality.

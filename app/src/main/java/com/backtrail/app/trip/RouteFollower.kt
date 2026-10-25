@@ -42,7 +42,7 @@ class RouteFollower {
         var low=start
         while(low>goal && points[low-1].segment==points[start].segment && validRecorded(points[low]) && validRecorded(points[low-1]))low--
         if(!validRecorded(points[start]))return Guidance(Status.POSITION_UNCERTAIN)
-        if(at<low) { reset();return Guidance(Status.GAP) }
+        if(at<low) { reset();return Guidance(Status.GAP,target=points[low]) }
         val key=Identity(outing.id,guide.memoryId,start,goal,guide.firstIndex,points[start].id)
         if(identity!=key) { reset();identity=key }
         val lengths=DoubleArray(start-low+1)
@@ -115,10 +115,9 @@ class RouteFollower {
         if(distinct)passCount=if(passed)passCount+1 else 0
         val next=if(passCount>=3 && accepted!=null && acquiring>=3)ReturnRoute.next(outing,at,goal)else null
         val result=base.copy(passedTargetIndex=if(next!=null)at else null,nextTargetIndex=next)
-        if(accepted==null || acquiring<3)return result
         if(low==goal && TrailMath.distance(fix,points[goal])<=fix.accuracy+points[goal].accuracy)
-            return result.copy(status=Status.NEAR_DESTINATION)
-        if(low>goal && TrailMath.distance(fix,points[low])<=fix.accuracy+points[low].accuracy)return result.copy(status=Status.GAP)
+            return result.copy(status=Status.NEAR_DESTINATION,target=points[goal])
+        if(low>goal && TrailMath.distance(fix,points[low])<=fix.accuracy+points[low].accuracy)return result.copy(status=Status.GAP,target=points[low])
         var look=(measured+max(18.0,uncertainty*1.5)).coerceAtMost(total)
         // Keep a genuine corner as a visual target; do not aim diagonally through it.
         for(i in start-1 downTo low+1) {
@@ -128,6 +127,9 @@ class RouteFollower {
             }
         }
         val target=pointAt(points,start,low,lengths,look,fix.time)
+        // The pointer can preview this local forward point before matching is confirmed.
+        // The strict bearing/progress gates below still require three distinct fixes.
+        if(accepted==null || acquiring<3)return result.copy(target=target)
         val targetUncertainty=fix.accuracy.toDouble()+target.accuracy
         if(TrailMath.distance(fix,target)<=targetUncertainty)
             return result.copy(status=Status.POSITION_UNCERTAIN,target=target,uncertaintyMeters=targetUncertainty)

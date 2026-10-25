@@ -101,8 +101,8 @@ fun TravisScreen(
         LaunchedEffect(liveHeadingVisible) { onHeadingActiveChanged(liveHeadingVisible) }
         DisposableEffect(Unit) { onDispose { onHeadingActiveChanged(false) } }
         val approach=remember { ApproachFeedback() }
-        LaunchedEffect(state.outing.id,state.fix?.time,state.fixQuality,state.target?.id,state.mode,state.lastKnownGuidance,approachHaptics,visible,sheet,state.captureMode,state.replay) {
-            val enabled=approachHaptics && visible && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && sheet==null && !state.captureMode && !state.replay && state.mode!=GuidanceMode.NONE && !state.lastKnownGuidance && state.fixQuality==FixQuality.USABLE
+        LaunchedEffect(state.outing.id,state.fix?.time,state.fixQuality,state.target?.id,state.mode,state.lastKnownGuidance,state.approximateDirection,approachHaptics,visible,sheet,state.captureMode,state.replay) {
+            val enabled=approachHaptics && visible && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && sheet==null && !state.captureMode && !state.replay && state.mode!=GuidanceMode.NONE && !state.lastKnownGuidance && !state.approximateDirection && state.fixQuality==FixQuality.USABLE
             if(approach.observe(state.target?.let { "${state.outing.id}:${it.id}" },state.distanceMeters,state.fix?.accuracy,state.fix?.time,System.currentTimeMillis(),enabled))
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         }
@@ -284,6 +284,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
             if (showConfirmation) {
                 PrimaryAction(if (recognized) "Place recognized" else if (finalDestination) "I've reached my destination" else if (isRoute) "Check this waypoint" else "I recognize this place", if (recognized) "check" else "trail", Modifier.fillMaxWidth(), state.canConfirm && !recognized) { act(TravisAction.Confirm) }
                 if (!state.canConfirm && !recognized) Text(when {
+                    state.approximateDirection -> "Approximate pointer is available. Move closer and check the saved photo before confirming."
                     !state.directionUsable -> state.navigationMessage.ifBlank { "Wait for a reliable position before confirming." }
                     state.fixQuality != FixQuality.USABLE -> "A fresh, accurate GPS fix is needed to confirm."
                     (state.target?.accuracy ?: 0f) > 25f -> "This saved location is too uncertain to confirm by GPS. Compare the original photo."
@@ -292,7 +293,7 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                     else -> "You're close. Wait for a steadier fix, then check your surroundings."
                 }, style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
                 if (state.canConfirm && !recognized) Text("Close enough to check. Compare your surroundings before confirming.", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
-            } else Text(if (state.directionUsable) "Following trail · progress updates as you walk" else state.navigationMessage.ifBlank { "Waiting for a reliable position on your trail" }, style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
+            } else Text(if (state.approximateDirection && !state.lastKnownGuidance) state.pointerMessage else if (state.directionUsable) "Following trail · progress updates as you walk" else state.navigationMessage.ifBlank { "Waiting for a reliable position on your trail" }, style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
             if (guidanceTools) {
                 if (state.guidanceStatus.isNotBlank()) Text(state.guidanceStatus, style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
                 if (isRoute) RouteItinerary(state)

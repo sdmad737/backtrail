@@ -59,4 +59,55 @@ class GuidanceContinuityTest {
         val held=GuidanceContinuity.present(old,direct.copy(fix=null,bearing=null,directionUsable=false,fixQuality=FixQuality.UNAVAILABLE),null,20_000)
         assertTrue(held.lastKnownGuidance);assertEquals(270.0,held.bearing!!,0.0)
     }
+    @Test fun freshGpsNearPlaceShowsPointerEvenWithoutPreviousGuidance() {
+        val near=live.copy(target=fix.copy(id="near",longitude=fix.longitude-.00005),bearing=null,directionUsable=false)
+        val result=GuidanceContinuity.present(TravisUiState(),near,RouteFollower.Status.NEAR_DESTINATION,10_000)
+        assertNotNull("Fresh GPS and a saved place must show an approximate pointer",result.bearing)
+        assertFalse("Display pointer cannot promote route confidence",result.directionUsable)
+        assertEquals(near.routeTargetIndex,result.routeTargetIndex)
+    }
+    @Test fun mapQualityTwentyMeterFixCanShowFirstWaypointPointer() {
+        val coarse=live.copy(fix=fix.copy(accuracy=20f),bearing=null,directionUsable=false)
+        assertNotNull(GuidanceContinuity.present(TravisUiState(),coarse,RouteFollower.Status.WEAK_GPS,10_000).bearing)
+    }
+
+    @Test fun acquiringUsesForwardLookaheadInsteadOfPassedWaypointBehind() {
+        val points=(0..10).map { i->fix.copy(id="p$i",latitude=0.0,longitude=i*10.0/111_195.0,accuracy=3f) }
+        val walk=Outing(id="line",points=points,retraceIndex=7,guidance=SavedGuidance(GuidanceMode.RETRACE,startIndex=10,firstIndex=7))
+        val currentFix=fix.copy(latitude=0.0,longitude=60.0/111_195.0)
+        val nav=RouteFollower().update(walk,currentFix,10_000)
+        val state=live.copy(outing=walk,fix=currentFix,target=points[7],directionUsable=false,bearing=null)
+        val result=GuidanceContinuity.present(TravisUiState(),state,nav.status,10_000,nav.target)
+        assertNotNull(result.bearing)
+        assertTrue("Pointer continues west before route matching completes",kotlin.math.abs(TrailMath.delta(result.bearing!!,270.0))<5)
+        assertNull(nav.passedTargetIndex);assertFalse(result.directionUsable)
+    }
+    @Test fun exactCoordinateUsesRecordedApproachInsteadOfInventingNorth() {
+        val earlier=fix.copy(id="earlier",longitude=fix.longitude+.001)
+        val walk=outing.copy(points=listOf(target,earlier))
+        val state=live.copy(outing=walk,fix=target.copy(time=10_000),bearing=null,directionUsable=false)
+        val result=GuidanceContinuity.present(TravisUiState(),state,RouteFollower.Status.NEAR_DESTINATION,10_000,target)
+        assertTrue(kotlin.math.abs(TrailMath.delta(result.bearing!!,270.0))<5)
+    }
+    @Test fun nearFindShowsApproximateBearingWithoutChangingArrivalEligibility() {
+        val state=live.copy(mode=GuidanceMode.FIND_LANDMARK,bearing=null,directionUsable=false,canConfirm=false,
+            target=fix.copy(id="close",longitude=fix.longitude-.00002))
+        val result=GuidanceContinuity.present(TravisUiState(),state,null,10_000)
+        assertTrue(result.approximateDirection);assertNotNull(result.bearing);assertFalse(result.canConfirm)
+    }
+    @Test fun staleCoordinatesNeverBecomeFreshApproximatePointer() {
+        val state=live.copy(bearing=null,directionUsable=false)
+        assertNull(GuidanceContinuity.present(TravisUiState(),state,RouteFollower.Status.WEAK_GPS,30_000).bearing)
+    }
+    @Test fun gapPointerEndsAtContiguousBoundary() {
+        val points=(0..10).map { i->fix.copy(id="p$i",latitude=0.0,longitude=i*10.0/111_195.0,accuracy=3f,segment=if(i<6)0 else 1) }
+        val walk=Outing(id="gap",points=points,retraceIndex=0,guidance=SavedGuidance(GuidanceMode.RETRACE,startIndex=10,firstIndex=0))
+        val currentFix=fix.copy(latitude=0.0,longitude=80.0/111_195.0)
+        val nav=RouteFollower().update(walk,currentFix,10_000)
+        assertEquals(RouteFollower.Status.GAP,nav.status);assertEquals(points[6],nav.target)
+        val result=GuidanceContinuity.present(TravisUiState(),live.copy(outing=walk,fix=currentFix,target=points[0],bearing=null,directionUsable=false),nav.status,10_000,nav.target)
+        assertEquals(20.0,result.pointerDistanceMeters!!,.1)
+        assertFalse(result.directionUsable);assertNull(nav.nextTargetIndex)
+    }
+
 }

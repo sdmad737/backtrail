@@ -115,7 +115,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             RouteFollower.Status.POSITION_UNCERTAIN->"This distance is smaller than GPS uncertainty. Follow the map and original photo."
             RouteFollower.Status.NEAR_DESTINATION->"GPS uncertainty overlaps this place. Use the original photo to recognize it."
             RouteFollower.Status.OFF_ROUTE->"Your position is away from this recorded section. Check the map before continuing."
-            RouteFollower.Status.AMBIGUOUS->"Several nearby trail sections could match. Check the map; the arrow is paused."
+            RouteFollower.Status.AMBIGUOUS->"Several nearby trail sections could match. The arrow points to the saved waypoint; check the map."
             RouteFollower.Status.GAP->"The recorded route ends at a gap. No connecting path is inferred."
             else->if(mode==GuidanceMode.FIND_LANDMARK && fix?.let { System.currentTimeMillis()-it.time>5_000 }==true)"Waiting for a fresh GPS update."else if(mode==GuidanceMode.FIND_LANDMARK && directUncertain)"GPS cannot resolve a direction this close. Compare the original photo."else ""
         }
@@ -160,7 +160,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             canConfirm=if(old.replay)usable && fix!=null && target!=null && TrailMath.distance(fix,target)<=12 else TrailMath.canConfirm(fix,target,System.currentTimeMillis()),
             sensorStatus=if(old.replay)"" else LiveSensors.failure.value,
             mapAvailable=issue!="missing_maps" && fix?.let { it.latitude in 37.549..37.585 && it.longitude in -122.390..-122.345 }==true)
-        mutable.value=GuidanceContinuity.present(old,measured,navigation?.status,System.currentTimeMillis())
+        mutable.value=GuidanceContinuity.present(old,measured,navigation?.status,System.currentTimeMillis(),navigation?.target)
         if(!old.replay) LiveSensors.headingReferenceFix.value=HeadingReference.choose(fix,mutable.value.lastKnownFix ?: outing.points.lastOrNull())
         if(navigation?.passedTargetIndex!=null && navigation.nextTargetIndex!=null)
             advanceMeasuredNavigation(outing,navigation.passedTargetIndex,navigation.nextTargetIndex)

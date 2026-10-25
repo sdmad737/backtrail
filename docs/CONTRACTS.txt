@@ -84,13 +84,15 @@ returns keep their own next/goal/start indices. Reaching a memory retains its
 confirmed progress; explicit continuation starts from there toward home. Undo is
 bound to outing/destination/goal/start and cannot mutate a cursor while finding.
 Deleting a memory clears both active and suspended references to that destination.
-Direction requires a fix no older than5s with <=15m reported accuracy; recorded
+Strict matched-route direction requires a fix no older than5s with <=15m reported accuracy; recorded
 geometry must have <=25m accuracy. Heading rejects reported uncertainty over25°.
 Unknown numeric heading uncertainty remains unknown; it never becomes precise.
 RouteFollower matches a bounded local portion of the ordered polyline using three
 distinct fixes. Its look-ahead respects sustained corners; short GPS wiggles are
-not treated as turns. Ambiguous, off-route, gap and unresolved close-position states suppress live
-directional guidance. GPS outage/reacquisition can retain the last measured
+not treated as turns. When strict matching is uncertain, a separately labelled
+approximate pointer uses the map-quality current fix and the local route target.
+Near-place uncertainty does not remove the pointer. Off-route/ambiguous references
+are waypoint bearings; gap references stop at the contiguous segment boundary. GPS outage/reacquisition can retain the last measured
 route bearing as explicitly historical display data, never as a current fix. Near a destination, overlapping GPS uncertainty requires the original photo.
 Measured progress may advance intermediate points through a session/cursor/goal
 checked atomic write. It never recognizes, collects or completes the destination.
@@ -134,3 +136,13 @@ a valid current/saved geographic region for declination; a fresh GPS fix is not
 required for an otherwise reliable compass. Sensor lifetime depends on foreground
 Map/Camera visibility, not GPS quality. Unreliable compass offers an explicitly
 fixed north-up bearing reference rather than pretending to track phone rotation.
+
+DEMO POINTER UPDATE — OCTOBER 24, 2026
+The Pixel showed fresh GPS +/-13m while NEAR_DESTINATION hid the arrow.
+GuidanceContinuity now distinguishes approximateDirection from strict directionUsable.
+A current map-quality fix (<=25m, <=15s) can supply a visible approximate bearing
+without prior matched guidance. RouteFollower supplies its local look-ahead during
+acquisition and the actual goal near arrival; segment gaps target the boundary only.
+The displayed approximate distance is to that pointer target, not a false 0m route
+remaining label. Existing explicit arrival, route advancement and reminders retain
+their measured gates. No fake coordinates, arrival or model output were added.

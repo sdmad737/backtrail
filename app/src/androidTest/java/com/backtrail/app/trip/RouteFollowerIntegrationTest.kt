@@ -96,7 +96,9 @@ class RouteFollowerIntegrationTest {
             assertNull(near.recognizedMemoryId)
             assertEquals(0,store.outings.value.first { it.id==seed.id }.guidance.returnIndex)
             assertTrue(near.outing.memories.all { it.pickup==PickupPhase.ARMED })
-            assertNull("Position uncertainty near destination must suppress exact arrow",near.bearing)
+            assertNotNull("Fresh GPS near the destination must keep an approximate pointer",near.bearing)
+            assertTrue(near.approximateDirection)
+            assertFalse(near.directionUsable)
             report.put("finalDestinationRequiresExplicitConfirmation",true)
         } finally {
             instrumentation.runOnMainSync { models.clear();LiveSensors.fix.value=null;LiveSensors.heading.value=null;LiveSensors.headingReliable.value=false;LiveSensors.trackingRunning.value=false }
