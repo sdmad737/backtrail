@@ -24,15 +24,22 @@ class RouteChatDeviceTest {
         val source=File(app.filesDir,"outings.json")
         val before=source.readBytes()
         val outings=Json { ignoreUnknownKeys=true }.decodeFromString<List<Outing>>(before.toString(Charsets.UTF_8))
-        val activeId=app.getSharedPreferences("travis",0).getString("active",null)
-        val outing=outings.firstOrNull { it.id==activeId && it.memories.isNotEmpty() }
-            ?: outings.first { it.memories.isNotEmpty() }
+        val requestedId=InstrumentationRegistry.getArguments().getString("outingId")
+        fun hasPhoto(outing:Outing)=outing.memories.any { it.photoPath.isNotBlank() && File(it.photoPath).isFile }
+        val outing=if(requestedId!=null) {
+            requireNotNull(outings.firstOrNull { it.id==requestedId }) { "The requested outingId is not installed on this phone." }
+        } else {
+            requireNotNull(outings.filter(::hasPhoto).maxByOrNull { it.startedAt }) { "No saved journey with an original photo is installed." }
+        }
+        assertTrue("The selected journey must have an original saved photo",hasPhoto(outing))
         val model=File(app.noBackupFilesDir,"models/gemma-4-E2B-it_Google_Tensor_G6.litertlm")
         assertTrue("Verified local G6 asset must already be installed",model.isFile)
         val report=JSONObject().put("outingId",outing.id).put("memoryCount",outing.memories.size)
             .put("routePointCount",outing.points.size).put("model",model.name).put("backend","NPU")
             .put("airplaneMode",Settings.Global.getInt(app.contentResolver,Settings.Global.AIRPLANE_MODE_ON,0))
             .put("currentFixProvided",false).put("photoSource","original saved photo, not a fresh capture")
+            .put("outingSelection",if(requestedId!=null)"explicit outingId" else "most recent journey with an original photo")
+            .put("assertionScope","Runtime completion, allowed citations and unchanged records; answer semantics require review")
         var raw:String?=null
         var trace:InferenceTrace?=null
         val service=LocalVisionService(model,app.cacheDir,InferenceBackend.NPU,
