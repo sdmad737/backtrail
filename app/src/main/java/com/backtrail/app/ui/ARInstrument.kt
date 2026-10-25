@@ -1,7 +1,9 @@
 package com.backtrail.app.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -18,6 +20,13 @@ import kotlin.math.*
  * sensor state changes; no frame timer, extra sensors, model calls or 3D engine. */
 @Composable
 internal fun ARDirectionalInstrument(relativeDegrees: Double, headingDegrees: Double, modifier: Modifier = Modifier) {
+    var previous by remember { mutableDoubleStateOf(relativeDegrees) }
+    var unwrapped by remember { mutableFloatStateOf(relativeDegrees.toFloat()) }
+    LaunchedEffect(relativeDegrees) {
+        unwrapped += (((relativeDegrees - previous + 540.0) % 360.0) - 180.0).toFloat()
+        previous = relativeDegrees
+    }
+    val animated by animateFloatAsState(unwrapped, tween(110), label = "Camera direction")
     Canvas(modifier.semantics { contentDescription = "Approximate camera compass toward the next target" }) {
         val radius = min(size.width * .42f, size.height * .64f)
         val center = Offset(size.width / 2, size.height * .61f)
@@ -37,7 +46,7 @@ internal fun ARDirectionalInstrument(relativeDegrees: Double, headingDegrees: Do
         // A restrained projected disk and rim establish depth without implying a
         // surface in the camera image has been detected or tracked.
         drawOval(Color.Black.copy(alpha = .28f), Offset(center.x - radius, center.y - radius * .33f), Size(radius * 2, radius * .9f))
-        drawPath(polygon(rim), Color(0xFF132D26))
+        drawPath(polygon(rim), Color(0xFF132D26).copy(alpha = .55f))
         drawPath(polygon(rim), Color(0xFFE7EEE5).copy(alpha = .62f), style = Stroke(1.2.dp.toPx()))
         drawPath(polygon((0..72).map { point(it * 5.0, .78f) }), Color.White.copy(alpha = .12f), style = Stroke(.7.dp.toPx()))
         for (tick in 0 until 36) {
@@ -52,7 +61,7 @@ internal fun ARDirectionalInstrument(relativeDegrees: Double, headingDegrees: Do
         drawCircle(TravisBlue, 2.8.dp.toPx(), point(-headingDegrees, .87f))
         drawLine(Color.White.copy(alpha = .85f), project(0f, 1.08f), project(0f, 1.23f), 2.dp.toPx(), StrokeCap.Round)
 
-        val theta = Math.toRadians(relativeDegrees)
+        val theta = Math.toRadians(animated.toDouble())
         fun arrowPoint(x: Float, forward: Float, height: Float): Offset = project(
             (x * cos(theta) + forward * sin(theta)).toFloat(),
             (forward * cos(theta) - x * sin(theta)).toFloat(), height)
