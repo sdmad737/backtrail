@@ -1,0 +1,27 @@
+<section id="field" data-transition="fade" style="background:#F4F1E8;color:#163B32;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:row;gap:48px;align-items:flex-start">
+<div style="flex:1;display:flex;flex-direction:column;gap:28px">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#B45E1E">On the phone, today</p>
+<h2 style="font-family:'Domine', Georgia, serif;font-size:58px;font-weight:700;line-height:1.1">Every feature ran on the Pixel’s NPU in airplane mode, on photos we took this afternoon.</h2>
+<table style="font-size:26px;color:#163B32">
+<tr style="background:#163B32"><th style="width:52%;text-align:left;color:#F4F1E8;padding:12px 16px">Feature on the Tensor G6 NPU</th><th style="width:24%;color:#F4F1E8">Result</th><th style="width:24%;color:#F4F1E8">Time</th></tr>
+<tr style="background:#EBE6D9"><td style="text-align:left">Describe a landmark (8 garden photos)</td><td style="text-align:center">8 of 8 valid</td><td style="text-align:center">3.0 to 8.9 s</td></tr>
+<tr><td style="text-align:left">Same spot? 25 different-place pairs, strict prompt</td><td style="text-align:center"><b>0 wrong “same spot”</b></td><td style="text-align:center">~8.5 s</td></tr>
+<tr style="background:#EBE6D9"><td style="text-align:left">Same spot? 3 true pairs (look-alike garden)</td><td style="text-align:center">1 of 3 found</td><td style="text-align:center">~8.5 s</td></tr>
+<tr><td style="text-align:left">“Where did I leave my water bottle?”</td><td style="text-align:center">right spot, cited</td><td style="text-align:center">8.7 s</td></tr>
+<tr style="background:#EBE6D9"><td style="text-align:left">Same question, spoken (16 kHz audio into Gemma)</td><td style="text-align:center">same answer</td><td style="text-align:center">8.6 s</td></tr>
+<tr><td style="text-align:left">“Where is the swimming pool?” (there is none)</td><td style="text-align:center">“I don’t see that”</td><td style="text-align:center">7.9 s</td></tr>
+<tr style="background:#EBE6D9"><td style="text-align:left">“Can I eat anything growing here?”</td><td style="text-align:center">refused, no model call</td><td style="text-align:center">0 ms</td></tr>
+<tr><td style="text-align:left">Note → return reminder (3 notes)</td><td style="text-align:center">3 of 3 correct</td><td style="text-align:center">4.6 to 5.9 s</td></tr>
+</table>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;width:520px">
+<img src="/_blob/2dc58719fc4326e10a46c065df38fab8" alt="Street junction test photo with a teal shop sign reading Lalibela" style="width:520px;height:390px;object-fit:cover;border-radius:20px;border:3px solid #163B32">
+<div style="display:flex;flex-direction:column;gap:8px;background:#163B32;padding:26px;border-radius:20px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#E59A5B">Gemma 4 E2B on the NPU, 7.7 s</p>
+<p style="font-size:26px;line-height:1.35;color:#F4F1E8">“Red brick buildings · white window frames · <b>shop front with ‘Lalibela’</b> · balcony on the upper floor · street lamp post”</p>
+<p style="font-size:24px;line-height:1.3;color:#BFD3CB">The Tensor G6 build read the sign. The generic GPU build never did on this photo.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5C6B64">docs/INFERENCE-LOG.md, runs between 13:48 and 15:00 today. Garden photos stay private; this street photo is a public sample image.</p>
+<aside>This slide proves the loop is real. The pool question is the one to call out: the model said it does not see a pool in your saved places. Then the honest row: on a garden where every spot shares the same pergola and paving, the strict check found one of three true matches. We chose zero false matches over recall, and the next slide explains why.</aside>
+</section>

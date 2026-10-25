@@ -1,0 +1,19 @@
+{
+  "v": 4,
+  "createdOnFiles": {"v": 1, "at": "2026-10-25T00:05:00Z"},
+  "lists": "css",
+  "title": "Travis Pitch Deck",
+  "order": ["cover", "story", "problem", "landscape", "solution", "edge", "architecture", "silicon", "npu-fix", "trust", "field", "honest", "demo", "fit", "closing", "sources", "repro"],
+  "sections": {
+    "why": {"description": "The problem: people get lost exactly where phones fail, and the tools we have assume a network.", "start": "cover"},
+    "what": {"description": "Travis: an offline landmark memory that runs Gemma on the phone and lets the walker decide.", "start": "solution"},
+    "how": {"description": "Pushing the Tensor G6 NPU and making the model trustworthy, with measured numbers.", "start": "silicon"},
+    "proof": {"description": "Field results, honest limits, the demo, and why this fits the brief.", "start": "field"},
+    "appendix": {"description": "Sources and reproducibility.", "start": "sources"}
+  },
+  "faces": {
+    "domine": {"family": "Domine", "href": "https://fonts.googleapis.com/css2?family=Domine:wght@400..700&display=swap"},
+    "dm-sans": {"family": "DM Sans", "href": "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"}
+  },
+  "designSystems": []
+}

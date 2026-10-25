@@ -1,0 +1,24 @@
+<section id="npu-fix" data-transition="fade" style="background:#F4F1E8;color:#163B32;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<p style="font-size:28px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:#B45E1E">Technical ingenuity</p>
+<h2 style="font-family:'Domine', Georgia, serif;font-size:60px;font-weight:700;line-height:1.1">The NPU did not work out of the box. Four fixes got the whole loop onto it.</h2>
+<div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:28px">
+<div style="display:flex;flex-direction:column;gap:10px;background:#EBE6D9;padding:30px;border-radius:20px">
+<h3 style="font-size:30px;font-weight:700;color:#163B32">1 · Three root causes, one dependency</h3>
+<p style="font-size:26px;line-height:1.35;color:#3D4F48">No Tensor dispatch driver in the APK; the sample driver was built for an older runtime (“Unsupported dispatch runtime version”); the manifest lacked <i>uses-native-library libedgetpu_litert.so</i> (“Failed to initialize SB”). Fix: <b>litert-npu-runtime-google-tensor 2.3.0</b> plus uncompressed JNI packaging. Upgrading LiteRT-LM alone did nothing.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;background:#EBE6D9;padding:30px;border-radius:20px">
+<h3 style="font-size:30px;font-weight:700;color:#163B32">2 · Forced JSON, 0% → 100% usable</h3>
+<p style="font-size:26px;line-height:1.35;color:#3D4F48">Stock Gemma wrapped every answer in Markdown code fences, so our strict validator rejected all of them. Constraining decoding to a JSON schema in the runtime took usable answers from 0 of 66 to 66 of 66, with no retries.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;background:#EBE6D9;padding:30px;border-radius:20px">
+<h3 style="font-size:30px;font-weight:700;color:#163B32">3 · One engine, kept loaded</h3>
+<p style="font-size:26px;line-height:1.35;color:#3D4F48">The bootstrap reloaded the 2.6 GB model for every photo: 20.8 s on first load. Now one engine stays resident; follow-up requests pay 0 ms to load. Both Gemma and EmbeddingGemma share the NPU at about 1.6 GB total.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;background:#EBE6D9;padding:30px;border-radius:20px">
+<h3 style="font-size:30px;font-weight:700;color:#163B32">4 · A cancel bug that broke the next request</h3>
+<p style="font-size:26px;line-height:1.35;color:#3D4F48">In LiteRT-LM 0.18.0, cancelling a finished conversation corrupted the reused engine (“Failed to get num packed bytes”). We cancel only work that stopped early, and refuse overlapping requests instead of queueing them, so the UI never waits on an uninterruptible native call.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;font-size:24px;color:#5C6B64">Each fix is a commit on main with the before and after measurement. Reproduction commands in the appendix.</p>
+<aside>This is the “how deep did you go” slide for engineers. Say the first one in full: three different error messages, three layers (APK, runtime version, manifest), one correct dependency. Then the JSON point in one line: the model was fine; the format was the bug. Thirty seconds total.</aside>
+</section>
