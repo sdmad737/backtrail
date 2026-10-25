@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.backtrail.app.contracts.*
+import com.backtrail.app.trip.ReturnRoute
 
 /** A conversation about the current journey; every source card remains an explicit action. */
 @Composable
@@ -96,7 +97,7 @@ internal fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: 
                     }
                     if (!user && message.status == AssistantAnswerStatus.LIVE) TextButton(onClick = { act(if (state.speaking) TravisAction.StopSpeaking else TravisAction.ReadAloud(message.text)) }) { Text(if (state.speaking) "Stop speaking" else "Read aloud") }
                     message.sourceIds.mapNotNull { id -> state.outing.memories.firstOrNull { it.id == id } }.distinctBy { it.id }.forEach { memory ->
-                        AssistantSource(memory, act, close)
+                        AssistantSource(memory, state.outing, act, close)
                     }
                 }
             }
@@ -154,18 +155,19 @@ internal fun AskSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: 
 }
 
 @Composable
-private fun AssistantSource(memory: Memory, act: (TravisAction) -> Unit, close: () -> Unit) {
+private fun AssistantSource(memory: Memory, outing: Outing, act: (TravisAction) -> Unit, close: () -> Unit) {
     val palette = MaterialTheme.colorScheme
+    val hasReturnRoute = remember(outing, memory.id) { ReturnRoute.plan(outing, memory.id) != null }
     Surface(color = palette.surface, shape = RoundedCornerShape(14.dp), border = androidx.compose.foundation.BorderStroke(1.dp, palette.outlineVariant), modifier = Modifier.fillMaxWidth().padding(top = 7.dp)) {
         Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             TravisPhoto(memory.photoPath, "Original saved photo of ${memory.title}", Modifier.size(58.dp).clip(RoundedCornerShape(9.dp)))
             Column(Modifier.weight(1f)) {
                 Text(memory.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(if (memory.routeIndex != null) "Saved on your recorded trail" else "Saved photo · route position unknown", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
+                Text(if (hasReturnRoute) "Return along your recorded trail" else "No connected return route available", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
                 TextButton(onClick = {
-                    act(if (memory.routeIndex != null) TravisAction.TakeMeBack(memory.id) else TravisAction.SelectMemory(memory.id))
+                    act(if (hasReturnRoute) TravisAction.TakeMeBack(memory.id) else TravisAction.SelectMemory(memory.id))
                     act(TravisAction.SwitchSurface(TravisSurface.AR)); close()
-                }, enabled = memory.point != null, contentPadding = PaddingValues(vertical = 4.dp)) { Text(if (memory.routeIndex != null) "Find in AR via trail" else "View direct bearing") }
+                }, enabled = memory.point != null, contentPadding = PaddingValues(vertical = 4.dp)) { Text(if (hasReturnRoute) "Find in AR via trail" else "Direct bearing only") }
             }
         }
     }

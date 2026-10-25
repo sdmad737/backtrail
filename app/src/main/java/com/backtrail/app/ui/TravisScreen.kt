@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.backtrail.app.contracts.*
 import com.backtrail.app.R
 import com.backtrail.app.trip.ApproachFeedback
+import com.backtrail.app.trip.ReturnRoute
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -284,7 +285,13 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                 PrimaryAction(if (recognized) "Place recognized" else if (isRoute) "I'm at this waypoint" else "I recognize this place", if (recognized) "check" else "trail", Modifier.weight(1f), state.canConfirm && !recognized) { act(TravisAction.Confirm) }
                 QuietAction("Travis", "spark", Modifier.widthIn(min = 90.dp), onClick = onAsk)
             }
-            if (!state.canConfirm && !recognized) Text(if (state.fixQuality != FixQuality.USABLE) "A fresh, accurate GPS fix is needed to confirm." else "Keep following the arrow. Confirm when you're at the next waypoint.", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
+            if (!state.canConfirm && !recognized) Text(when {
+                state.fixQuality != FixQuality.USABLE -> "A fresh, accurate GPS fix is needed to confirm."
+                (state.target?.accuracy ?: 0f) > 25f -> "This saved location is too uncertain to confirm by GPS. Compare the original photo."
+                (state.fix?.accuracy ?: 0f) > 15f -> "GPS is ±${state.fix?.accuracy?.toInt()} m. Wait for a more accurate fix before confirming."
+                (state.distanceMeters ?: Double.POSITIVE_INFINITY) > 12.0 -> "Keep following the arrow · ${distanceLabel(state.distanceMeters)} to this waypoint."
+                else -> "You're close, but GPS uncertainty is still too large to confirm. Wait for a steadier fix."
+            }, style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
             if (state.canConfirm && !recognized) Text("Close enough to check. Compare your surroundings before confirming.", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
             if (guidanceTools) {
                 if (state.guidanceStatus.isNotBlank()) Text(state.guidanceStatus, style = MaterialTheme.typography.bodySmall, color = palette.onSurfaceVariant)
@@ -544,11 +551,14 @@ private fun MemoryCard(memory: Memory, state:TravisUiState, onClick: () -> Unit,
                         TextButton(onClick = { confirmDelete = true }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
                     }
                 }
-                if (memory.point != null && memory.routeIndex != null) {
+                if (ReturnRoute.plan(state.outing, memory.id) != null) {
                     PrimaryAction("Find in AR via my trail", "ar", Modifier.fillMaxWidth()) { act(TravisAction.TakeMeBack(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); onCloseMemoryCard() }
                     Text("Follow the recorded route to this place.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Direct bearing only") }
-                } else PrimaryAction(actionLabel, "ar", Modifier.fillMaxWidth(), memory.point != null, onClick)
+                } else {
+                    if (memory.point != null) Text("No connected return route available. A direct bearing does not show a walkable path.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedButton(onClick = onClick, enabled = memory.point != null, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Direct bearing only") }
+                }
                 if (memory.pickup == PickupPhase.COLLECTED) Text("Collected · saved to this journey", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 if (memory.pickup !in listOf(PickupPhase.NONE, PickupPhase.COLLECTED)) OutlinedButton(onClick = { act(TravisAction.Collect(memory.id)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("I collected it") }
             }

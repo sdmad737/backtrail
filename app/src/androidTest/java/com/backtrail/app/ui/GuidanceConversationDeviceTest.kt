@@ -55,6 +55,12 @@ class GuidanceConversationDeviceTest {
         assertNotNull(find("TO NEXT WAYPOINT"))
         assertNotNull(find("TRAIL"))
         assertNull("Proximity must not claim arrival", find("Near the recorded place"))
+        tap("Replay step")
+        awaitNode("0 m")
+        assertNotNull("Direction stays visible while near, before confirmation", find("Approximate camera compass toward the next target"))
+        assertNull("Near is not an arrival claim", find("Near the recorded place"))
+        tap("I'm at this waypoint")
+        awaitNode("2/14")
         tap("Show route details")
         awaitNode("Your way back")
     }
@@ -66,6 +72,10 @@ class GuidanceConversationDeviceTest {
         awaitNode("SAMPLE RESPONSE")
         assertNotNull(find("What did I leave to collect?"))
         assertNotNull(find("Clear chat"))
+        tap("Find in AR via trail")
+        awaitNode("BACK TO STONE BRIDGE")
+        awaitNode("TO NEXT WAYPOINT")
+        tap("Travis")
         tap("Clear chat")
         awaitNode("What do you want to remember?")
     }

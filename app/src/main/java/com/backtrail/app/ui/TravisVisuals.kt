@@ -154,7 +154,7 @@ internal fun TravisCameraGuidance(state: TravisUiState, camera: @Composable (Mod
                 !usable -> CameraStatus(if (state.fixQuality != FixQuality.USABLE) "Waiting for GPS" else "Direction unavailable", if (state.fixQuality == FixQuality.STALE) "Location is stale. Use your saved photo and map." else if (state.fixQuality != FixQuality.USABLE) "A fresh, accurate location is needed for the arrow." else "Hold the phone upright, away from magnetic interference.")
                 else -> {
                     // This is a camera-relative compass, never a world anchor or arrival claim.
-                    ARDirectionalInstrument(relative!!, state.heading!!, Modifier.width(if (compact) 158.dp else 210.dp).height(if (compact) 112.dp else 156.dp))
+                    ARDirectionalInstrument(relative, state.heading!!, Modifier.width(if (compact) 158.dp else 210.dp).height(if (compact) 112.dp else 156.dp))
                     Surface(shape = RoundedCornerShape(16.dp), color = Color.Black.copy(alpha = .50f)) {
                         Column(Modifier.padding(horizontal = 16.dp, vertical = 9.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
                             Text(distanceLabel(state.distanceMeters), color = Color.White, fontSize = if (compact) 28.sp else 36.sp, fontWeight = FontWeight.SemiBold)
