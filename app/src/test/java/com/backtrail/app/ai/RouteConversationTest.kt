@@ -52,6 +52,27 @@ class RouteConversationTest {
         assertEquals(20,built.payload.getValue("totalSavedPlaces").jsonPrimitive.int)
         assertTrue(built.prompt.length<=12_000)
     }
+    @Test fun `active destination cannot be evicted by many recent citations`() {
+        val many=outing().copy(memories=(0..19).map { Memory("m$it","Place $it",capturedAt=it.toLong(),routeIndex=0,point=points[0]) },
+            guidance=SavedGuidance(GuidanceMode.RETRACE,"m0",3,0,4))
+        val history=listOf(ConversationTurn(ConversationRole.TRAVIS,"Several places",(1..8).map { "m$it" }))
+        val built=RouteConversationPrompt.build("where",many,null,history,now)
+        assertTrue("m0" in built.idMap.values)
+        val activeAlias=built.payload.getValue("guidance").jsonObject.getValue("destinationId").jsonPrimitive.content
+        assertEquals("m0",built.idMap[activeAlias])
+    }
+    @Test fun `full legal catalog and conversation fit by excerpting prose without dropping route facts`() {
+        val many=outing().copy(memories=(0..11).map { Memory("m$it","Landmark ".repeat(20),note="Saved note ".repeat(100),description="Observed features ".repeat(100),capturedAt=it.toLong(),routeIndex=0,point=points[0]) })
+        val history=(0..5).map { ConversationTurn(ConversationRole.TRAVIS,"Earlier answer ".repeat(40),many.memories.map { it.id }) }
+        val query="q".repeat(500)
+        val built=RouteConversationPrompt.build(query,many,points.last(),history,now)
+        assertEquals(12,built.idMap.size)
+        assertEquals(query,built.payload.getValue("question").jsonPrimitive.content)
+        assertTrue(built.payload.getValue("textExcerpted").jsonPrimitive.boolean)
+        assertTrue(built.prompt.toByteArray(Charsets.UTF_8).size<=RouteConversationPrompt.MAX_PROMPT_BYTES)
+        assertEquals(6,built.payload.getValue("conversation").jsonArray.size)
+        assertTrue(built.payload.getValue("places").jsonArray.all { it.jsonObject.getValue("routeIndex").jsonPrimitive.int==0 })
+    }
     @Test(expected=IllegalArgumentException::class) fun `invented answer citation rejected`() {
         AssistantValidator.tripAnswer("""{"answer":"Go there","sourceIds":["s9"],"grounded":true}""",mapOf("s1" to "real"))
     }
