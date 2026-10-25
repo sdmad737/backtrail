@@ -100,6 +100,16 @@ class RouteFollowerIntegrationTest {
             assertTrue(near.approximateDirection)
             assertFalse(near.directionUsable)
             report.put("finalDestinationRequiresExplicitConfirmation",true)
+            val preserved=near.outing.guidance
+            instrumentation.runOnMainSync { model.action(TravisAction.SelectMemory("goal")) }
+            withTimeout(5_000) { model.state.first { it.mode==GuidanceMode.FIND_LANDMARK } }
+            fixes(5.0)
+            val direct=withTimeout(5_000) { model.state.first { it.mode==GuidanceMode.FIND_LANDMARK && it.bearing!=null && it.fix!=null } }
+            assertEquals(TrailMath.bearing(direct.fix!!,points[0]),direct.bearing!!,.001)
+            assertEquals(TrailMath.distance(direct.fix!!,points[0]),direct.distanceMeters!!,.001)
+            assertEquals(preserved,direct.outing.suspendedGuidance)
+            assertTrue(direct.outing.memories.all { it.pickup==PickupPhase.ARMED })
+            report.put("directBearingUsesSelectedPlaceAndPreservesTrail",true)
         } finally {
             instrumentation.runOnMainSync { models.clear();LiveSensors.fix.value=null;LiveSensors.heading.value=null;LiveSensors.headingReliable.value=false;LiveSensors.trackingRunning.value=false }
             if(oldActive==null)prefs.edit().remove("active").commit()else prefs.edit().putString("active",oldActive).commit()

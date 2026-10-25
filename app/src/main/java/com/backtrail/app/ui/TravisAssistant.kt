@@ -163,11 +163,11 @@ private fun AssistantSource(memory: Memory, outing: Outing, act: (TravisAction) 
             TravisPhoto(memory.photoPath, "Original saved photo of ${memory.title}", Modifier.size(58.dp).clip(RoundedCornerShape(9.dp)))
             Column(Modifier.weight(1f)) {
                 Text(memory.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(if (hasReturnRoute) "Return along your recorded trail" else "No connected return route available", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
+                Text("Straight-line direction to this saved place", style = MaterialTheme.typography.labelSmall, color = palette.onSurfaceVariant)
                 TextButton(onClick = {
-                    act(if (hasReturnRoute) TravisAction.TakeMeBack(memory.id) else TravisAction.SelectMemory(memory.id))
+                    act(TravisAction.SelectMemory(memory.id))
                     act(TravisAction.SwitchSurface(TravisSurface.AR)); close()
-                }, enabled = memory.point != null, contentPadding = PaddingValues(vertical = 4.dp)) { Text(if (hasReturnRoute) "Find in AR via trail" else "Direct bearing only") }
+                }, enabled = memory.point != null, contentPadding = PaddingValues(vertical = 4.dp)) { Text("Direct to place in AR") }
             }
         }
     }

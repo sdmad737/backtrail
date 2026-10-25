@@ -65,6 +65,17 @@ object TravisNotifications {
             false
         }
     }
+    fun cancelOuting(context: Context, outing: com.backtrail.app.contracts.Outing) {
+        val manager=context.getSystemService(NotificationManager::class.java)
+        outing.memories.forEach { memory -> manager.cancel(memory.id.hashCode());manager.cancel(("arrival:"+memory.id).hashCode()) }
+        val preferences=context.getSharedPreferences("reminders",0)
+        if(preferences.getString("outingId",null)==outing.id) {
+            PendingIntent.getBroadcast(context,900,Intent(context,TimeReminderReceiver::class.java),PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)?.let {
+                context.getSystemService(AlarmManager::class.java).cancel(it);it.cancel()
+            }
+            preferences.edit().clear().apply();manager.cancel(900)
+        }
+    }
     fun schedule(context: Context, minutes: Int, outingId: String = "", memoryId: String? = null) {
         require(outingId.isNotBlank()) { "A time reminder must belong to a saved outing" }
         val safe = minutes.coerceIn(1, 1440)

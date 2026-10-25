@@ -109,4 +109,20 @@ class NavigationLayoutDeviceTest {
         find("Pause recording")?.let { tap("Pause recording") }
     }
 
+    @Test fun journeyDeletionCanBeCancelledThenConfirmed() {
+        org.junit.Assume.assumeTrue(android.os.Build.MODEL.startsWith("sdk_gphone"))
+        automation.grantRuntimePermission(context.packageName,Manifest.permission.ACCESS_FINE_LOCATION)
+        automation.grantRuntimePermission(context.packageName,Manifest.permission.ACCESS_COARSE_LOCATION)
+        launch(false)
+        tap("Journeys");tap("Start a new journey");fill("Delete me test")
+        if(find("Save & start new")!=null)tap("Save & start new")else tap("Start journey")
+        await("Delete me test");tap("Journeys");tap("Delete Delete me test")
+        await("Delete Delete me test?");tap("Keep journey");await("Delete me test")
+        tap("Delete Delete me test");tap("Delete journey")
+        repeat(50) { if(find("Delete me test")!=null)SystemClock.sleep(100) }
+        assertNull(find("Delete me test"))
+        assertFalse(File(context.filesDir,"outings.json").readText().contains("Delete me test"))
+        tap("Done");await("Start journey")
+    }
+
 }

@@ -79,6 +79,12 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         } }
         refreshPermissions()
     }
+    fun ensureGuidanceTracking() {
+        val state=mutable.value
+        if(!state.replay && state.locationAllowed && state.mode!=GuidanceMode.NONE &&
+            state.outing.id.isNotBlank() && state.outing.id==currentId && !LiveSensors.trackingRunning.value)
+            startGuidanceLocation(state.outing.id)
+    }
     fun refreshPermissions() {
         val app=getApplication<Application>()
         mutable.update { it.copy(cameraAllowed=app.checkSelfPermission(Manifest.permission.CAMERA)==PackageManager.PERMISSION_GRANTED,
@@ -178,6 +184,7 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
             TravisAction.Start -> beginJourney(false)
             is TravisAction.StartNewJourney -> beginJourney(true,action.name)
             is TravisAction.RenameOuting -> renameOuting(action.id,action.name)
+            is TravisAction.DeleteOuting -> deleteOuting(action.id)
             TravisAction.Pause -> change { it.copy(phase=OutingPhase.PAUSED,segment=it.segment+1) }
             TravisAction.End -> { invalidate();change { it.copy(phase=OutingPhase.ENDED,endedAt=System.currentTimeMillis(),guidance=SavedGuidance()) };if(!mutable.value.replay) RecordingService.stop(getApplication());announce("Outing saved on this phone.") }
             TravisAction.HeadBack -> {
@@ -393,6 +400,28 @@ class TravisViewModel(app:Application):AndroidViewModel(app) {
         viewModelScope.launch {
             try { store.mutate(id) { requireNotNull(it).copy(name=clean) };announce("Journey renamed to $clean.") }
             catch(_:Exception) { announce("Could not save that name. Try again.") }
+        }
+    }
+
+    private fun deleteOuting(id:String) {
+        if(mutable.value.replay || store.outings.value.none { it.id==id })return
+        if(id==currentId && (photoSaveInFlight || mutable.value.captureBusy || journeyTransition)) {
+            announce("Finish saving before deleting this journey.");return
+        }
+        val deletingActive=id==currentId
+        if(deletingActive) { invalidate();RecordingService.stop(getApplication());discardPhotoDraft(true) }
+        viewModelScope.launch {
+            try {
+                val removed=store.delete(id)?:return@launch
+                TravisNotifications.cancelOuting(getApplication(),removed)
+                if(currentId==id) {
+                    currentId=null;preferences.edit().remove("active").apply();liveOuting=Outing()
+                    undo.clear();undoContext=null;routeFollower.reset();recentFixes.clear()
+                    mutable.update { it.copy(surface=TravisSurface.MAP,assistantMessages=emptyList(),answer="",resultIds=emptyList(),recognizedMemoryId=null,lastKnownFix=null,lastKnownGuidance=false,bearing=null,notificationMemory=null) }
+                    refresh()
+                }
+                announce("Deleted ${removed.name}.")
+            } catch(_:Exception) { announce("Could not delete the journey. Try again.") }
         }
     }
 

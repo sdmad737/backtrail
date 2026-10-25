@@ -146,3 +146,21 @@ acquisition and the actual goal near arrival; segment gaps target the boundary o
 The displayed approximate distance is to that pointer target, not a false 0m route
 remaining label. Existing explicit arrival, route advancement and reminders retain
 their measured gates. No fake coordinates, arrival or model output were added.
+
+DIRECT DEMO CONTROLS — OCTOBER 24, 2026
+Primary saved-photo, assistant citation and map-pin selection use existing
+SelectMemory/FIND_LANDMARK. Arrow and distance are the displacement from the actual
+current fix to that saved photo point; they do not use route look-ahead. The visible
+Direct to place / Follow trail choice keeps mode explicit. SelectMemory suspends
+the original retrace guide, without advancing/recognizing/collecting any point.
+Following the trail is still explicitly available. A bare recorded start without
+a saved photo stays a trail target; Direct requires an actual saved place.
+GPS and heading uncertainty remain; this does not improve physical sensor accuracy.
+
+JOURNEY DELETION
+DeleteOuting is user-confirmed. OutingStore.delete commits atomically before
+removing only unreferenced app-owned photos. A session tombstone rejects queued
+mutations of deleted IDs. Active deletion invalidates inference and stops GPS,
+then rechecks current identity before clearing UI. Saving photos blocks deletion.
+No model, map, unrelated journey or external file is deleted. Matching scheduled
+reminders and per-place notifications are cancelled.

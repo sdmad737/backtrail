@@ -95,6 +95,7 @@ sealed interface TravisAction {
     data object Start : TravisAction
     data class StartNewJourney(val name: String = "") : TravisAction
     data class RenameOuting(val id: String, val name: String) : TravisAction
+    data class DeleteOuting(val id: String) : TravisAction
     data object Pause : TravisAction
     data object End : TravisAction
     data object HeadBack : TravisAction

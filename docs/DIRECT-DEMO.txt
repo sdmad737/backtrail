@@ -1,0 +1,26 @@
+TRAVIS — DIRECT DEMO + JOURNEY DELETION — OCTOBER 24, 2026
+
+Saved places, map pins and assistant citations now open Direct to place in AR.
+Existing FIND_LANDMARK uses current GPS displacement to the selected saved photo,
+with straight-line distance, rather than the trail follower's local look-ahead.
+The visible Direct to place / Follow trail controls keep mode explicit. Changing
+mode keeps the camera open and preserves suspended return progress. No inferred
+walkable connection, fabricated location or physical accuracy gain is claimed.
+An active user-started guidance session resumes its location service when reopened.
+Paused recording without active guidance is not automatically restarted.
+
+Journeys has Delete on each real saved journey, followed by a named confirmation
+and Keep journey cancellation. Deleting active data stops tracking/cancels inference;
+atomic metadata deletion precedes best-effort cleanup of owned, unshared photos.
+Queued callbacks cannot resurrect deleted IDs. Other journeys, maps and models
+remain. Matching time alarms and saved-place notifications are cancelled.
+Deletion tests use disposable emulator data; no user's Pixel journey was deleted.
+
+VERIFICATION
+214 JVM tests, zero failures; offline APK and Android test APK build; lint no errors.
+Six emulator checks cover exact direct bearing and distance, preserved return
+cursor, camera-preserving Direct/Trail switching, existing chat/replay pointer UI,
+photo cleanup/late-write rejection, and cancelling then confirming active journey
+deletion through the UI. Pixel install and launch are separately verified.
+No claim of a physical short-range accuracy improvement or a bug-free application.
+GPS/compass uncertainty remains; this is an explicit direct-reference demo mode.

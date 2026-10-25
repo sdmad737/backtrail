@@ -277,6 +277,18 @@ private fun DockContent(state: TravisUiState, act: (TravisAction) -> Unit, onAsk
                     TravisGlyph("info", Modifier.size(22.dp), palette.primary)
                 }
             }
+            val directMemory = outing.memories.firstOrNull { it.id == state.destinationMemoryId }
+                ?: outing.memories.firstOrNull { it.routeIndex == (state.returnRouteStartIndex ?: state.routeTargetIndex) && it.point != null }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = !isRoute, onClick = { directMemory?.let { act(TravisAction.SelectMemory(it.id)) } },
+                    enabled = !isRoute || directMemory?.point != null, label = { Text("Direct to place") }, modifier = Modifier.weight(1f).heightIn(min = 48.dp))
+                FilterChip(selected = isRoute, onClick = {
+                    if (state.canReturnAlongRoute && state.selectedMemoryId != null) act(TravisAction.TakeMeBack(state.selectedMemoryId))
+                    else act(TravisAction.ResumeRetrace)
+                    act(TravisAction.SwitchSurface(state.surface))
+                }, enabled = isRoute || state.canReturnAlongRoute || state.canResumeRetrace,
+                    label = { Text("Follow trail") }, modifier = Modifier.weight(1f).heightIn(min = 48.dp))
+            }
             if (isRoute && state.routeStepCount > 0) LinearProgressIndicator(progress = { state.routeProgress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(3.dp).clip(CircleShape), color = TravisOrange, trackColor = palette.outlineVariant)
             val recognized = state.recognizedMemoryId != null && state.recognizedMemoryId == state.selectedMemoryId
             val finalDestination = isRoute && state.routeTargetIndex == state.returnRouteStartIndex
@@ -491,6 +503,14 @@ private fun CaptureScreen(state: TravisUiState, act: (TravisAction) -> Unit, cam
 @Composable
 private fun JourneysSheet(state: TravisUiState, act: (TravisAction) -> Unit, close: () -> Unit) {
     var renameId by rememberSaveable { mutableStateOf<String?>(null) }
+    var deleteId by rememberSaveable { mutableStateOf<String?>(null) }
+    val deleting = state.savedOutings.firstOrNull { it.id == deleteId }
+    if (deleting != null) AlertDialog(
+        onDismissRequest = { deleteId = null }, title = { Text("Delete ${deleting.name}?") },
+        text = { Text("This permanently removes this journey, its trail and saved photos from this phone. Active tracking for this journey will stop. Offline maps and models stay installed.") },
+        confirmButton = { TextButton(onClick = { act(TravisAction.DeleteOuting(deleting.id)); deleteId = null }, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text("Delete journey") } },
+        dismissButton = { TextButton(onClick = { deleteId = null }) { Text("Keep journey") } },
+    )
     var name by rememberSaveable { mutableStateOf("") }
     var newJourney by rememberSaveable { mutableStateOf(false) }
     val currentActive = state.outing.phase in listOf(OutingPhase.RECORDING, OutingPhase.PAUSED)
@@ -531,6 +551,7 @@ private fun JourneysSheet(state: TravisUiState, act: (TravisAction) -> Unit, clo
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     TextButton(onClick = { renameId = outing.id; name = outing.name }, enabled = !state.replay) { Text("Rename") }
+                    TextButton(onClick = { deleteId = outing.id }, enabled = !state.replay, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error), modifier = Modifier.semantics { contentDescription = "Delete ${outing.name}" }) { Text("Delete") }
                     TextButton(onClick = {
                         if(selected && outing.phase == OutingPhase.PAUSED) act(TravisAction.Start)
                         else if(!selected) act(TravisAction.OpenOuting(outing.id))
@@ -614,13 +635,10 @@ private fun MemoryCard(memory: Memory, state:TravisUiState, onClick: () -> Unit,
                         TextButton(onClick = { confirmDelete = true }) { Text("Remove", color = MaterialTheme.colorScheme.error) }
                     }
                 }
+                PrimaryAction("Direct to place in AR", "ar", Modifier.fillMaxWidth(), memory.point != null) { onClick() }
+                Text("Straight-line direction to this saved place.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (ReturnRoute.plan(state.outing, memory.id) != null) {
-                    PrimaryAction("Find in AR via my trail", "ar", Modifier.fillMaxWidth()) { act(TravisAction.TakeMeBack(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); onCloseMemoryCard() }
-                    Text("Follow the recorded route to this place.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Direct bearing only") }
-                } else {
-                    if (memory.point != null) Text("No connected return route available. A direct bearing does not show a walkable path.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    OutlinedButton(onClick = onClick, enabled = memory.point != null, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Direct bearing only") }
+                    OutlinedButton(onClick = { act(TravisAction.TakeMeBack(memory.id)); act(TravisAction.SwitchSurface(TravisSurface.AR)); onCloseMemoryCard() }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Follow my recorded trail") }
                 }
                 if (memory.pickup == PickupPhase.COLLECTED) Text("Collected · saved to this journey", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 if (memory.pickup !in listOf(PickupPhase.NONE, PickupPhase.COLLECTED)) OutlinedButton(onClick = { act(TravisAction.Collect(memory.id)) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("I collected it") }

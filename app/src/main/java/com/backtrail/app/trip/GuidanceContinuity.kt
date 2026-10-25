@@ -35,7 +35,7 @@ object GuidanceContinuity {
             if (bearing != null) return base.copy(
                 bearing = bearing, approximateDirection = true, guidanceMeasuredAt = fix.time,
                 pointerDistanceMeters = distance,
-                pointerMessage = when (status) {
+                pointerMessage = if (current.mode == GuidanceMode.FIND_LANDMARK) "Direct to saved place · GPS ±${fix.accuracy.toInt()} m" else when (status) {
                     RouteFollower.Status.NEAR_DESTINATION, RouteFollower.Status.POSITION_UNCERTAIN -> "Approximate · GPS ±${fix.accuracy.toInt()} m · check the saved photo"
                     RouteFollower.Status.OFF_ROUTE, RouteFollower.Status.AMBIGUOUS -> "Bearing to waypoint · check the recorded trail"
                     RouteFollower.Status.GAP -> "Bearing to recorded segment end · route has a gap"

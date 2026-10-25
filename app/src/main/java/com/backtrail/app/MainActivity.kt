@@ -34,7 +34,10 @@ class MainActivity:ComponentActivity() {
                 model.openNotification(destination);incomingDestination.value=null
             } }
             val state by model.state.collectAsStateWithLifecycle()
-            LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { model.refreshPermissions() }
+            LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { model.refreshPermissions();model.ensureGuidanceTracking() }
+            LaunchedEffect(state.outing.id,state.mode,state.replay,state.locationAllowed) {
+                if(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))model.ensureGuidanceTracking()
+            }
             val importer=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri->uri?.let(model::importModel) }
             var pending by remember { mutableStateOf<TravisAction?>(null) }
             val permissions=rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -57,8 +60,7 @@ class MainActivity:ComponentActivity() {
             }
             LaunchedEffect(Unit) { if(savedInstanceState==null && intent.getBooleanExtra("explore",false)) model.action(TravisAction.Explore);intent.removeExtra("explore") }
             TravisScreen(state,act,camera={ modifier->NativeCamera(model.camera,modifier) { model.announce(it) } },map={ modifier->OfflineTrailMap(state,modifier,onMemorySelected={ id->
-                    if(com.backtrail.app.trip.ReturnRoute.plan(state.outing,id)!=null) { model.action(TravisAction.TakeMeBack(id));model.action(TravisAction.SwitchSurface(TravisSurface.AR)) }
-                    else model.action(TravisAction.SelectMemory(id))
+                    model.action(TravisAction.SelectMemory(id))
                 }) },
                 onHeadingActiveChanged={ visible ->
                     headingVisible=visible

@@ -203,7 +203,7 @@ private fun GuidanceDistance(state: TravisUiState, relative: Double, compact: Bo
     Surface(modifier = modifier, shape = RoundedCornerShape(16.dp), color = Color.Black.copy(alpha = .50f)) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(if (state.approximateDirection) "≈ ${distanceLabel(state.pointerDistanceMeters)}" else if (state.mode == GuidanceMode.RETRACE) "≈ ${distanceLabel(state.remainingMeters)}" else distanceLabel(state.distanceMeters), color = Color.White, fontSize = if (compact) 26.sp else 36.sp, fontWeight = FontWeight.SemiBold)
-            Text(if (state.lastKnownGuidance) "AT LAST GPS POSITION · DISTANCE HELD" else if (state.approximateDirection) "TO WAYPOINT · APPROXIMATE BEARING" else if (state.mode == GuidanceMode.RETRACE) "LEFT ON RECORDED TRAIL" else "STRAIGHT LINE TO PLACE", color = Color.White.copy(alpha = .85f), fontSize = 9.sp, letterSpacing = .5.sp, textAlign = TextAlign.Center)
+            Text(if (state.lastKnownGuidance) "AT LAST GPS POSITION · DISTANCE HELD" else if (state.mode == GuidanceMode.FIND_LANDMARK) "STRAIGHT LINE TO PLACE" else if (state.approximateDirection) "TO WAYPOINT · APPROXIMATE BEARING" else if (state.mode == GuidanceMode.RETRACE) "LEFT ON RECORDED TRAIL" else "STRAIGHT LINE TO PLACE", color = Color.White.copy(alpha = .85f), fontSize = 9.sp, letterSpacing = .5.sp, textAlign = TextAlign.Center)
             Text(when {
                 state.lastKnownGuidance -> "Reference only · check your trail"
                 abs(relative) < 12 -> "Ahead, approximately"

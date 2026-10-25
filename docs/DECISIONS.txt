@@ -1,3 +1,17 @@
+DEMO COMPLETION / DELETE JOURNEYS — OCTOBER 24, 2026
+User added journey deletion to the direct-bearing demo pass. Root implements
+confirmation, serialized storage deletion, late-write protection and alarm cleanup.
+Read-only review covers deletion races and shared photos. Only disposable emulator
+journeys are deleted during verification. DIRECT-DEMO.txt records the final scope.
+
+DIRECT DISPLACEMENT DEMO — OCTOBER 24, 2026
+User explicitly requests displacement direction for the short demo. Reused existing
+FIND_LANDMARK, made direct selection primary, and exposed the mode choice. No new
+framework, stored guidance format, route algorithm, model or fake sensor values.
+Root integrates/UI changes; read-only agent review confirms existing suspension
+and confirmation behavior.214 JVM tests and build/lint pass; direct ViewModel
+integration verifies exact displacement and unchanged suspended trail.
+
 DEMO POINTER RESTORATION — OCTOBER 24, 2026
 User explicitly requests visible approximate guidance despite GPS uncertainty.
 Root owns the targeted UI/composition/trip fix; read-only agent review found no
